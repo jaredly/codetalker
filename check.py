@@ -3,3 +3,5 @@ import parse_lib
 print str(parse_lib.parse(open('parse.py').read())[1]) # another comment
 """hello
 my fred"""
+if 1:
+    print "yes"

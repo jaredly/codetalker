@@ -1,5 +1,19 @@
 """
 grammar.py -> parses BNF grammars
+
+SWEET!!
+
+examples
+
+<name> : 'L' | <something> | <other><man>+
+
+-- to do the string "'", use ''
+-- suffixes:
+* `+` one or more of the preceeding
+* `*` zero or more of the preceeding
+* `:` check for, but do not consume the preceeding
+* `+?` non-greedy version
+* `*?` non-greedy version
 """
 
 import re
@@ -9,12 +23,10 @@ class BNFException(Exception):
 
 def split_rule(text):
     """just made much small w/ regex =)"""
-    pieces = "('[^']*'|<[^>]+>|\||\+|\*|\?|\s)"
+    pieces = "('[^']*'|<[^>]+>|\||\+|\*|\?|\s|:)"
     parts = re.findall(pieces, text)
     if ''.join(parts) != text:
         raise BNFException,'Invalid BNF provided'
-    #print text
-#    print parts
     options = [[]]
     for part in parts:
         if part == '|':

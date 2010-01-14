@@ -28,5 +28,6 @@
 <symbol> : <multi>|'!'|'"'|'$'|'%'|'&'|'('|')'|'*'|'+'|','|'-'|'.'|'/'|':'|''|'<'|'='|'>'|'?'|'@'|'['|'\'|']'|'^'|'{'|'|'|'}'|'~'
 
 <multi>  : '+'<wchar>*'='|'*'<wchar>*'*'|'<' <wchar>* '='|'>' <wchar>* '='|'!' <wchar>* '='
-<reserved> : <reserved_><white>
-<reserved_> : 'for'|'while'|'if'|'del'|'def'|'class'|'print'|'in'|'and'|'not'|'import'|'from'
+<reserved> : <reserved_><noa>:
+<noa>    : <white>|<symbol>
+<reserved_> : 'for'|'while'|'if'|'del'|'def'|'class'|'print'|'in'|'and'|'not'|'import'|'from'|'assert'|'raise'
