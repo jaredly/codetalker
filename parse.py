@@ -9,10 +9,16 @@ def isliteral(rule):
 def matchliteral(text, i, rule):
     if rule.startswith("'"):
         char = rule.strip("'") or "'"
-        if text[i:i+len(char)] != char:
-            return False,0
-        i += len(char)
-        return char, i
+        if isinstance(text[i], Node):
+            txt = str(text[i])
+            while len(txt)<len(char) and i<len(text)-1:
+                i+=1
+                txt+=str(text[i])
+            if txt == char:
+                return char, i+1
+        elif text[i:i+len(char)] == char:
+            i += len(char)
+            return char, i
     elif isinstance(text[i],Node) and text[i].name == rule:
         return text[i], i+1
     return False,0
