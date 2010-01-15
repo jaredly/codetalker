@@ -1,7 +1,8 @@
 
 class Node:
-    def __init__(self, name, literal = False):
+    def __init__(self, name, index, literal = False):
         self.name = name
+        self.index = index
         self.children = []
         self.isliteral = False
         if literal:
@@ -45,4 +46,4 @@ class Node:
 
     def __eq__(self,x):
         if not self.isliteral:raise Exception,'not a literal'
-        return self.children[0] == x
+        return self.children[0] == x or self.name == x

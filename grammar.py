@@ -17,13 +17,14 @@ examples
 """
 
 import re
+import string
 
 class BNFException(Exception):
     pass
 
 def split_rule(text):
-    """just made much small w/ regex =)"""
-    pieces = "('[^']*'|<[^>]+>|\||\+|\*|\?|\s|:)"
+    """just made much smaller w/ regex =)"""
+    pieces = "('[^']*'|<[^>]+>|\||\+|\*|\?|\s|:|e)"
     parts = re.findall(pieces, text)
     if ''.join(parts) != text:
         raise BNFException,'Invalid BNF provided'
@@ -99,6 +100,7 @@ def flatten(lst):
     return res
 
 firsts = {}
+
 def first(rule,rules):
     """cache the first character/token of a given *rule*"""
     if rule in firsts:return firsts[rule]
@@ -106,6 +108,8 @@ def first(rule,rules):
         return ["'"]
     elif rule.startswith("'"):
         return [rule.strip("'")[0]]
+    elif rule == 'e':
+        return list(string.printable)
 
     ret = []
     firsts[rule] = ret
