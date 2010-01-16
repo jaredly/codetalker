@@ -83,7 +83,7 @@ def parse_children(text, i, rule, children, stack, error):
                     i = di
                 a += 2
                 continue
-            if children[a+1] == ':':
+            elif children[a+1] == ':':
                 # check, but don't consume
                 res, di = parserule(text, i, children[a], stack, error)
                 if not res:
@@ -93,6 +93,14 @@ def parse_children(text, i, rule, children, stack, error):
                     return False, 0
                 a += 2
                 continue
+            elif children[a+1] == '~':
+                a += 2
+                res, di = parserule(text, i, children[a], stack, error)
+                if not res:
+                    continue
+                node.children.append(res)
+                i = di
+
 
         res, di = parserule(text, i, children[a], stack, error)
         if not res:

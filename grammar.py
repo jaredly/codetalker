@@ -14,6 +14,15 @@ examples
 * `:` check for, but do not consume the preceeding
 * `+?` non-greedy version
 * `*?` non-greedy version
+* `~` no big deal if it's not there
+
+............. um changing to fit the Python BNF
+
+
+
+
+
+
 """
 
 import re
@@ -24,7 +33,7 @@ class BNFException(Exception):
 
 def split_rule(text):
     """just made much smaller w/ regex =)"""
-    pieces = "('[^']*'|<[^>]+>|\||\+|\*|\?|\s|:|e)"
+    pieces = "('[^']*'|<[^>]+>|\||\+|\*|\?|\s|:|~|e)"
     parts = re.findall(pieces, text)
     if ''.join(parts) != text:
         raise BNFException,'Invalid BNF provided'
@@ -41,53 +50,6 @@ def split_rule(text):
         else:
             options[-1].append(part)
     return options
-    #print options
-
-
-'''    ors = [[]]
-    i = 0
-    ins = False
-    while i<len(text):
-        current = ''
-        if text[i] in ' \t':
-            i += 1
-            continue
-        if text[i] == '<':
-            current+=text[i]
-            i+=1
-            if i>=len(text):raise BNFException,'invalif bnf'
-            while text[i]!='>':
-                current+=text[i]
-                i+=1
-                if i>=len(text):raise BNFException,'invalif bnf'
-            current+=text[i]
-            i+=1
-        elif text[i] == "'":
-            current+=text[i]
-            i+=1
-            if i>=len(text):raise BNFException,'invalif bnf'
-            while text[i]!="'":
-                current+=text[i]
-                i+=1
-                if i>=len(text):raise BNFException,'invalif bnf'
-            current+=text[i]
-            if current == "'\\t'":
-                current = "'\t'"
-            elif current == "'\\n'":
-                current = "'\n'"
-            i+=1
-        elif text[i] in '*+?':
-            current+=text[i]
-            i+=1
-        elif text[i] == '|':
-            ors.append([])
-            i+=1
-            continue
-        else:
-            raise Exception,'fail: %s:'%text[i]
-        ors[-1].append(current)
-    return ors'''
-
 
 def flatten(lst):
     """flatten a nested list"""
