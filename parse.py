@@ -1,7 +1,7 @@
 ### tokenizer
 
 from node import Node
-import grammar
+from mybnf import Grammar
 
 def matchliteral(text, i, rule):
     if rule == 'e':
@@ -99,8 +99,10 @@ def totokens(node):
         tokenw.children[0].children[0].toliteral()
         yield tokenw.children[0].children[0]
 
+grammar = None
 def parse(text, bnf):
-    grammar.make_rules(open(bnf).read())
+    global grammar
+    grammar = Grammar(open(bnf))
     error = [0, None]
     node, char = parserule(text, 0, '<start>', (), error)
     if not node:
