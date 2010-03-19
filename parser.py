@@ -124,5 +124,7 @@ def parse(text, bnf):
     return node
 
 if __name__ == '__main__':
-    res = parse(open('parse.py').read(), 'tokenize.bnf')
-    print res[1]
+    def t():
+        res = parse(open('parse.py').read(), 'tokenize.bnf')
+    import cProfile
+    cProfile.run('t()','slowparser.prof')

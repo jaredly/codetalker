@@ -10,11 +10,6 @@ class Node:
             self.isliteral = True
 
     def __repr__(self):
-        '''txt = self.name+'\n'
-        for child in self.children:
-            txt += child.__repr__().replace('\n','\n  ')
-        txt += self.name.replace('<','</')+'\n'
-        return txt'''
         return '<Node %s with %d children>'%(self.name.strip('<>'),len(self.children))
 
     def __str__(self):
