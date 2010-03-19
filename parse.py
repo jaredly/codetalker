@@ -114,11 +114,11 @@ def parse(text, bnf):
     return node
 
 def gettokens(text):
-    tokens = list(totokens(parse(text, 'tokenize.bnf')))
+    tokens = list(totokens(parse(text, 'data/tokenize.bnf')))
     #print [str(x) for x in tokens],tokens
-    return parse(tokens, 'json.bnf')
+    return parse(tokens, 'data/json.bnf')
 
 if __name__=='__main__':
-    tokens = gettokens(open('test.json').read())
+    tokens = gettokens(open('test/test.json').read())
     #print str(tokens)
     print tokens
