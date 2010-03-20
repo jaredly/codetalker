@@ -24,6 +24,12 @@ import re
 import string
 
 class Grammar:
+    '''A tool for parsing and storing a grammar.
+
+    >>> g = Grammar('')
+    >>> g = Grammar('<start>:\\'hi\\'')
+    >>> g = Grammar("<a>:<b>|'4'\\n<b>:'yo'")
+    '''
     def __init__(self, text):
         if type(text) not in (str, unicode) and hasattr(text, 'read'):
             text = text.read()
@@ -32,22 +38,25 @@ class Grammar:
 
     def parse(self):
         self.rules = {}
+        self.firsts = {}
         for i,line in enumerate(self.original.split('\n')):
             if not line.startswith('#') and line.strip():
                 if not ':' in line:
                     raise Exception, 'invalid bnf on line %d: %s' % (i, line)
                 name,body = line.split(':',1)
                 self.rules[name.strip()] = self.rulesplit(body.strip())
-        for name in rules:
+        for name in self.rules:
             self.loadfirst(name)
 
     def loadfirst(self, name):
         if name in self.firsts:return self.firsts[name]
         elif name == "'":return ["'"]
-        elif rule.startswith("'"):
-            return [rule.strip("'")[0]]
-        elif rule == 'e':
+        elif name.startswith("'"):
+            return [name.strip("'")[0]]
+        elif name == 'e':
             return list(string.printable)
+        elif name not in self.rules:
+            return [name]
 
         chars = []
         self.firsts[name] = chars
@@ -58,9 +67,9 @@ class Grammar:
     def rulesplit(self, body):
         """just made much smaller w/ regex =)"""
         pieces = "('[^']*'|<[^>]+>|\||\+|\*|\?|\s|:|~|e)"
-        parts = re.findall(pieces, text)
-        if ''.join(parts) != text:
-            raise BNFException,'Invalid BNF provided: %s' % text
+        parts = re.findall(pieces, body)
+        if ''.join(parts) != body:
+            raise BNFException,'Invalid BNF provided: %s' % body
         options = [[]]
         for part in parts:
             if part == '|':
@@ -85,5 +94,8 @@ def flatten(lst):
             res.append(item)
     return res
 
+if __name__=='__main__':
+    import doctest
+    doctest.testmod()
 
 # vim: et sw=4 sts=4
