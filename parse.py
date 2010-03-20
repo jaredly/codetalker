@@ -39,11 +39,9 @@ def parserule(text, i, rule, state):
     res, di = matchliteral(text, i, rule)
     if res:
         if not isinstance(res, Node):
-            state['at'][1] += len(res)
-            #print 'inc at',res,len(res),state['at']
             if '\n' in res:
-                state['at'][0]+=1
-                state['at'][1] = 0
+                state['at'][0] += 1
+                state['at'][1] = i+1
         return res, di
     elif not rule in grammar.rules: ## should be a literal, didn't match. an error occured
         if i>state['error'][0]:
@@ -80,7 +78,8 @@ def parse_children(text, i, rule, children, state):
     if debug:print 'children:',text[i], rule, children
     at = list(state['at'])
     node = Node(rule, i)
-    node.lno, node.cno = state['at']
+    node.lno = state['at'][0]
+    node.cno = i - state['at'][1]
     a = 0
     clen = len(children)
     while a < clen:
@@ -191,9 +190,7 @@ if __name__=='__main__':
         from bnf import js as grammar
     res = parse(open(code).read(), grammar.tokens)
     tokens = res.tokens()
-    for i in tokens:
-        print i,i.name,i.lineno(),i.charno()
-    global debug
+    #global debug
     #debug = True
     full = parse(tokens, grammar.main)
     print full
