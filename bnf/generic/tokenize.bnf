@@ -1,18 +1,26 @@
 
 <start>  : <tokenw>*
 <tokenw> : <token>|<white>
-<token>  : <string>|<number>|<id>|<uoperator>|<aoperator>|<boperator>|<symbol>|<reserved_>|<comment>
-<string> : '"'<dcontents>*'"'|''<scontents>*''
+<token>  : <string>|<number>|<reserved_>|<id>|<uoperator>|<aoperator>|<boperator>|<symbol>|<comment>
+<string> : <dstring>|<sstring>
 
+<sstring>:''<scontents>*''
+<dstring>:'"'<dcontents>*'"'
 <dcontents>:<nodb>|'\'<char>
 <scontents>:<nos>|'\'<char>
 
 <digit>  : '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'
 <alpha>  : 'a'|'b'|'c'|'d'|'e'|'f'|'g'|'h'|'i'|'j'|'k'|'l'|'m'|'n'|'o'|'p'|'q'|'r'|'s'|'t'|'u'|'v'|'w'|'x'|'y'|'z'|'A'|'B'|'C'|'D'|'E'|'F'|'G'|'H'|'I'|'J'|'K'|'L'|'M'|'N'|'O'|'P'|'Q'|'R'|'S'|'T'|'U'|'V'|'W'|'X'|'Y'|'Z'
 
+### to be overridden
+# unary
 <uoperator> :
+# assign-op
 <aoperator> :
+# bin op
 <boperator> :
+<reserved>  :
+<comment>   :
 
 <few>    : <digit>|<alpha>|'!'|'#'|'$'|'%'|'&'|'('|')'|'*'|'+'|','|'-'|'.'|'/'|':'|'<'|'='|'>'|'?'|'@'|'['|'\'|']'|'^'|'_'|'`'|'{'|'|'|'}'|'~'|' '|'    '
 <nodb>   : <few>|''
@@ -33,5 +41,3 @@
 # the ":" at the end means non-capturing
 <reserved_> : <reserved><noa>:
 <noa>       : <white>|<symbol>
-<reserved>  :
-<comment>   :
