@@ -26,7 +26,7 @@ def matchliteral(text, i, rule):
 def parserule(text, i, rule, state):
     grammar = state['grammar']
     at = list(state['at'])
-    if debug:print 'rule: ',text[i],rule
+    if debug and i<len(text):print 'rule: ',text[i],rule
     state['stack'] += (rule,)
     if i>=len(text):
         if i>state['error'][0]:
@@ -57,6 +57,7 @@ def parserule(text, i, rule, state):
         return False,0
 
     for n,one in enumerate(grammar.rules[rule]):
+        if one == rule:continue
         if text[i][0] in grammar.firsts[rule][n] or hasattr(text[i],'name') and text[i].name in grammar.firsts[rule][n]:
             res, di = parse_children(text, i, rule, one, state.copy())
             if not res:
@@ -122,6 +123,9 @@ def parse_children(text, i, rule, children, state):
                     continue
                 node.children.append(res)
                 i = di
+        if children[a] == rule:
+            a+=1
+            continue
         res, di = parserule(text, i, children[a], state.copy())
         if not res:
             if i>state['error'][0]:
@@ -148,6 +152,7 @@ def totokens(node):
 def parse(text, grammar):
     error = [0, None, None, 'unknown error']
     state = {'error':error, 'stack':(), 'grammar':grammar, 'at':[0,0]}
+    #print grammar.rules['<start>']
     node, char = parserule(text, 0, '<start>', state.copy())
     if not node:
         if state['error'][1]:
@@ -188,10 +193,16 @@ if __name__=='__main__':
         from bnf import json as grammar
     elif ext == 'js':
         from bnf import js as grammar
+    elif ext == 'c':
+        from bnf import c as grammar
+    else:
+        raise Exception,'no grammar found for that file type'
+    global debug
+    #debug = True
     res = parse(open(code).read(), grammar.tokens)
     tokens = res.tokens()
-    #global debug
     #debug = True
+    global debug
     full = parse(tokens, grammar.main)
     print full
     print full.toXML()

@@ -1,0 +1,8 @@
+<int_const> : <int>
+<char_const> : ''<char>''
+<string> : '"'<dcontents>'"'
+<float_const> : <float>
+
+<enumeration_const> : 'enum'
+<token> : <string>|<char_const>|<float_const>|<int_const>|<enumeration_const>|<id>|<symbol>|<reserved_>|<comment>
+
