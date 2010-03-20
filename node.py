@@ -28,6 +28,9 @@ class Node:
             res += str(c)
         return res
     
+    def toXML(self):
+        return '%s\n  %s\n%s' % (self.name, ('\n'.join((isinstance(c,Node) and c.toXML() or str(c)) for c in self.children)).replace('\n','\n  '), self.name.replace('<','</'))
+    
     def tokens(self):
         return list(a.children[0] for a in self.getElementsByTagName('<token>') if a.children[0].toliteral())
 

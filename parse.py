@@ -194,5 +194,5 @@ if __name__=='__main__':
     #debug = True
     full = parse(tokens, grammar.main)
     print full
-    for a in full.children:print a,a.name
+    print full.toXML()
 
