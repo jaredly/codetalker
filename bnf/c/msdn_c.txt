@@ -1,14 +1,21 @@
-﻿new-line:
+﻿
+### C.1.1 Line Terminators
+
+new-line:
     Carriage return character (U+000D)
     Line feed character (U+000A)
     Line separator character (U+2028)
     Paragraph separator character (U+2029)
+
+### C.1.2 White space
 
 whitespace:
     Any character with Unicode class Zs
     Horizontal tab character (U+0009)
     Vertical tab character (U+000B)
     Form feed character (U+000C)
+
+### C.1.3 Comments
 
 comment:
     single-line-comment
@@ -1508,132 +1515,4 @@ named-argument:
 
 attribute-argument-expression:
     expression
-
-### C.3 Grammar extensions for unsafe code
-
-class-modifier:
-    ...
-    unsafe
-
-struct-modifier:
-    ...
-    unsafe
-
-interface-modifier:
-    ...
-    unsafe
-
-delegate-modifier:
-    ...
-    unsafe
-
-field-modifier:
-    ...
-    unsafe
-
-method-modifier:
-    ...
-    unsafe
-
-property-modifier:
-    ...
-    unsafe
-
-event-modifier:
-    ...
-    unsafe
-
-indexer-modifier:
-    ...
-    unsafe
-
-operator-modifier:
-    ...
-    unsafe
-
-constructor-modifier:
-    ...
-    unsafe
-
-destructor-declaration:
-    attributesopt   externopt   unsafeopt   ~   identifier   (   )    destructor-body
-    attributesopt   unsafeopt   externopt   ~   identifier   (   )    destructor-body
-
-static-constructor-modifiers:
-    externopt   unsafeopt   static
-    unsafeopt   externopt   static
-    externopt   static   unsafeopt
-    unsafeopt    static   externopt
-    static   externopt   unsafeop
-    static   unsafeopt   externopt
-    
-embedded-statement:
-    ...
-    unsafe-statement
-
-unsafe-statement:
-    unsafe   block
-
-type:
-    value-type
-    reference-type
-    pointer-type
-    pointer-type:
-    unmanaged-type   *
-    void   *
-
-unmanaged-type:
-    type
-    primary-no-array-creation-expression:
-    ...
-    pointer-member-access
-    pointer-element-access
-    sizeof-expression
-
-unary-expression:
-    ...
-    pointer-indirection-expression
-    addressof-expression
-
-pointer-indirection-expression:
-    *   unary-expression
-
-pointer-member-access:
-    primary-expression   ->   identifier
-
-pointer-element-access:
-    primary-no-array-creation-expression   [   expression   ]
-
-addressof-expression:
-    &   unary-expression
-
-sizeof-expression:
-    sizeof   (   unmanaged-type   )
-
-embedded-statement:
-    ...
-    fixed-statement
-
-fixed-statement:
-    fixed   (   pointer-type   fixed-pointer-declarators   )   embedded-statement
-
-fixed-pointer-declarators:
-    fixed-pointer-declarator
-    fixed-pointer-declarators   ,   fixed-pointer-declarator
-
-fixed-pointer-declarator:
-    identifier   =   fixed-pointer-initializer
-
-fixed-pointer-initializer:
-    &   variable-reference
-    expression
-
-variable-initializer:
-    expression
-    array-initializer
-    stackalloc-initializer
-
-stackalloc-initializer:
-    stackalloc   unmanaged-type   [   expression   ]
-
 
