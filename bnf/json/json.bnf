@@ -11,3 +11,4 @@
 <object tail>     : ','<value>':'<value>|','
 
 <ignorewhite> : <wchar>|e
+<wchar> : ' '|'\t'|'\n'

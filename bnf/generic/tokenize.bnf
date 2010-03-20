@@ -30,5 +30,6 @@
 
 # the ":" at the end means non-capturing
 <reserved_> : <reserved><noa>:
-<noa>    : <white>|<symbol>
-<reserved> :
+<noa>       : <white>|<symbol>
+<reserved>  :
+<comment>   :

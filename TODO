@@ -1,4 +1,4 @@
-make mybnf.py: Grammar object
+*make mybnf.py: Grammar object
 
 test stuff.
 make unittests

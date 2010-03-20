@@ -1,9 +1,10 @@
 ### tokenizer
 
 from node import Node
-from jbnf import Grammar
+debug = False
 
 def matchliteral(text, i, rule):
+    if debug:print 'match?', text[i], rule
     if rule == 'e':
         return Node('',i), i
     if rule[0] == "'":
@@ -22,7 +23,8 @@ def matchliteral(text, i, rule):
         return text[i], i+1
     return False,0
 
-def parserule(text, i, rule, stack, error):
+def parserule(text, i, rule, stack, error, grammar):
+    if debug:print 'rule: ',text[i],rule
     stack += (rule,)
     if i>=len(text):
         if i>error[0]:
@@ -32,27 +34,30 @@ def parserule(text, i, rule, stack, error):
     res, di = matchliteral(text, i, rule)
     if res:
         return res, di
-    elif not rule in grammar.rules: ## should be a literal, didn't match
+    elif not rule in grammar.rules: ## should be a literal, didn't match. an error occured
         if i>error[0]:
             error[0] = i
             error[1] = stack+(str(text[i]),)
         return False,0
+
     for n,one in enumerate(grammar.rules[rule]):
-        if text[i][0] in grammar.firsts[rule][n]:
-            res, di = parse_children(text, i, rule, one, stack, error)
+        if debug:print 'f:',text[i][0], grammar.firsts[rule][n]
+        if text[i][0] in grammar.firsts[rule][n] or hasattr(text[i],'name') and text[i].name in grammar.firsts[rule][n]:
+            res, di = parse_children(text, i, rule, one, stack, error, grammar)
             if not res:
                 continue
             return res, di
     return False, 0
 
-def parse_children(text, i, rule, children, stack, error):
+def parse_children(text, i, rule, children, stack, error, grammar):
+    if debug:print 'children:',text[i], rule, children
     node = Node(rule, i)
     a = 0
     clen = len(children)
     while a < clen:
         if a < clen-1:
             if children[a+1] == '+':
-                res, di = parserule(text, i, children[a], stack, error)
+                res, di = parserule(text, i, children[a], stack, error, grammar)
                 if not res:
                     return False, 0
                 node.children.append(res)
@@ -61,11 +66,11 @@ def parse_children(text, i, rule, children, stack, error):
                 while 1:
                     if a < clen-2 and children[a+2] == '?':
                         # non-greedy
-                        res, di = parse_children(text, i, rule, children[a+3:], stack, error)
+                        res, di = parse_children(text, i, rule, children[a+3:], stack, error, grammar)
                         if res:
                             node.children += res.children
                             return node, di
-                    res, di = parserule(text, i, children[a], stack, error)
+                    res, di = parserule(text, i, children[a], stack, error, grammar)
                     if not res:break
                     node.children.append(res)
                     i = di
@@ -73,19 +78,19 @@ def parse_children(text, i, rule, children, stack, error):
                 continue
             elif children[a+1] == ':':
                 # check, but don't consume
-                res, di = parserule(text, i, children[a], stack, error)
+                res, di = parserule(text, i, children[a], stack, error, grammar)
                 if not res:
                     return False, 0
                 a += 2
                 continue
             elif children[a+1] == '~':
                 a += 2
-                res, di = parserule(text, i, children[a], stack, error)
+                res, di = parserule(text, i, children[a], stack, error, grammar)
                 if not res:
                     continue
                 node.children.append(res)
                 i = di
-        res, di = parserule(text, i, children[a], stack, error)
+        res, di = parserule(text, i, children[a], stack, error, grammar)
         if not res:
             return False, 0
         node.children.append(res)
@@ -99,15 +104,18 @@ def totokens(node):
         tokenw.children[0].children[0].toliteral()
         yield tokenw.children[0].children[0]
 
-grammar = None
-def parse(text, bnf):
-    global grammar
-    grammar = Grammar(open(bnf))
+def parse(text, grammar):
     error = [0, None]
-    node, char = parserule(text, 0, '<start>', (), error)
+    node, char = parserule(text, 0, '<start>', (), error, grammar)
     if not node:
-        etext = "Syntax error while parsing %s: found '%s', expected %s"%(error[1][-3],error[1][-1],error[1][-2])
-        raise Exception,etext
+        if error[1]:
+            etext = "Syntax error while parsing %s: found '%s', expected %s"%(error[1][-3],error[1][-1],error[1][-2])
+            print 'Error at char %d' % error[0], etext,error
+            sys.exit(1)
+            #raise Exception,etext
+        else:
+            print 'idk what happened...'
+            fail
     if not node:
         raise Exception,str(error)
     if char<len(text):
@@ -123,9 +131,22 @@ def gettokens(text):
 
 if __name__=='__main__':
     import sys
-    if len(sys.argv) < 4:
-        print 'usage: parse.py [code file] [token file] [bnf file]'
+    if len(sys.argv) < 2:
+        print 'usage: parse.py [code file]'
         sys.exit(1)
-    code, token, bnf = sys.argv[1:]
-    res = parse(open(code).read(), token)
+    code, = sys.argv[1:]
+    ext = code.split('.')[-1]
+    if ext == 'py':
+        from bnf import python as grammar
+    elif ext == 'json':
+        from bnf import json as grammar
+    elif ext == 'js':
+        from bnf import js as grammar
+    res = parse(open(code).read(), grammar.tokens)
+    tokens = res.tokens()
+    global debug
+    #debug = True
+    full = parse(tokens, grammar.main)
+    print full
+    for a in full.children:print a,a.name
 

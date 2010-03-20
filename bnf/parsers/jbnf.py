@@ -30,10 +30,9 @@ class Grammar:
     >>> g = Grammar('<start>:\\'hi\\'')
     >>> g = Grammar("<a>:<b>|'4'\\n<b>:'yo'")
     '''
-    def __init__(self, text, tokens = string.printable, extends = None):
-        if type(text) not in (str, unicode) and hasattr(text, 'read'):
-            text = text.read()
-        self.original = text
+    def __init__(self, filename, tokens = string.printable, extends = None):
+        self.filename = filename
+        self.original = open(filename).read()
         self.extends = extends
         self.tokens = tokens
         self.parse()
@@ -43,7 +42,7 @@ class Grammar:
         self.firsts = {}
         if self.extends:
             self.rules = self.extends.rules.copy()
-            self.firsts = self.extends.firsts.copy()
+            #self.firsts = self.extends.firsts.copy()
         self.lines = {}
         for i,line in enumerate(self.original.split('\n')):
             if not line.startswith('#') and line.strip():
@@ -52,7 +51,7 @@ class Grammar:
                         raise Exception
                     name, sep, body = re.findall(r'\s*(<[^>]+>)\s*([+]?:)\s*(.*)\s*', line)[0]
                 except:
-                    raise Exception, 'invalid bnf on line %d: %s' % (i, line)
+                    raise Exception, 'invalid bnf in file %s, line %d: %s' % (self.filename, i, line)
                 
                 name = name.strip()
                 body = body.strip()
@@ -61,7 +60,7 @@ class Grammar:
                     if self.extends:
                         self.rules[name] += self.rulesplit(name)
                     else:
-                        raise Exception, 'no previous declaration for %s found.' % name
+                        raise Exception, 'no previous declaration for %s found in "%s", line %d.' % (name, self.filename, i)
                 else:
                     self.rules[name] = self.rulesplit(name)
         for name in self.rules:
@@ -77,11 +76,14 @@ class Grammar:
         elif name in self.tokens:
             return [name]
         elif name not in self.rules:
-            raise Exception, 'invalid rule found on line %d: %s' % (self.lines[parent][0], name)
+            print self.tokens
+            raise Exception, 'invalid rule found in "%s", line %d: %s' % (self.filename, self.lines[parent][0], name)
 
         chars = []
         self.firsts[name] = chars
         for child in self.rules[name]:
+            if not child:
+                continue
             chars.append(flatten(self.loadfirst(child[0], name)))
         return chars
 
@@ -91,7 +93,7 @@ class Grammar:
         lno, body = self.lines[name]
         parts = re.findall(pieces, body)
         if ''.join(parts) != body:
-            raise BNFException,'Invalid BNF provided on line %d: %s' % (lno, body)
+            raise BNFException,'Invalid BNF provided in "%s", line %d: %s' % (self.filename, lno, body)
         options = [[]]
         for part in parts:
             if part == '|':
