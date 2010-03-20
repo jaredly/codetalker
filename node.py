@@ -3,8 +3,8 @@ class Node:
     def __init__(self, name, index, literal = False):
         self.name = name
         self.index = index
-        self.lno = None
-        self.cno = None
+        self.lno = -1
+        self.cno = -1
         self.children = []
         self.isliteral = False
         if literal:
@@ -12,11 +12,11 @@ class Node:
             self.isliteral = True
 
     def lineno(self):
-        if self.literal:return self.lno
+        if self.lno>=0:return self.lno
         return self.children[0].lineno()
     
     def charno(self):
-        if self.literal:return self.cno
+        if self.cno>=0:return self.cno
         return self.children[0].charno()
 
     def __repr__(self):

@@ -23,75 +23,117 @@ def matchliteral(text, i, rule):
         return text[i], i+1
     return False,0
 
-def parserule(text, i, rule, stack, error, grammar):
+def parserule(text, i, rule, state):
+    grammar = state['grammar']
+    at = list(state['at'])
     if debug:print 'rule: ',text[i],rule
-    stack += (rule,)
+    state['stack'] += (rule,)
     if i>=len(text):
-        if i>error[0]:
-            error[0] = i
-            error[1] = stack + (0,)
+        if i>state['error'][0]:
+            state['error'][3] = 'toolong'
+            state['error'][0] = i
+            state['error'][1] = state['stack'] + (0,)
+            state['error'][2] = None
+        state['at'] = at
         return False, 0
     res, di = matchliteral(text, i, rule)
     if res:
+        if not isinstance(res, Node):
+            state['at'][1] += len(res)
+            #print 'inc at',res,len(res),state['at']
+            if '\n' in res:
+                state['at'][0]+=1
+                state['at'][1] = 0
         return res, di
     elif not rule in grammar.rules: ## should be a literal, didn't match. an error occured
-        if i>error[0]:
-            error[0] = i
-            error[1] = stack+(str(text[i]),)
+        if i>state['error'][0]:
+            state['error'][3] = 'badrule'
+            if isinstance(text[i], Node):
+                ## TODO: is that last subtraction really nessecary?
+                state['error'][0] = text[i].lineno(),text[i].charno()-len(text[i])
+            else:
+                state['error'][0] = i
+            state['error'][1] = state['stack']+(str(text[i]),)
+            state['error'][2] = text[i]
+        state['at'] = at
         return False,0
 
     for n,one in enumerate(grammar.rules[rule]):
-        if debug:print 'f:',text[i][0], grammar.firsts[rule][n]
         if text[i][0] in grammar.firsts[rule][n] or hasattr(text[i],'name') and text[i].name in grammar.firsts[rule][n]:
-            res, di = parse_children(text, i, rule, one, stack, error, grammar)
+            res, di = parse_children(text, i, rule, one, state.copy())
             if not res:
                 continue
             return res, di
+    #if i>state['error'][0]:
+    #    print i,text[i],text[i-2:i+3]
+    #    if isinstance(text[i], Node):
+    #        state['error'][0] = text[i].lineno(),text[i].charno()
+    #    else:
+    #        state['error'][0] = i
+    #    state['error'][1] = state['stack']+(str(text[i]),)
+    #    state['error'][2] = text[i]
+    state['at'] = at
     return False, 0
 
-def parse_children(text, i, rule, children, stack, error, grammar):
+def parse_children(text, i, rule, children, state):
+    grammar = state['grammar']
     if debug:print 'children:',text[i], rule, children
+    at = list(state['at'])
     node = Node(rule, i)
+    node.lno, node.cno = state['at']
     a = 0
     clen = len(children)
     while a < clen:
         if a < clen-1:
             if children[a+1] == '+':
-                res, di = parserule(text, i, children[a], stack, error, grammar)
+                res, di = parserule(text, i, children[a], state.copy())
                 if not res:
+                    state['at']=at
                     return False, 0
                 node.children.append(res)
                 i = di
             if children[a+1] in '+*':
                 while 1:
+                    at = list(state['at'])
                     if a < clen-2 and children[a+2] == '?':
                         # non-greedy
-                        res, di = parse_children(text, i, rule, children[a+3:], stack, error, grammar)
+                        res, di = parse_children(text, i, rule, children[a+3:], state.copy())
                         if res:
                             node.children += res.children
                             return node, di
-                    res, di = parserule(text, i, children[a], stack, error, grammar)
+                    res, di = parserule(text, i, children[a], state.copy())
                     if not res:break
                     node.children.append(res)
                     i = di
+                state['at'] = at
                 a += 2
                 continue
             elif children[a+1] == ':':
                 # check, but don't consume
-                res, di = parserule(text, i, children[a], stack, error, grammar)
+                res, di = parserule(text, i, children[a], state.copy())
                 if not res:
+                    state['at']=at
                     return False, 0
                 a += 2
                 continue
             elif children[a+1] == '~':
                 a += 2
-                res, di = parserule(text, i, children[a], stack, error, grammar)
+                res, di = parserule(text, i, children[a], state.copy())
                 if not res:
                     continue
                 node.children.append(res)
                 i = di
-        res, di = parserule(text, i, children[a], stack, error, grammar)
+        res, di = parserule(text, i, children[a], state.copy())
         if not res:
+            if i>state['error'][0]:
+                state['error'][3] = 'nochildren'
+                if isinstance(text[i], Node):
+                    state['error'][0] = text[i].lineno(),text[i].charno()
+                else:
+                    state['error'][0] = i
+                state['error'][1] = state['stack']+(str(text[i]),)
+                state['error'][2] = text[i]
+            state['at']=at
             return False, 0
         node.children.append(res)
         i = di
@@ -105,21 +147,26 @@ def totokens(node):
         yield tokenw.children[0].children[0]
 
 def parse(text, grammar):
-    error = [0, None]
-    node, char = parserule(text, 0, '<start>', (), error, grammar)
+    error = [0, None, None, 'unknown error']
+    state = {'error':error, 'stack':(), 'grammar':grammar, 'at':[0,0]}
+    node, char = parserule(text, 0, '<start>', state.copy())
     if not node:
-        if error[1]:
-            etext = "Syntax error while parsing %s: found '%s', expected %s"%(error[1][-3],error[1][-1],error[1][-2])
-            print 'Error at char %d' % error[0], etext,error
+        if state['error'][1]:
+            etext = "Syntax error while parsing %s: found '%s', expected %s"%(state['error'][1][-3],state['error'][1][-1],state['error'][1][-2])
+            print 'error type:',state['error'][3]
+            if type(state['error'][0]) in (list,tuple):
+                lno, cno = state['error'][0]
+                print 'Error at line %d, char %d' % (lno+1, cno+1)
+            print etext#,state['error']
             sys.exit(1)
             #raise Exception,etext
         else:
             print 'idk what happened...'
             fail
     if not node:
-        raise Exception,str(error)
+        raise Exception,str(state['error'])
     if char<len(text):
-        print "error",error
+        print "error",state['error']
         raise Exception,"Didn't parse the whole thing: %d - %d"%(char,len(text))
     return node
 
@@ -144,6 +191,8 @@ if __name__=='__main__':
         from bnf import js as grammar
     res = parse(open(code).read(), grammar.tokens)
     tokens = res.tokens()
+    for i in tokens:
+        print i,i.name,i.lineno(),i.charno()
     global debug
     #debug = True
     full = parse(tokens, grammar.main)
