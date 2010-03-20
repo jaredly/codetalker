@@ -30,46 +30,68 @@ class Grammar:
     >>> g = Grammar('<start>:\\'hi\\'')
     >>> g = Grammar("<a>:<b>|'4'\\n<b>:'yo'")
     '''
-    def __init__(self, text):
+    def __init__(self, text, tokens = string.printable, extends = None):
         if type(text) not in (str, unicode) and hasattr(text, 'read'):
             text = text.read()
         self.original = text
+        self.extends = extends
+        self.tokens = tokens
         self.parse()
 
     def parse(self):
         self.rules = {}
         self.firsts = {}
+        if self.extends:
+            self.rules = self.extends.rules.copy()
+            self.firsts = self.extends.firsts.copy()
+        self.lines = {}
         for i,line in enumerate(self.original.split('\n')):
             if not line.startswith('#') and line.strip():
-                if not ':' in line:
+                try:
+                    if not ':' in line:
+                        raise Exception
+                    name, sep, body = re.findall(r'\s*(<[^>]+>)\s*([+]?:)\s*(.*)\s*', line)[0]
+                except:
                     raise Exception, 'invalid bnf on line %d: %s' % (i, line)
-                name,body = line.split(':',1)
-                self.rules[name.strip()] = self.rulesplit(body.strip())
+                
+                name = name.strip()
+                body = body.strip()
+                self.lines[name] = i,body
+                if sep == '+:':
+                    if self.extends:
+                        self.rules[name] += self.rulesplit(name)
+                    else:
+                        raise Exception, 'no previous declaration for %s found.' % name
+                else:
+                    self.rules[name] = self.rulesplit(name)
         for name in self.rules:
-            self.loadfirst(name)
+            self.loadfirst(name, 'base')
 
-    def loadfirst(self, name):
+    def loadfirst(self, name, parent):
         if name in self.firsts:return self.firsts[name]
-        elif name == "'":return ["'"]
+        elif name == "''":return ["'"]
         elif name.startswith("'"):
             return [name.strip("'")[0]]
         elif name == 'e':
-            return list(string.printable)
-        elif name not in self.rules:
+            return list(self.tokens)
+        elif name in self.tokens:
             return [name]
+        elif name not in self.rules:
+            raise Exception, 'invalid rule found on line %d: %s' % (self.lines[parent][0], name)
 
         chars = []
         self.firsts[name] = chars
         for child in self.rules[name]:
-            chars.append(flatten(self.loadfirst(child[0])))
+            chars.append(flatten(self.loadfirst(child[0], name)))
         return chars
 
-    def rulesplit(self, body):
+    def rulesplit(self, name):
         """just made much smaller w/ regex =)"""
         pieces = "('[^']*'|<[^>]+>|\||\+|\*|\?|\s|:|~|e)"
+        lno, body = self.lines[name]
         parts = re.findall(pieces, body)
         if ''.join(parts) != body:
-            raise BNFException,'Invalid BNF provided: %s' % body
+            raise BNFException,'Invalid BNF provided on line %d: %s' % (lno, body)
         options = [[]]
         for part in parts:
             if part == '|':

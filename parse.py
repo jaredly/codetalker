@@ -1,7 +1,7 @@
 ### tokenizer
 
 from node import Node
-from mybnf import Grammar
+from jbnf import Grammar
 
 def matchliteral(text, i, rule):
     if rule == 'e':
@@ -116,11 +116,16 @@ def parse(text, bnf):
     return node
 
 def gettokens(text):
+    '''not to be used in production'''
     tokens = list(totokens(parse(text, 'data/tokenize.bnf')))
     #print [str(x) for x in tokens],tokens
     return parse(tokens, 'data/json.bnf')
 
 if __name__=='__main__':
-    tokens = gettokens(open('test/test.json').read())
-    #print str(tokens)
-    print tokens
+    import sys
+    if len(sys.argv) < 4:
+        print 'usage: parse.py [code file] [token file] [bnf file]'
+        sys.exit(1)
+    code, token, bnf = sys.argv[1:]
+    res = parse(open(code).read(), token)
+
