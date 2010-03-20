@@ -29,7 +29,11 @@ class Node:
         return res
     
     def toXML(self):
-        return '%s\n  %s\n%s' % (self.name, ('\n'.join((isinstance(c,Node) and c.toXML() or str(c)) for c in self.children)).replace('\n','\n  '), self.name.replace('<','</'))
+        if not self.name:return ''
+        name = self.name.strip('<>')
+        return '<%s>\n  %s\n</%s>' % (name, 
+                ('\n'.join((isinstance(c,Node) and c.toXML() or str(c)) for c in self.children)).replace('\n','\n  '), 
+                name)
     
     def tokens(self):
         return list(a.children[0] for a in self.getElementsByTagName('<token>') if a.children[0].toliteral())
