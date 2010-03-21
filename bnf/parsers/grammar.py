@@ -67,6 +67,7 @@ class Grammar:
         self.loadrules()
 
         errors = self.test_reachability()
+        errors += self.test_ordering()
         reach = self.check_circular('start')
         if reach:
             print 'front-end recursion found:',reach
@@ -81,6 +82,20 @@ class Grammar:
                 print>>sys.stderr, "Error in %s" % self.filename
                 print>>sys.stderr, '    %s' % e
                 sys.exit(1)
+    
+    def test_ordering(self):
+        errors = 0
+        for rule in self.rules:
+            for i,line in enumerate(self.rules[rule]):
+                for other in self.rules[rule][i+1:]:
+                    for a in range(len(line)):
+                        if a >= len(other):break
+                        if line[a]!=other[a]:
+                            break
+                    else:
+                        print 'there is a rule hidden behind a greedy other on line %s. rule %s' % (self.lines[rule][0]+1, rule)
+                        errors += 1
+        return errors
 
     def test_reachability(self):
         at = 'start'

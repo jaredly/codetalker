@@ -223,59 +223,84 @@ cast-expression:
     '('   type   ')'   unary-expression
 
 multiplicative-expression:
-    unary-expression
-    unary-expression   '*'   multiplicative-expression
-    unary-expression   '/'   multiplicative-expression
-    unary-expression   '%'   multiplicative-expression
+    unary-expression multiplicative-right?
+
+multiplicative-right:
+    mul-op multiplicative-expression
+
+mul-op: one of
+    * / %
 
 additive-expression:
-    multiplicative-expression
     multiplicative-expression   '+'   additive-expression
     multiplicative-expression   '–'   additive-expression
+    multiplicative-expression
 
 shift-expression:
-    additive-expression 
-    additive-expression   '<<'   shift-expression
-    additive-expression   '>>'   shift-expression
+    additive-expression shift-right?
+
+shift-right:
+    shift-op shift-expression?
+
+shift-op:one of
+    << >>
 
 relational-expression:
-    shift-expression
-    shift-expression   '<'   relational-expression
-    shift-expression   '>'   relational-expression
-    shift-expression   '<='   relational-expression
-    shift-expression   '>='   relational-expression
-    shift-expression   'is'   type
-    shift-expression   'as'   type
-## was 'relational' for 'is' and 'as'. is this valid? TODO
+    shift-expression relational-right?
+## was 'relational' (on the left) for 'is' and 'as'. is this valid? TODO
+
+relational-right:
+    rel-op relational-expression
+    'is' type
+    'as' type
+
+rel-op:one of
+    < > <= >=
 
 equality-expression:
-    relational-expression
-    relational-expression   '=='   equality-expression
-    relational-expression   '!='   equality-expression
+    relational-expression equality-right?
+
+equality-right:
+    equ-op equality-expression
+
+equ-op:one of
+    == !=
 
 and-expression:
-    equality-expression
-    equality-expression   '&'   and-expression
+    equality-expression and-right?
+
+and-right:
+    '&' and-expression
 
 exclusive-or-expression:
-    and-expression
-    and-expression   '^'   exclusive-or-expression
+    and-expression ex-or-right?
+
+ex-or-right:
+    '^' exclusive-or-expression
 
 inclusive-or-expression:
-    exclusive-or-expression
-    exclusive-or-expression   '|'   inclusive-or-expression
+    exclusive-or-expression inclusive-or-expression-right?
+
+inclusive-or-expression-right:
+      '|'   inclusive-or-expression
 
 conditional-and-expression:
-    inclusive-or-expression
-    inclusive-or-expression   '&&'   conditional-and-expression
+    inclusive-or-expression conditional-and-expression-right?
+
+conditional-and-expression-right:
+      '&&'   conditional-and-expression
 
 conditional-or-expression:
-    conditional-and-expression
-    conditional-and-expression   '||'   conditional-or-expression   
+    conditional-and-expression conditional-or-expression-right?
+
+conditional-or-expression-right:
+      '||'   conditional-or-expression   
 
 conditional-expression:
-    conditional-or-expression
-    conditional-or-expression   '?'   expression   ':'   expression
+    conditional-or-expression conditional-expression-right?
+
+conditional-expression-right:
+      '?'   expression   ':'   expression
 
 assignment:
     unary-expression   assignment-operator   expression
@@ -333,8 +358,8 @@ local-variable-declarator-list:
     ','   local-variable-declarator
 
 local-variable-declarator:
-    identifier
     identifier   '='   local-variable-initializer
+    identifier
 
 local-variable-initializer:
     auto-rule-3
@@ -369,8 +394,8 @@ selection-statement:
     switch-statement
 
 if-statement:
-    'if'   '('   boolean-expression   ')'   embedded-statement
     'if'   '('   boolean-expression   ')'   embedded-statement   'else'   embedded-statement
+    'if'   '('   boolean-expression   ')'   embedded-statement
 
 boolean-expression:
     expression
@@ -448,9 +473,9 @@ throw-statement:
     'throw'   expression?   ';'
 
 try-statement:
-    'try'   block   catch-clauses
     'try'   block   finally-clause
     'try'   block   catch-clauses   finally-clause
+    'try'   block   catch-clauses
 
 catch-clauses:
     specific-catch-clause+   general-catch-clause?
@@ -533,9 +558,9 @@ class-modifier: one of
     sealed
 
 class-base:
-    ':'   class-type
     ':'   interface-type-list
     ':'   class-type   ','   interface-type-list
+    ':'   class-type
 
 interface-type-list:
     interface-type interface-type-tail*
@@ -585,8 +610,8 @@ variable-declarator-tail:
     ','   variable-declarator
 
 variable-declarator:
-    identifier
     identifier   '='   variable-initializer
+    identifier
 
 variable-initializer:
     auto-rule-3
@@ -612,8 +637,8 @@ method-body:
     auto-rule-1
 
 formal-parameter-list:
-    fixed-parameters
     fixed-parameters   ','   parameter-array
+    fixed-parameters
     parameter-array
 
 fixed-parameters:
@@ -631,6 +656,7 @@ arraybit:
 parameter-modifier: one of
     ref
     out
+    const
 
 parameter-array:
     attributes?   'params'   array-type   identifier
@@ -829,10 +855,10 @@ interface-property-declaration:
     attributes?   'new'?   type   identifier   '{'   interface-accessors   '}'
 
 interface-accessors:
-    attributes?   'get'   ';'
-    attributes?   'set'   ';'
     attributes?   'get'   ';'   attributes?   'set'   ';'
     attributes?   'set'   ';'   attributes?   'get'   ';'
+    attributes?   'get'   ';'
+    attributes?   'set'   ';'
 
 interface-event-declaration:
     attributes?   'new'?   'event'   type   identifier   ';'
@@ -862,8 +888,8 @@ enum-member-declaration-tail:
     ','   enum-member-declaration
 
 enum-member-declaration:
-    attributes?   identifier
     attributes?   identifier   '='   constant-expression
+    attributes?   identifier
 
 ### C.2.12 Delegates
 

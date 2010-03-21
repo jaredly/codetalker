@@ -237,14 +237,14 @@ if __name__=='__main__':
     #debug = True
     res = parse(open(code).read(), grammar.tokens)
     tokens = res.tokens()
-    print tokens
+    #print tokens
     junk = 'whites'
     tokens = tuple(t for t in tokens if t.name not in junk)
     print ''.join(str(t) for t in tokens)
 #    for t in tokens:
 #        print t.name,t.toXML()
     print 'tokened!'
-    #debug = 1
+    debug = 1
     full = parse(tokens, grammar.main)
     print full
     #print full.toXML()
