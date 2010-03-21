@@ -56,10 +56,11 @@ class Grammar:
         if self.filename.endswith('er.txt'):
             self.debug = True
         self.loadrules()
-        if self.debug:
-            self.test_reachability()
-        if self.debug:
-            fail
+
+        errors = self.test_reachability()
+        if errors>0:
+            print>>sys.stderr, 'please correcto the above errors'
+            sys.exit(1)
         for name in self.rules:
             try:
                 self.loadfirst('@'+name, 'base')
@@ -70,35 +71,41 @@ class Grammar:
 
     def test_reachability(self):
         at = 'start'
-        found = set()
+        found = set([at])
 #        for rule in self.rules:
 #            if rule in found:continue
 #            self.crawl_reach(rule, found)
-        self.crawl_reach(at,found)
+        errors = self.crawl_reach(at,found)
 
         for rule in self.rules:
-            self.check_exists(rule)
+            errors += self.check_exists(rule)
             if rule not in found:
                 print 'unreachable rule "%s" at line %d' % (rule, self.lines[rule][0]+1)
+        return errors
 
     def check_exists(self, rule):
+        errors = 0
         for line in self.rules[rule]:
             for child in line:
                 if child[0]=='@':
                     if child[1:] not in self.rules and child[1:] not in self.tokens:
                         print 'undefined rule:',child[1:]
+                        errors += 1
+        return errors
 
     def crawl_reach(self, at, found):
-        if at in self.tokens:return
+        errors = 0
+        if at in self.tokens:return errors
         elif at not in self.rules:
             print>>sys.stderr,'undefined rule:',at
-            return
+            return 1
         for line in self.rules[at]:
             for child in line:
                 if child[0]=='@':
                     if child[1:] in found:continue
                     found.add(child[1:])
-                    self.crawl_reach(child[1:], found)
+                    errors += self.crawl_reach(child[1:], found)
+        return errors
 
     def loadfirst(self, name, parent):
         if name in self.firsts:return self.firsts[name]
@@ -121,6 +128,7 @@ class Grammar:
         name = name[1:]
         chars = []
         self.firsts[name] = chars
+        print>>open('first.log','aw'), 'firsting',name
         for child in self.rules[name]:
             if not child:
                 continue

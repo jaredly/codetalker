@@ -1,19 +1,6 @@
 
 
 ### C.1.4 Tokens
-# these will be moved.
-
-token:
-    identifier
-    keyword
-    comment
-    boolean-literal
-    integer-literal
-    real-literal
-    character-literal
-    string-literal
-    null-literal
-    operator-or-punctuator
 
 literal:
     boolean-literal
@@ -541,8 +528,10 @@ class-base:
     ':'   class-type   ','   interface-type-list
 
 interface-type-list:
-    interface-type
-    interface-type-list   ','   interface-type
+    interface-type interface-type-tail*
+
+interface-type-tail:
+    ','   interface-type
 
 class-body:
     '{'   class-member-declaration*   '}'
@@ -567,11 +556,7 @@ constant-modifier:
     auto-rule-2
 
 field-declaration:
-    attributes?   field-modifiers?   type   variable-declarators   ';'
-
-field-modifiers:
-    field-modifier
-    field-modifiers   field-modifier
+    attributes?   field-modifier*   type   variable-declarators   ';'
 
 field-modifier: one of
     new
@@ -584,8 +569,10 @@ field-modifier: one of
     volatile
 
 variable-declarators:
-    variable-declarator
-    variable-declarators   ','   variable-declarator
+    variable-declarator variable-declarator-tail*
+
+variable-declarator-tail:
+    ','   variable-declarator
 
 variable-declarator:
     identifier
@@ -620,8 +607,10 @@ formal-parameter-list:
     parameter-array
 
 fixed-parameters:
-    fixed-parameter
-    fixed-parameters   ','   fixed-parameter
+    fixed-parameter fixed-parameter-tail*
+
+fixed-parameter-tail:
+    ','   fixed-parameter
 
 fixed-parameter:
     attributes?   parameter-modifier?   type   identifier
@@ -670,11 +659,7 @@ remove-accessor-declaration:
     attributes?   'remove'   block
 
 indexer-declaration:
-    attributes?   indexer-modifiers?   indexer-declarator   '{'   accessor-declarations   '}'
-
-indexer-modifiers:
-    indexer-modifier
-    indexer-modifiers   indexer-modifier
+    attributes?   indexer-modifier*   indexer-declarator   '{'   accessor-declarations   '}'
 
 indexer-modifier: one of
     new
@@ -693,11 +678,7 @@ indexer-declarator:
     type   interface-type   '.'   'this'   '['   formal-parameter-list   ']'
 
 operator-declaration:
-    attributes?   operator-modifiers   operator-declarator   operator-body
-
-operator-modifiers:
-    operator-modifier
-    operator-modifiers   operator-modifier
+    attributes?   operator-modifier+   operator-declarator   operator-body
 
 operator-modifier: one of
     public
@@ -803,8 +784,10 @@ array-initializer:
     '{'   variable-initializer-list   ','   '}'
 
 variable-initializer-list:
-    variable-initializer
-    variable-initializer-list   ','   variable-initializer
+    variable-initializer variable-initializer-tail*
+
+variable-initializer-tail:
+    ','   variable-initializer
 
 ### C.2.10 Interfaces
 
@@ -911,8 +894,10 @@ attribute-target: one of
     type
 
 attribute-list:
-    attribute
-    attribute-list   ','   attribute
+    attribute attribute-tail*
+
+attribute-tail:
+    ','   attribute
 
 attribute:
     attribute-name   attribute-arguments?
@@ -926,15 +911,19 @@ attribute-arguments:
     '('   named-argument-list   ')'
 
 positional-argument-list:
-    positional-argument
-    positional-argument-list   ','   positional-argument
+    positional-argument positional-argument-tail*
+
+positional-argument-tail:
+    ','   positional-argument
 
 positional-argument:
     attribute-argument-expression
 
 named-argument-list:
-    named-argument
-    named-argument-list   ','   named-argument
+    named-argument named-argument-tail*
+
+named-argument-tail:
+    ','   named-argument
 
 named-argument:
     identifier   '='   attribute-argument-expression
