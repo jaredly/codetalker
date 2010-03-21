@@ -27,9 +27,6 @@ class Grammar:
 
     def loadrules(self):
         raise NotImplementedError,'need to override this'
-    
-    def rulesplit(self, name):
-        raise NotImplementedError,'need to override this'
 
     def parse(self):
         self.rules = {}
