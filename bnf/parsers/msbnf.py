@@ -18,6 +18,7 @@ Grammar looks like:
 import grammar
 import re
 import sys
+import string
 
 def splitsections(text):
     '''Sections look like:
@@ -59,6 +60,9 @@ def splitsections(text):
         sections[-1][1].append(decl)
     return sections
 
+class BNFError(Exception):
+    pass
+
 class Grammar(grammar.Grammar):
     def loadrules(self):
         sections = splitsections(self.original)
@@ -68,27 +72,33 @@ class Grammar(grammar.Grammar):
                     continue
                 name,opts = decl[2].split(':')
                 name = name.strip()
-                options = tuple(x.strip() for x in opts.split(','))
-                self.loadrule(name, options, decl[3:])
+                options = tuple(x.strip() for x in opts.split(',') if x.strip())
+                try:
+                    self.loadrule(name, options, decl[3:])
+                except BNFError, e:
+                    print>>sys.stderr, 'Error in "%s"' % self.filename
+                    print>>sys.stderr, '\tError parsing BNF for rule at line %d: %s' % (
+                            decl[1]+1, e)
+                    sys.exit()
 
     def loadrule(self, name, options, body):
         valid_opts = 'one of', 'add', 'sub', 'replace'
         for opt in options:
             if opt not in valid_opts:
-                raise Exception,'invalid option: %s' % opt
+                raise BNFError,'invalid option: %s' % opt
 
         mods = sum(['add' in options,'sub' in options,'replace' in options])
         if mods > 1:
-            raise Exception,'invalid options. only one of "add","sub","replace" is allowed'
+            raise BNFError,'invalid options. only one of "add","sub","replace" is allowed'
 
         choices = []
         if 'add' in options or 'sub' in options:
             if not self.rules.has_key(name):
-                raise Exception,'can\'t add: not previous definition of %s' % name
+                raise BNFError,'can\'t add: not previous definition of %s' % name
             choices = self.rules[name]
         if 'replace' in options:
             if name+'-old' in self.rules:
-                raise Exception,'rule has already been replaced (%s-old exists): %s' % (name, name)
+                raise BNFError,'rule has already been replaced (%s-old exists): %s' % (name, name)
             self.rules[name+'-old'] = self.rules[name]
             del self.rules[name]
 
@@ -101,18 +111,18 @@ class Grammar(grammar.Grammar):
             if 'sub' in options:
                 for it in items:
                     if it not in choices:
-                        raise Exception,'item not there to remove: %s' % it
+                        raise BNFError,'item not there to remove: %s' % it
                     choices.remove(it)
                 self.rules[name] = choices
             else:
                 self.rules[name] = choices + items
         else:
             for line in body:
-                parts = self.rulesplit(line)
+                parts = rulesplit(line)
                 if 'sub' in options:
                     for it in parts:
                         if it not in choices:
-                            raise Exception,'item not there to remove: %s' % it
+                            raise BNFError,'item not there to remove: %s' % it
                         choices.remove(it)
                 else:
                     choices += parts
@@ -132,21 +142,23 @@ def rulesplit(line):
     >>> rulesplit
     '''
     line = line.replace('\xc2\xa0',' ')
-    rx = r"([\w\-]+|\s|'([^']|\\')*'|\*|\+|:|\?|\[([^\]]|\\\]])+\])"
+    rx = r"([\w\-]+|\s|'(?:[^']|\\')*'|\*|\+|:|\?|\[(?:[^\]]|\\\]])+\])"
     parts = re.findall(rx, line)
     if ''.join(parts) != line:
-        raise Exception, 'invalid bnf:\nparsed  : %s\noriginal: %s' % (''.join(parts), line)
+        raise BNFError, 'invalid bnf:\nparsed  : %s\noriginal: %s' % (''.join(parts), line)
+
+    parts = list(p for p in parts if p.strip())
 
     if len(parts)==1 and parts[0][0] == '[':
         try:
             return expand(parts[0])
-        except Exception, e:
-            raise Exception,'invalid character range: %s; %s' % (parts, e)
+        except BNFError, e:
+            raise BNFError,'invalid character range: %s; %s' % (parts[0], e)
 
     ret = []
     for part in parts:
         if part.startswith('['):
-            raise Exception,'a character range must be the only item'
+            raise BNFError,'a character range must be the only item'
         if not part.strip():continue
         if part[0] == "'":
             part = part[1:-1]
@@ -157,23 +169,23 @@ def rulesplit(line):
             ret.append('r'+part)
     return [tuple(ret)]
 
-def expand(self, range):
-    '''expand a regex-like character range. supported escapes:
+def expand(crange):
+    '''expand a regex-like character crange. supported escapes:
     \w a-zA-Z_0-9
     \s whitespace
     \. all printable'''
-    if range[0]!='[' or range[-1]!=']':
-        raise Exception
+    if crange[0]!='[' or crange[-1]!=']':
+        raise BNFError
     items = []
     i = 1
     exclude = False
-    if range[1] == '^':
+    if crange[1] == '^':
         i += 1
         exclude = True
-    while i<len(range)-1:
-        char = range[i]
+    while i<len(crange)-1:
+        char = crange[i]
         if char == '\\':
-            next = range[i:i+1]
+            next = crange[i+1]
             if next == 'w':
                 items += list(string.ascii_letters + string.digits + '_')
             elif next == '.':
@@ -187,14 +199,14 @@ def expand(self, range):
             elif next == 't':
                 items.append('\t')
             else:
-                raise Exception, 'the only valid escapes are \\n \\t \\w \\. \\s \\- \\[ \\]'
+                raise BNFError, 'invalid escape "%s"; the only valid escapes are \\n \\t \\w \\. \\s \\- \\[ \\]' % next
             i += 2
             continue
         elif char == '-':
-            if i < 2 or i >= len(range)-2: raise Exception
+            if i < 2 or i >= len(crange)-2: raise BNFError
             cs = ord(items[-1])
-            ce = ord(range[i+1])
-            if ce<cs:raise Exception
+            ce = ord(crange[i+1])
+            if ce<cs:raise BNFError
             for a in range(cs,ce):
                 items.append(chr(a+1))
             i += 2

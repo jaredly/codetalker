@@ -1,3 +1,5 @@
+### Generic tokens; should apply to most modern languages with a few additions
+
 start:
     token*
 
