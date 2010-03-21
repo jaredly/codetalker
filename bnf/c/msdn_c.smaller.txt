@@ -190,11 +190,11 @@ delegate-creation-expression:
     'new'   delegate-type   '('   expression   ')'
 
 typeof-expression:
+    'typeof(void'   ')'
     'typeof'   '('   type   ')'
-    'typeof'   '('   'void'   ')'
 sizeof-expression:
-    'sizeof'   '('   type   ')'
-    'sizeof'   '('   'void'   ')'
+    'sizeof(void'   ')'
+    'sizeof('   type   ')'
 
 checked-expression:
     'checked'   '('   expression   ')'
@@ -203,15 +203,16 @@ unchecked-expression:
     'unchecked'   '('   expression   ')'
 
 unary-expression:
-    primary-expression
     '+'   unary-expression
     '-'   unary-expression
     '!'   unary-expression
     '~'   unary-expression
     '*'   unary-expression
+    '&'   unary-expression
     pre-increment-expression
     pre-decrement-expression
     cast-expression
+    primary-expression
 
 pre-increment-expression:
     '++'   unary-expression
@@ -232,9 +233,11 @@ mul-op: one of
     * / %
 
 additive-expression:
-    multiplicative-expression   '+'   additive-expression
-    multiplicative-expression   '–'   additive-expression
-    multiplicative-expression
+    multiplicative-expression   add-right?
+
+add-right:
+    '+'   additive-expression
+    '-'   additive-expression
 
 shift-expression:
     additive-expression shift-right?
@@ -380,7 +383,6 @@ expression-statement:
     statement-expression   ';'
 
 statement-expression:
-    primary-expression
     invocation-expression
     object-creation-expression
     assignment
@@ -388,6 +390,7 @@ statement-expression:
     post-decrement-expression
     pre-increment-expression
     pre-decrement-expression
+    primary-expression
 
 selection-statement:
     if-statement
@@ -473,9 +476,11 @@ throw-statement:
     'throw'   expression?   ';'
 
 try-statement:
-    'try'   block   finally-clause
-    'try'   block   catch-clauses   finally-clause
-    'try'   block   catch-clauses
+    'try'   block try-right
+
+try-right:
+    finally-clause
+    catch-clauses finally-clause?
 
 catch-clauses:
     specific-catch-clause+   general-catch-clause?
@@ -558,9 +563,14 @@ class-modifier: one of
     sealed
 
 class-base:
-    ':'   interface-type-list
-    ':'   class-type   ','   interface-type-list
-    ':'   class-type
+    ':' class-base-right
+
+class-base-right:
+    interface-type-list
+    class-type   class-base-right2?
+
+class-base-right2:
+    ','   interface-type-list
 
 interface-type-list:
     interface-type interface-type-tail*
@@ -610,8 +620,10 @@ variable-declarator-tail:
     ','   variable-declarator
 
 variable-declarator:
-    identifier   '='   variable-initializer
-    identifier
+    identifier   vbl-dec-right?
+
+vbl-dec-right:
+    '='   variable-initializer
 
 variable-initializer:
     auto-rule-3
@@ -637,9 +649,11 @@ method-body:
     auto-rule-1
 
 formal-parameter-list:
-    fixed-parameters   ','   parameter-array
-    fixed-parameters
+    fixed-parameters formal-p-right?
     parameter-array
+
+formal-p-right:
+    ','   parameter-array
 
 fixed-parameters:
     fixed-parameter fixed-parameter-tail*
@@ -762,8 +776,8 @@ constructor-declarator:
     identifier   '('   formal-parameter-list?   ')'   constructor-initializer?
 
 constructor-initializer:
-    ':'   'base'   '('   argument-list?   ')'
-    ':'   'this'   '('   argument-list?   ')'
+    ':base('   argument-list?   ')'
+    ':this('   argument-list?   ')'
 
 constructor-body:
     auto-rule-1
@@ -888,8 +902,11 @@ enum-member-declaration-tail:
     ','   enum-member-declaration
 
 enum-member-declaration:
-    attributes?   identifier   '='   constant-expression
-    attributes?   identifier
+    attributes?   identifier enum-member-decl-right?  
+
+enum-member-decl-right:
+    '='   constant-expression
+
 
 ### C.2.12 Delegates
 

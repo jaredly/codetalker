@@ -244,7 +244,7 @@ if __name__=='__main__':
 #    for t in tokens:
 #        print t.name,t.toXML()
     print 'tokened!'
-    debug = 1
+    #debug = 1
     full = parse(tokens, grammar.main)
     print full
     #print full.toXML()

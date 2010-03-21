@@ -96,7 +96,7 @@ class Grammar:
                             break
                     if a>0:
                         print 'you could optimize %d %s' % (self.lines[rule][0]+1, rule)
-                        errors += 1
+                        #errors += 1
         return errors
 
     def test_ordering(self):
