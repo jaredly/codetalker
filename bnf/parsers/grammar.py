@@ -69,7 +69,7 @@ class Grammar:
                 sys.exit(1)
 
     def test_reachability(self):
-        at = 'compilation-unit'
+        at = 'start'
         found = set()
 #        for rule in self.rules:
 #            if rule in found:continue
@@ -77,8 +77,16 @@ class Grammar:
         self.crawl_reach(at,found)
 
         for rule in self.rules:
+            self.check_exists(rule)
             if rule not in found:
                 print 'unreachable rule "%s" at line %d' % (rule, self.lines[rule][0]+1)
+
+    def check_exists(self, rule):
+        for line in self.rules[rule]:
+            for child in line:
+                if child[0]=='@':
+                    if child[1:] not in self.rules:
+                        print 'undefined rule:',child[1:]
 
     def crawl_reach(self, at, found):
         if at in self.tokens:return
