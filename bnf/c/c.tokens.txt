@@ -1,6 +1,13 @@
 ### C specific tokens
 token: add
     character-literal
+    operator-or-punctuator
+
+token: sub
+    symbol
+
+operator-or-punctuator:
+    symbol
 
 character-literal:
     '\'' char '\''

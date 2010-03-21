@@ -27,6 +27,9 @@ literal:
 
 ### C.2.1 Basic concepts
 
+start:
+    statement*
+
 namespace-name:
     namespace-or-type-name
 
@@ -115,7 +118,7 @@ variable-reference:
 ### C.2.4 Expressions
 
 argument-list:
-    argument arugment-list-tail*
+    argument argument-list-tail*
 
 argument-list-tail:
     ',' argument
@@ -197,10 +200,10 @@ delegate-creation-expression:
 
 typeof-expression:
     'typeof'   '('   type   ')'
-    'typeof'   '('   void   ')'
+    'typeof'   '('   'void'   ')'
 sizeof-expression:
     'sizeof'   '('   type   ')'
-    'sizeof'   '('   void   ')'
+    'sizeof'   '('   'void'   ')'
 
 checked-expression:
     'checked'   '('   expression   ')'
@@ -250,8 +253,9 @@ relational-expression:
     shift-expression   '>'   relational-expression
     shift-expression   '<='   relational-expression
     shift-expression   '>='   relational-expression
-    relational-expression   'is'   type
-    relational-expression   'as'   type
+    shift-expression   'is'   type
+    shift-expression   'as'   type
+## was 'relational' for 'is' and 'as'. is this valid? TODO
 
 equality-expression:
     relational-expression
@@ -332,8 +336,10 @@ local-variable-declaration:
     type   local-variable-declarators
 
 local-variable-declarators:
-    local-variable-declarator
-    local-variable-declarators   ','   local-variable-declarator
+    local-variable-declarator local-variable-declarator-list*
+
+local-variable-declarator-list:
+    ','   local-variable-declarator
 
 local-variable-declarator:
     identifier
@@ -383,16 +389,9 @@ switch-statement:
 switch-block:
     '{'   switch-section*   '}'
 
-switch-sections:
-    switch-section
-    switch-sections   switch-section
-
 switch-section:
-    switch-labels   statement-list
-
-switch-labels:
-    switch-label
-    switch-labels   switch-label
+    switch-label+   statement*
+## used to be statement-list. where did that do? is this legal? TODO
 
 switch-label:
     'case'   constant-expression   ':'
@@ -408,7 +407,7 @@ while-statement:
     'while'   '('   boolean-expression   ')'   embedded-statement
 
 do-statement:
-    'do'   embedded-statement   while   '('   boolean-expression   ')'   ';'
+    'do'   embedded-statement   'while'   '('   boolean-expression   ')'   ';'
 
 for-statement:
     'for'   '('   for-initializer?   ';'   for-condition?   ';'   for-iterator?   ')'   embedded-statement
@@ -424,8 +423,10 @@ for-iterator:
     statement-expression-list
 
 statement-expression-list:
-    statement-expression
-    statement-expression-list   ','   statement-expression
+    statement-expression statement-expression-tail*
+
+statement-expression-tail:
+    ','   statement-expression
 
 foreach-statement:
     'foreach'   '('   type   identifier   'in'   expression   ')'   embedded-statement
@@ -460,12 +461,8 @@ try-statement:
     'try'   block   catch-clauses   finally-clause
 
 catch-clauses:
-    specific-catch-clauses   general-catch-clause?
+    specific-catch-clause+   general-catch-clause?
     specific-catch-clause*   general-catch-clause
-
-specific-catch-clauses:
-    specific-catch-clause
-    specific-catch-clauses   specific-catch-clause
 
 specific-catch-clause:
     'catch'   '('   class-type   identifier?   ')'   block
@@ -501,15 +498,10 @@ namespace-declaration:
     'namespace'   qualified-identifier   namespace-body   ';'?
 
 qualified-identifier:
-    identifier
-    qualified-identifier   '.'   identifier
+    identifier dot-identifier*
 
 namespace-body:
     '{'   using-directive*   namespace-member-declaration*   '}'
-
-using-directives:
-    using-directive
-    using-directives   using-directive
 
 using-directive:
     using-alias-directive
@@ -522,8 +514,7 @@ using-namespace-directive:
     'using'   namespace-name   ';'
 
 namespace-member-declarations:
-    namespace-member-declaration
-    namespace-member-declarations   namespace-member-declaration
+    namespace-member-declaration+
 
 namespace-member-declaration:
     namespace-declaration
@@ -662,7 +653,7 @@ parameter-modifier: one of
     out
 
 parameter-array:
-    attributes?   params   array-type   identifier
+    attributes?   'params'   array-type   identifier
 
 property-declaration:
     attributes?   property-modifier*   type   member-name   '{'   accessor-declarations   '}'
@@ -679,17 +670,17 @@ accessor-declarations:
     set-accessor-declaration   get-accessor-declaration?
 
 get-accessor-declaration:
-    attributes?   get   accessor-body
+    attributes?   'get'   accessor-body
 
 set-accessor-declaration:
-    attributes?   set   accessor-body
+    attributes?   'set'   accessor-body
 
 accessor-body:
     auto-rule-1
 
 event-declaration:
-    attributes?   event-modifier*   event   type   variable-declarators   ';'
-    attributes?   event-modifier*   event   type   member-name   '{'   event-accessor-declarations   '}'
+    attributes?   event-modifier*   'event'   type   variable-declarators   ';'
+    attributes?   event-modifier*   'event'   type   member-name   '{'   event-accessor-declarations   '}'
 
 event-modifiers:
     event-modifier
@@ -703,10 +694,10 @@ event-accessor-declarations:
     remove-accessor-declaration   add-accessor-declaration
 
 add-accessor-declaration:
-    attributes?   add   block
+    attributes?   'add'   block
 
 remove-accessor-declaration:
-    attributes?   remove   block
+    attributes?   'remove'   block
 
 indexer-declaration:
     attributes?   indexer-modifiers?   indexer-declarator   '{'   accessor-declarations   '}'
@@ -728,8 +719,8 @@ indexer-modifier: one of
     extern
 
 indexer-declarator:
-    type   this   '['   formal-parameter-list   ']'
-    type   interface-type   '.'   this   '['   formal-parameter-list   ']'
+    type   'this'   '['   formal-parameter-list   ']'
+    type   interface-type   '.'   'this'   '['   formal-parameter-list   ']'
 
 operator-declaration:
     attributes?   operator-modifiers   operator-declarator   operator-body
@@ -749,20 +740,20 @@ operator-declarator:
     conversion-operator-declarator
 
 unary-operator-declarator:
-    type   operator   overloadable-unary-operator   '('   type   identifier   ')'
+    type   'operator'   overloadable-unary-operator   '('   type   identifier   ')'
 
 overloadable-unary-operator: one of
     +   -   !   ~   ++   --   true   false
 
 binary-operator-declarator:
-    type   operator   overloadable-binary-operator   '('   type   identifier   ','   type   identifier   ')'
+    type   'operator'   overloadable-binary-operator   '('   type   identifier   ','   type   identifier   ')'
 
 overloadable-binary-operator: one of
     +   -   *   /   %   &   |   ^   <<   >>   ==   !=   >   <   >=   <=
 
 conversion-operator-declarator:
-    'implicit'   operator   type   '('   type   identifier   ')'
-    'explicit'   operator   type   '('   type   identifier   ')'
+    'implicit'   'operator'   type   '('   type   identifier   ')'
+    'explicit'   'operator'   type   '('   type   identifier   ')'
 
 operator-body:
     auto-rule-1
@@ -785,8 +776,8 @@ constructor-declarator:
     identifier   '('   formal-parameter-list?   ')'   constructor-initializer?
 
 constructor-initializer:
-    ':'   base   '('   argument-list?   ')'
-    ':'   this   '('   argument-list?   ')'
+    ':'   'base'   '('   argument-list?   ')'
+    ':'   'this'   '('   argument-list?   ')'
 
 constructor-body:
     auto-rule-1
@@ -802,7 +793,7 @@ static-constructor-body:
     auto-rule-1
 
 destructor-declaration:
-    attributes?   extern?   '~'   identifier   '('   ')'    destructor-body
+    attributes?   'extern'?   '~'   identifier   '('   ')'    destructor-body
 
 destructor-body:
     auto-rule-1
@@ -810,7 +801,7 @@ destructor-body:
 ### C.2.8 Structs
 
 struct-declaration:
-    attributes?   struct-modifier*   struct   identifier   struct-interface*   struct-body   ';'?
+    attributes?   struct-modifier*   'struct'   identifier   struct-interfaces?   struct-body   ';'?
 
 struct-modifiers:
     struct-modifier
@@ -860,7 +851,7 @@ variable-initializer-list:
 ### C.2.10 Interfaces
 
 interface-declaration:
-    attributes?   interface-modifier*   interface   identifier   interface-base?   interface-body   ';'?
+    attributes?   interface-modifier*   'interface'   identifier   interface-base?   interface-body   ';'?
 
 interface-modifiers:
     interface-modifier
@@ -886,10 +877,10 @@ interface-member-declaration:
     interface-indexer-declaration
 
 interface-method-declaration:
-    attributes?   new?   return-type   identifier   '('   formal-parameter-list?   ')'   ';'
+    attributes?   'new'?   return-type   identifier   '('   formal-parameter-list?   ')'   ';'
 
 interface-property-declaration:
-    attributes?   new?   type   identifier   '{'   interface-accessors   '}'
+    attributes?   'new'?   type   identifier   '{'   interface-accessors   '}'
 
 interface-accessors:
     attributes?   'get'   ';'
@@ -898,15 +889,15 @@ interface-accessors:
     attributes?   'set'   ';'   attributes?   'get'   ';'
 
 interface-event-declaration:
-    attributes?   new?   event   type   identifier   ';'
+    attributes?   'new'?   'event'   type   identifier   ';'
 
 interface-indexer-declaration:
-    attributes?   new?   type   this   '['   formal-parameter-list   ']'   '{'   interface-accessors   '}'
+    attributes?   'new'?   type   'this'   '['   formal-parameter-list   ']'   '{'   interface-accessors   '}'
 
 ### C.2.11 Enums
 
 enum-declaration:
-    attributes?   enum-modifier*   enum   identifier   enum-base?   enum-body   ';'?
+    attributes?   enum-modifier*   'enum'   identifier   enum-base?   enum-body   ';'?
 
 enum-base:
     ':'   integral-type
@@ -933,7 +924,7 @@ enum-member-declaration:
 ### C.2.12 Delegates
 
 delegate-declaration:
-    attributes?   delegate-modifier*   delegate   return-type   identifier   '('   formal-parameter-list?   ')'   ';'
+    attributes?   delegate-modifier*   'delegate'   return-type   identifier   '('   formal-parameter-list?   ')'   ';'
 
 delegate-modifiers:
     delegate-modifier
@@ -984,7 +975,7 @@ attribute-list:
     attribute-list   ','   attribute
 
 attribute:
-    attribute-name   attribute-argument*
+    attribute-name   attribute-arguments?
 
 attribute-name:
     type-name

@@ -57,6 +57,8 @@ class Grammar:
             self.debug = True
         self.loadrules()
         if self.debug:
+            self.test_reachability()
+        if self.debug:
             fail
         for name in self.rules:
             try:
@@ -65,6 +67,29 @@ class Grammar:
                 print>>sys.stderr, "Error in %s" % self.filename
                 print>>sys.stderr, '    %s' % e
                 sys.exit(1)
+
+    def test_reachability(self):
+        at = 'start'
+        found = set()
+        for rule in self.rules:
+            if rule in found:continue
+            self.crawl_reach(rule, found)
+
+        for rule in self.rules:
+            if rule not in found:
+                print 'unreachable rule "%s" at line %d' % (rule, self.lines[rule][0]+1)
+
+    def crawl_reach(self, at, found):
+        if at in self.tokens:return
+        elif at not in self.rules:
+            print>>sys.stderr,'undefined rule:',at
+            return
+        for line in self.rules[at]:
+            for child in line:
+                if child[0]=='@':
+                    if child[1:] in found:continue
+                    found.add(child[1:])
+                    self.crawl_reach(child[1:], found)
 
     def loadfirst(self, name, parent):
         if name in self.firsts:return self.firsts[name]
