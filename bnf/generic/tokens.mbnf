@@ -1,0 +1,63 @@
+start:
+    token*
+
+token:
+    boolean-literal
+    real-literal
+    integer-literal
+    string-literal
+    null-literal
+    keyword
+    identifier
+    comment
+    symbol
+
+identifier:
+    id-start id-in*
+
+id-start:
+    [a-zA-Z_]
+
+id-in:
+    [\w]
+
+keyword:
+    reserved notword:
+
+# to be overridden
+reserved:
+comment:
+
+notword:
+    symbol
+    white
+
+white:
+    [\s]
+
+symbol: one of
+    ~ ! @ # $ % ^ & * ( ) _ + - = ` [ ] \ { } | ; ' : " , . / < > ? 
+
+boolean-literal: one of
+    true false
+
+real-literal:
+    digit* '.' digit+
+
+integer-literal:
+    digit+
+
+digit: one of
+    0 1 2 3 4 5 6 7 8 9 
+
+string-literal:
+    '"' string-contents '"'
+
+string-contents:
+    [^"\n]
+    '\\"'
+    '\\\n'
+
+null-literal:
+    'null'
+
