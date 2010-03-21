@@ -28,7 +28,7 @@ literal:
 ### C.2.1 Basic concepts
 
 start:
-    statement*
+    compilation-unit
 
 namespace-name:
     namespace-or-type-name
@@ -554,10 +554,6 @@ interface-type-list:
 class-body:
     '{'   class-member-declaration*   '}'
 
-class-member-declarations:
-    class-member-declaration
-    class-member-declarations   class-member-declaration
-
 class-member-declaration:
     constant-declaration
     field-declaration
@@ -573,10 +569,6 @@ class-member-declaration:
 
 constant-declaration:
     attributes?   constant-modifier*   'const'   type   constant-declarators   ';'
-
-constant-modifiers:
-    constant-modifier
-    constant-modifiers   constant-modifier
 
 constant-modifier:
     auto-rule-2
@@ -678,10 +670,6 @@ accessor-body:
 event-declaration:
     attributes?   event-modifier*   'event'   type   variable-declarators   ';'
     attributes?   event-modifier*   'event'   type   member-name   '{'   event-accessor-declarations   '}'
-
-event-modifiers:
-    event-modifier
-    event-modifiers   event-modifier
 
 event-modifier:
     auto-rule-4
@@ -850,10 +838,6 @@ variable-initializer-list:
 interface-declaration:
     attributes?   interface-modifier*   'interface'   identifier   interface-base?   interface-body   ';'?
 
-interface-modifiers:
-    interface-modifier
-    interface-modifiers   interface-modifier
-
 interface-modifier:
     auto-rule-2
 
@@ -862,10 +846,6 @@ interface-base:
 
 interface-body:
     '{'   interface-member-declaration*   '}'
-
-interface-member-declarations:
-    interface-member-declaration
-    interface-member-declarations   interface-member-declaration
 
 interface-member-declaration:
     interface-method-declaration
@@ -933,11 +913,7 @@ delegate-modifier:
 ### C.2.13 Attributes
 
 global-attributes:
-    global-attribute-sections
-
-global-attribute-sections:
-    global-attribute-section
-    global-attribute-sections global-attribute-section
+    global-attribute-section+
 
 global-attribute-section:
     '['   global-attribute-target-specifier   attribute-list  ','? ']'

@@ -69,11 +69,12 @@ class Grammar:
                 sys.exit(1)
 
     def test_reachability(self):
-        at = 'start'
+        at = 'compilation-unit'
         found = set()
-        for rule in self.rules:
-            if rule in found:continue
-            self.crawl_reach(rule, found)
+#        for rule in self.rules:
+#            if rule in found:continue
+#            self.crawl_reach(rule, found)
+        self.crawl_reach(at,found)
 
         for rule in self.rules:
             if rule not in found:
