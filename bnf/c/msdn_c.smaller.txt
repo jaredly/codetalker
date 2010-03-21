@@ -321,6 +321,7 @@ constant-expression:
 ### C.2.5 Statements
 
 statement:
+    comment
     labeled-statement
     declaration-statement
     embedded-statement
@@ -536,9 +537,10 @@ using-namespace-directive:
     'using'   namespace-name   ';'
 
 namespace-member-declaration:
+    comment
+    pp-line
     namespace-declaration
     type-declaration
-    pp-line
 
 type-declaration:
     class-declaration

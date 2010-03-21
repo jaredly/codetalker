@@ -119,14 +119,14 @@ comment:add
     multi-line-comment
 
 single-line-comment:
-    '//' not-newline
+    '//' not-newline* '\n'
 
 #TODO add \r
 not-newline:
     [^\n]
 
 multi-line-comment:
-    '/*' comment-inner '*/'
+    '/*' comment-inner* '*/'
 
 comment-inner:
     [^*]

@@ -8,13 +8,17 @@ def prettyfy(full):
     lbreak = Node('\n',-1,True)
     tab = Node('    ',-1,True)
     [n.appendChild(space) for n in full.getElementsByTagName('type')]
+    [n.appendChild(space) for n in full.getElementsByTagName('return-type') if n.children[0].name!='type']
     [n.appendChild(space) for n in full.getElementsByTagName(',')]
 
     [n.appendChild(lbreak) for n in full.getElementsByTagName('embedded-statement') if not n.children[0].name=='block']
     [n.appendChild(lbreak) for n in full.getElementsByTagName('declaration-statement')]
+    [n.appendChild(lbreak) for n in full.getElementsByTagName('interface-member-declaration')]
     for block in full.getElementsByTagName('block'):
         block.children.insert(1,lbreak)
         block.children.insert(0,space)
+        for exp in block.getElementsByTagName('comment'):
+            exp.children.insert(0,tab)
         for exp in block.getElementsByTagName('declaration-statement'):
             exp.children.insert(0,tab)
         for exp in block.getElementsByTagName('embedded-statement'):
@@ -24,9 +28,19 @@ def prettyfy(full):
             if exp is block:continue
             if len(exp.children)>2:
                 exp.children.insert(-1,tab)
+
     for node in full.gETN('assignment-operator'):
         node.appendChild(space)
         node.children.insert(0,space)
+    for node in full.gETN('local-variable-declarator'):
+        if len(node.children) == 3:
+            node.children.insert(2,space)
+            node.children.insert(1,space)
+    for node in full.gETN('comment'):
+        node.children.insert(0,lbreak)
+        node.appendChild(lbreak)
+    
+
     for list_type in ('parameter-modifier',
             'fixed-parameter-tail',
             'argument-list-tail',
@@ -48,6 +62,8 @@ if __name__=='__main__':
         sys.exit(1)
     code, = sys.argv[1:]
 
+    import codetalker.parser
+    codetalker.parser.debug = False
     full = codetalker.parse(open(code).read(), grammar)
     print prettyfy(full)
 
