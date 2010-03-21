@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import string
+import re
 
 class BNFException(Exception):
     pass
@@ -16,6 +17,16 @@ def flatten(lst, seen = ()):
             res.append(item)
             seen += (item,)
     return res
+
+class RxFirst:
+    def __init__(self, rx):
+        self.rx = re.compile(rx[2:-1])
+    def __eq__(self, other):
+        if isinstance(other, RxFirst):
+            return other is self
+        if type(other) != str:
+            return NotImplemented
+        return self.rx.match(other) is not None
 
 class Grammar:
     def __init__(self, filename, tokens = string.printable, extends = None):
@@ -42,7 +53,12 @@ class Grammar:
         if name in self.firsts:return self.firsts[name]
         elif name == "''":return ["'"]
         elif name.startswith("'"):
-            return [name.strip("'")[0]]
+            if name == "'":
+                print 'what?',parent,name
+                print self.rules[parent]
+            return [name[2]]
+        elif name.startswith('%'):
+            return [RxFirst(name)]
         elif name == 'e':
             return list(self.tokens)
         elif name in self.tokens:

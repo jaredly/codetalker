@@ -1,3 +1,23 @@
+### C.1 Lexical Grammar
+
+input:
+    input-section-part*
+
+input-section:
+    input-section-part+
+
+input-section-part:
+    input-element*   new-line
+    pp-directive
+
+input-elements:
+    input-element+
+
+input-element:
+    whitespace
+    comment
+    token
+
 ### C.1.1 Line Terminators
 
 new-line:
@@ -29,8 +49,10 @@ single-line-comment:
 #input-characters   input-character
 
 input-character:
-    ^new-line
-    Any Unicode character except a new-line-character
+    ^'\n'
+
+#FIXME this could be broken :) doesnt check all newlines
+#    Any Unicode character except a new-line-character
 
 new-line-character:
     auto-rule-5
@@ -43,8 +65,11 @@ delimited-comment:
 #delimited-comment-characters   delimited-comment-character
 
 delimited-comment-character:
-    not-asterisk
-    *   not-slash
+    ^'*'
+    ^'/'
+
+#    not-asterisk
+#    *   not-slash
 
 #not-asterisk:
 #Any Unicode character except *
@@ -273,8 +298,9 @@ character:
     hexadecimal-escape-sequence
     unicode-escape-sequence
 
-single-character:
-    nolb
+single-character: one of
+    q w e r t y u i o p a s d f g h j k l z x c v b n m 
+# FIXME
 #    Any character except ' (U+0027), \ (U+005C), and new-line-character
 
 simple-escape-sequence: one of
@@ -303,6 +329,11 @@ regular-string-literal-character:
 single-regular-string-literal-character:
     dcontents
 #    Any character except " (U+0022), \ (U+005C), and new-line-character
+
+dcontents: one of 
+    q w e r t y u i o p a s d f g h j k l z x c v b n m 
+
+#FIXME ^ again char stuff
 
 verbatim-string-literal:
     '@"'   verbatim -string-literal-character*   '"'
@@ -343,7 +374,8 @@ pp-new-line:
     whitespace?   single-line-comment?   new-line
 
 conditional-symbol:
-    Any identifier-or-keyword except true or false
+    identifier
+#    Any identifier-or-keyword except true or false
 
 pp-expression:
     whitespace?   pp-or-expression   whitespace?
@@ -403,7 +435,7 @@ skipped-section:
     skipped-section   skipped-section-part
 
 skipped-section-part:
-    skipped-character*   new-line
+    skipped-characters?   new-line
     pp-directive
 
 skipped-characters:
@@ -419,7 +451,7 @@ pp-line:
 line-indicator:
     decimal-digit+   whitespace   file-name
     decimal-digit+
-    default
+    'default'
 
 file-name:
     '"'   file-name-character+   '"'
@@ -497,7 +529,7 @@ integral-type: one of
     ulong
     char
 
-floating-point-type:
+floating-point-type: one of
     float
     double
 
@@ -781,7 +813,7 @@ local-variable-initializer:
     auto-rule-3
 
 local-constant-declaration:
-    const   type   constant-declarators
+    'const'   type   constant-declarators
 
 constant-declarators:
     constant-declarator
@@ -831,8 +863,8 @@ switch-labels:
     switch-labels   switch-label
 
 switch-label:
-    case   constant-expression   ':'
-    default   ':'
+    'case'   constant-expression   ':'
+    'default'   ':'
 
 iteration-statement:
     while-statement
@@ -841,13 +873,13 @@ iteration-statement:
     foreach-statement
 
 while-statement:
-    while   '('   boolean-expression   ')'   embedded-statement
+    'while'   '('   boolean-expression   ')'   embedded-statement
 
 do-statement:
-    do   embedded-statement   while   '('   boolean-expression   ')'   ';'
+    'do'   embedded-statement   while   '('   boolean-expression   ')'   ';'
 
 for-statement:
-    for   '('   for-initializer?   ';'   for-condition?   ';'   for-iterator?   ')'   embedded-statement
+    'for'   '('   for-initializer?   ';'   for-condition?   ';'   for-iterator?   ')'   embedded-statement
 
 for-initializer:
     local-variable-declaration
@@ -864,7 +896,7 @@ statement-expression-list:
     statement-expression-list   ','   statement-expression
 
 foreach-statement:
-    foreach   '('   type   identifier   'in'   expression   ')'   embedded-statement
+    'foreach'   '('   type   identifier   'in'   expression   ')'   embedded-statement
 
 jump-statement:
     break-statement
@@ -874,10 +906,10 @@ jump-statement:
     throw-statement
 
 break-statement:
-    break   ';'
+    'break'   ';'
 
 continue-statement:
-    continue   ';'
+    'continue'   ';'
 
 goto-statement:
     'goto'   identifier   ';'
@@ -922,7 +954,7 @@ lock-statement:
     'lock'   '('   expression   ')'   embedded-statement
 
 using-statement:
-    using   '('    resource-acquisition   ')'    embedded-statement
+    'using'   '('    resource-acquisition   ')'    embedded-statement
 
 resource-acquisition:
     local-variable-declaration
@@ -934,7 +966,7 @@ compilation-unit:
     using-directive*   global-attributes?   namespace-member-declaration*
 
 namespace-declaration:
-    namespace   qualified-identifier   namespace-body   ';'?
+    'namespace'   qualified-identifier   namespace-body   ';'?
 
 qualified-identifier:
     identifier
@@ -1100,7 +1132,7 @@ fixed-parameters:
 fixed-parameter:
     attributes?   parameter-modifier?   type   identifier
 
-parameter-modifier:
+parameter-modifier: one of
     ref
     out
 
@@ -1208,8 +1240,8 @@ overloadable-binary-operator: one of
     +   -   *   /   %   &   |   ^   <<   >>   ==   !=   >   <   >=   <=
 
 conversion-operator-declarator:
-    implicit   operator   type   '('   type   identifier   ')'
-    explicit   operator   type   '('   type   identifier   ')'
+    'implicit'   operator   type   '('   type   identifier   ')'
+    'explicit'   operator   type   '('   type   identifier   ')'
 
 operator-body:
     auto-rule-1
@@ -1221,7 +1253,7 @@ constructor-modifiers:
     constructor-modifier
     constructor-modifiers   constructor-modifier
 
-constructor-modifier:
+constructor-modifier: one of
     public
     protected
     internal
@@ -1240,9 +1272,10 @@ constructor-body:
 
 static-constructor-declaration:
     attributes?   static-constructor-modifiers   identifier   '('   ')'   static-constructor-body
-    static-constructor-modifiers
-    extern? static
-    static extern?
+
+static-constructor-modifiers:
+    'extern'? 'static'
+    'static' 'extern'?
 
 static-constructor-body:
     auto-rule-1
@@ -1417,7 +1450,7 @@ global-attribute-section:
 global-attribute-target-specifier:
     global-attribute-target   ':'
 
-global-attribute-target:
+global-attribute-target: one of
     assembly
     module
 
@@ -1430,7 +1463,7 @@ attribute-section:
 attribute-target-specifier:
     attribute-target   ':'
 
-attribute-target:
+attribute-target: one of
     field
     event
     method
