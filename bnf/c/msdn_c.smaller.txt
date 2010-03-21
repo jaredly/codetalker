@@ -75,11 +75,14 @@ identifier:
     '@'   identifier-or-keyword
 
 available-identifier:
-    An identifier-or-keyword that is not a keyword
+    identifier-or-keyword
+
+# might need some looking at ^ needs to not be a keyword...
 
 identifier-or-keyword:
     identifier-start-character   identifier-part-character*
-    identifier-start-character:
+
+identifier-start-character:
     letter-character
     _ 
 #   (the underscore character U+005F)
@@ -213,8 +216,8 @@ literal:
     null-literal
 
 boolean-literal:
-    true
-    false
+    'true'
+    'false'
 
 integer-literal:
     decimal-integer-literal
@@ -234,8 +237,8 @@ integer-type-suffix: one of
     U u L l UL Ul uL ul LU Lu lU lu
 
 hexadecimal-integer-literal:
-    0x   hex-digit+   integer-type-suffix?
-    0X   hex-digit+   integer-type-suffix?
+    '0x'   hex-digit+   integer-type-suffix?
+    '0X'   hex-digit+   integer-type-suffix?
 
 #hex-digits:
 #    hex-digit
@@ -278,7 +281,7 @@ simple-escape-sequence: one of
     \' \" \\ \0 \a \b \f \n \r \t \v
 
 hexadecimal-escape-sequence:
-    '\x'   hex-digit   hex-digitopt   hex-digitopt   hex-digitopt
+    '\x'   hex-digit   hex-digit?   hex-digit?   hex-digit?
 
 string-literal:
     regular-string-literal
@@ -337,40 +340,40 @@ pp-directive:
     pp-region
 
 pp-new-line:
-    whitespaceopt   single-line-commentopt   new-line
+    whitespace?   single-line-comment?   new-line
 
 conditional-symbol:
     Any identifier-or-keyword except true or false
 
 pp-expression:
-    whitespaceopt   pp-or-expression   whitespaceopt
+    whitespace?   pp-or-expression   whitespace?
 
 pp-or-expression:
     pp-and-expression
-    pp-or-expression   whitespaceopt   '||'   whitespaceopt   pp-and-expression
+    pp-or-expression   whitespace?   '||'   whitespace?   pp-and-expression
 
 pp-and-expression:
     pp-equality-expression
-    pp-and-expression   whitespaceopt   '&&'   whitespaceopt   pp-equality-expression
+    pp-and-expression   whitespace?   '&&'   whitespace?   pp-equality-expression
 
 pp-equality-expression:
     pp-unary-expression
-    pp-equality-expression   whitespaceopt   '=='   whitespaceopt   pp-unary-expression
-    pp-equality-expression   whitespaceopt   '!='   whitespaceopt   pp-unary-expression
+    pp-equality-expression   whitespace?   '=='   whitespace?   pp-unary-expression
+    pp-equality-expression   whitespace?   '!='   whitespace?   pp-unary-expression
 
 pp-unary-expression:
     pp-primary-expression
-    '!'   whitespaceopt   pp-unary-expression
+    '!'   whitespace?   pp-unary-expression
 
 pp-primary-expression:
     'true'
     'false'
     conditional-symbol
-    '('   whitespaceopt   pp-expression   whitespaceopt   ')'
+    '('   whitespace?   pp-expression   whitespace?   ')'
 
 pp-declaration:
-    whitespaceopt   '#'   whitespaceopt   define   whitespace   conditional-symbol   pp-new-line
-    whitespaceopt   '#'   whitespaceopt   undef   whitespace   conditional-symbol   pp-new-line
+    whitespace?   '#'   whitespace?   define   whitespace   conditional-symbol   pp-new-line
+    whitespace?   '#'   whitespace?   undef   whitespace   conditional-symbol   pp-new-line
 
 pp-conditional:
     pp-if-section   pp-elif-section*   pp-else-section?   pp-endif
@@ -404,14 +407,14 @@ skipped-section-part:
     pp-directive
 
 skipped-characters:
-    whitespaceopt   not-number-sign   input-charactersopt
+    whitespace?   not-number-sign   input-character*
 
 not-number-sign:
     ^'#'
 #    Any input-character except #
 
 pp-line:
-    whitespaceopt   '#'   whitespaceopt   line   whitespace   line-indicator   pp-new-line
+    whitespace?   '#'   whitespace?   line   whitespace   line-indicator   pp-new-line
 
 line-indicator:
     decimal-digit+   whitespace   file-name
@@ -441,10 +444,10 @@ pp-region:
     pp-start-region   conditional-section?   pp-end-region
 
 pp-start-region:
-    whitespaceopt   '# '  whitespaceopt   'region'   pp-message
+    whitespace?   '# '  whitespace?   'region'   pp-message
 
 pp-end-region:
-    whitespaceopt   '#'   whitespaceopt   'endregion'   pp-message
+    whitespace?   '#'   whitespace?   'endregion'   pp-message
 
 ### C.2 Syntactic grammar
 
@@ -589,7 +592,7 @@ predefined-type: one of
     bool byte char decimal double float int long object sbyte short string uint ulong ushort
 
 invocation-expression:
-    primary-expression   '('   argument-listopt   ')'
+    primary-expression   '('   argument-list?   ')'
 
 element-access:
     primary-no-array-creation-expression   '['   expression-list   ']'
@@ -601,11 +604,11 @@ expression-list-tail:
     ',' expression
 
 this-access:
-    this
+    'this'
 
 base-access:
-    base   '.'   identifier
-    base   '['   expression-list   ']'
+    'base'   '.'   identifier
+    'base'   '['   expression-list   ']'
 
 post-increment-expression:
     primary-expression   '++'
@@ -614,24 +617,27 @@ post-decrement-expression:
     primary-expression   '--'
 
 object-creation-expression:
-    'new'   type   '('   argument-listopt   ')'
+    'new'   type   '('   argument-list?   ')'
 
 array-creation-expression:
-    'new'   non-array-type   '['   expression-list   ']'   rank-specifiersopt   array-initializeropt
+    'new'   non-array-type   '['   expression-list   ']'   rank-specifier*   array-initializer?
     'new'   array-type   array-initializer
 
 delegate-creation-expression:
     'new'   delegate-type   '('   expression   ')'
 
 typeof-expression:
-    typeof   '('   type   ')'
-    typeof   '('   void   ')'
+    'typeof'   '('   type   ')'
+    'typeof'   '('   void   ')'
+sizeof-expression:
+    'sizeof'   '('   type   ')'
+    'sizeof'   '('   void   ')'
 
 checked-expression:
-    checked   '('   expression   ')'
+    'checked'   '('   expression   ')'
 
 unchecked-expression:
-    unchecked   '('   expression   ')'
+    'unchecked'   '('   expression   ')'
 
 unary-expression:
     primary-expression
@@ -744,7 +750,7 @@ embedded-statement:
     using-statement
 
 block:
-    '{'   statement-listopt   '}'
+    '{'   statement-list?   '}'
 
 statement-list:
     statement
@@ -811,7 +817,7 @@ switch-statement:
     'switch'   '('   expression   ')'   switch-block
 
 switch-block:
-    '{'   switch-sectionsopt   '}'
+    '{'   switch-section*   '}'
 
 switch-sections:
     switch-section
@@ -841,7 +847,7 @@ do-statement:
     do   embedded-statement   while   '('   boolean-expression   ')'   ';'
 
 for-statement:
-    for   '('   for-initializeropt   ';'   for-conditionopt   ';'   for-iteratoropt   ')'   embedded-statement
+    for   '('   for-initializer?   ';'   for-condition?   ';'   for-iterator?   ')'   embedded-statement
 
 for-initializer:
     local-variable-declaration
@@ -890,8 +896,8 @@ try-statement:
     'try'   block   catch-clauses   finally-clause
 
 catch-clauses:
-    specific-catch-clauses   general-catch-clauseopt
-    specific-catch-clausesopt   general-catch-clause
+    specific-catch-clauses   general-catch-clause?
+    specific-catch-clause*   general-catch-clause
 
 specific-catch-clauses:
     specific-catch-clause
@@ -925,7 +931,7 @@ resource-acquisition:
 ### C.2.6 Namespaces
 
 compilation-unit:
-    using-directivesopt   global-attributesopt   namespace-member-declarationsopt
+    using-directive*   global-attributes?   namespace-member-declaration*
 
 namespace-declaration:
     namespace   qualified-identifier   namespace-body   ';'?
@@ -935,7 +941,7 @@ qualified-identifier:
     qualified-identifier   '.'   identifier
 
 namespace-body:
-    '{'   using-directivesopt   namespace-member-declarationsopt   '}'
+    '{'   using-directive*   namespace-member-declaration*   '}'
 
 using-directives:
     using-directive
@@ -969,7 +975,7 @@ type-declaration:
 ### C.2.7 Classes
 
 class-declaration:
-    attributes?   class-modifiersopt   'class'   identifier   class-baseopt   class-body   ';'?
+    attributes?   class-modifier*   'class'   identifier   class-base?   class-body   ';'?
 
 class-modifiers:
     class-modifier
@@ -994,7 +1000,7 @@ interface-type-list:
     interface-type-list   ','   interface-type
 
 class-body:
-    '{'   class-member-declarationsopt   '}'
+    '{'   class-member-declaration*   '}'
 
 class-member-declarations:
     class-member-declaration
@@ -1014,7 +1020,7 @@ class-member-declaration:
     type-declaration
 
 constant-declaration:
-    attributes?   constant-modifiersopt   'const'   type   constant-declarators   ';'
+    attributes?   constant-modifier*   'const'   type   constant-declarators   ';'
 
 constant-modifiers:
     constant-modifier
@@ -1062,7 +1068,7 @@ method-declaration:
     method-header   method-body
 
 method-header:
-    attributesopt   method-modifiersopt   return-type   member-name   '('   formal-parameter-listopt   ')'
+    attributes?   method-modifier*   return-type   member-name   '('   formal-parameter-list?   ')'
 
 method-modifiers:
     method-modifier
@@ -1092,17 +1098,17 @@ fixed-parameters:
     fixed-parameters   ','   fixed-parameter
 
 fixed-parameter:
-    attributesopt   parameter-modifieropt   type   identifier
+    attributes?   parameter-modifier?   type   identifier
 
 parameter-modifier:
     ref
     out
 
 parameter-array:
-    attributesopt   params   array-type   identifier
+    attributes?   params   array-type   identifier
 
 property-declaration:
-    attributesopt   property-modifiersopt   type   member-name   '{'   accessor-declarations   '}'
+    attributes?   property-modifier*   type   member-name   '{'   accessor-declarations   '}'
 
 property-modifiers:
     property-modifier
@@ -1116,21 +1122,21 @@ member-name:
     interface-type   '.'   identifier
 
 accessor-declarations:
-    get-accessor-declaration   set-accessor-declarationopt
-    set-accessor-declaration   get-accessor-declarationopt
+    get-accessor-declaration   set-accessor-declaration?
+    set-accessor-declaration   get-accessor-declaration?
 
 get-accessor-declaration:
-    attributesopt   get   accessor-body
+    attributes?   get   accessor-body
 
 set-accessor-declaration:
-    attributesopt   set   accessor-body
+    attributes?   set   accessor-body
 
 accessor-body:
     auto-rule-1
 
 event-declaration:
-    attributesopt   event-modifiersopt   event   type   variable-declarators   ';'
-    attributesopt   event-modifiersopt   event   type   member-name   '{'   event-accessor-declarations   '}'
+    attributes?   event-modifier*   event   type   variable-declarators   ';'
+    attributes?   event-modifier*   event   type   member-name   '{'   event-accessor-declarations   '}'
 
 event-modifiers:
     event-modifier
@@ -1144,13 +1150,13 @@ event-accessor-declarations:
     remove-accessor-declaration   add-accessor-declaration
 
 add-accessor-declaration:
-    attributesopt   add   block
+    attributes?   add   block
 
 remove-accessor-declaration:
-    attributesopt   remove   block
+    attributes?   remove   block
 
 indexer-declaration:
-    attributesopt   indexer-modifiersopt   indexer-declarator   '{'   accessor-declarations   '}'
+    attributes?   indexer-modifiers?   indexer-declarator   '{'   accessor-declarations   '}'
 
 indexer-modifiers:
     indexer-modifier
@@ -1173,7 +1179,7 @@ indexer-declarator:
     type   interface-type   '.'   this   '['   formal-parameter-list   ']'
 
 operator-declaration:
-    attributesopt   operator-modifiers   operator-declarator   operator-body
+    attributes?   operator-modifiers   operator-declarator   operator-body
 
 operator-modifiers:
     operator-modifier
@@ -1209,7 +1215,7 @@ operator-body:
     auto-rule-1
 
 constructor-declaration:
-    attributesopt   constructor-modifiersopt   constructor-declarator   constructor-body
+    attributes?   constructor-modifier*   constructor-declarator   constructor-body
 
 constructor-modifiers:
     constructor-modifier
@@ -1223,26 +1229,26 @@ constructor-modifier:
     extern
 
 constructor-declarator:
-    identifier   '('   formal-parameter-listopt   ')'   constructor-initializeropt
+    identifier   '('   formal-parameter-list?   ')'   constructor-initializer?
 
 constructor-initializer:
-    ':'   base   '('   argument-listopt   ')'
-    ':'   this   '('   argument-listopt   ')'
+    ':'   base   '('   argument-list?   ')'
+    ':'   this   '('   argument-list?   ')'
 
 constructor-body:
     auto-rule-1
 
 static-constructor-declaration:
-    attributesopt   static-constructor-modifiers   identifier   '('   ')'   static-constructor-body
+    attributes?   static-constructor-modifiers   identifier   '('   ')'   static-constructor-body
     static-constructor-modifiers
-    externopt static
-    static externopt
+    extern? static
+    static extern?
 
 static-constructor-body:
     auto-rule-1
 
 destructor-declaration:
-    attributesopt   externopt   '~'   identifier   '('   ')'    destructor-body
+    attributes?   extern?   '~'   identifier   '('   ')'    destructor-body
 
 destructor-body:
     auto-rule-1
@@ -1250,7 +1256,7 @@ destructor-body:
 ### C.2.8 Structs
 
 struct-declaration:
-    attributesopt   struct-modifiersopt   struct   identifier   struct-interfacesopt   struct-body   ';'?
+    attributes?   struct-modifier*   struct   identifier   struct-interface*   struct-body   ';'?
 
 struct-modifiers:
     struct-modifier
@@ -1263,7 +1269,7 @@ struct-interfaces:
     ':'   interface-type-list
 
 struct-body:
-    '{'   struct-member-declarationsopt   '}'
+    '{'   struct-member-declaration*   '}'
 
 struct-member-declarations:
     struct-member-declaration
@@ -1294,14 +1300,14 @@ rank-specifiers:
     rank-specifiers   rank-specifier
 
 rank-specifier:
-    '['   dim-separatorsopt   ']'
+    '['   dim-separator*   ']'
 
 dim-separators:
     ','
     dim-separators   ','
 
 array-initializer:
-    '{'   variable-initializer-listopt   '}'
+    '{'   variable-initializer-list?   '}'
     '{'   variable-initializer-list   ','   '}'
 
 variable-initializer-list:
@@ -1314,7 +1320,7 @@ variable-initializer:
 ### C.2.10 Interfaces
 
 interface-declaration:
-    attributesopt   interface-modifiersopt   interface   identifier   interface-baseopt   interface-body   ';'?
+    attributes?   interface-modifier*   interface   identifier   interface-base?   interface-body   ';'?
 
 interface-modifiers:
     interface-modifier
@@ -1327,7 +1333,7 @@ interface-base:
     ':'   interface-type-list
 
 interface-body:
-    '{'   interface-member-declarationsopt   '}'
+    '{'   interface-member-declaration*   '}'
 
 interface-member-declarations:
     interface-member-declaration
@@ -1340,33 +1346,33 @@ interface-member-declaration:
     interface-indexer-declaration
 
 interface-method-declaration:
-    attributesopt   newopt   return-type   identifier   '('   formal-parameter-listopt   ')'   ';'
+    attributes?   new?   return-type   identifier   '('   formal-parameter-list?   ')'   ';'
 
 interface-property-declaration:
-    attributesopt   newopt   type   identifier   '{'   interface-accessors   '}'
+    attributes?   new?   type   identifier   '{'   interface-accessors   '}'
 
 interface-accessors:
-    attributesopt   'get'   ';'
-    attributesopt   'set'   ';'
-    attributesopt   'get'   ';'   attributesopt   'set'   ';'
-    attributesopt   'set'   ';'   attributesopt   'get'   ';'
+    attributes?   'get'   ';'
+    attributes?   'set'   ';'
+    attributes?   'get'   ';'   attributes?   'set'   ';'
+    attributes?   'set'   ';'   attributes?   'get'   ';'
 
 interface-event-declaration:
-    attributesopt   newopt   event   type   identifier   ';'
+    attributes?   new?   event   type   identifier   ';'
 
 interface-indexer-declaration:
-    attributesopt   newopt   type   this   '['   formal-parameter-list   ']'   '{'   interface-accessors   '}'
+    attributes?   new?   type   this   '['   formal-parameter-list   ']'   '{'   interface-accessors   '}'
 
 ### C.2.11 Enums
 
 enum-declaration:
-    attributesopt   enum-modifiersopt   enum   identifier   enum-baseopt   enum-body   ';'?
+    attributes?   enum-modifier*   enum   identifier   enum-base?   enum-body   ';'?
 
 enum-base:
     ':'   integral-type
 
 enum-body:
-    '{'   enum-member-declarationsopt   '}'
+    '{'   enum-member-declaration*   '}'
     '{'   enum-member-declarations   ','   '}'
 
 enum-modifiers:
@@ -1381,13 +1387,13 @@ enum-member-declarations:
     enum-member-declarations   ','   enum-member-declaration
 
 enum-member-declaration:
-    attributesopt   identifier
-    attributesopt   identifier   '='   constant-expression
+    attributes?   identifier
+    attributes?   identifier   '='   constant-expression
 
 ### C.2.12 Delegates
 
 delegate-declaration:
-    attributesopt   delegate-modifiersopt   delegate   return-type   identifier   '('   formal-parameter-listopt   ')'   ';'
+    attributes?   delegate-modifier*   delegate   return-type   identifier   '('   formal-parameter-list?   ')'   ';'
 
 delegate-modifiers:
     delegate-modifier
@@ -1416,14 +1422,10 @@ global-attribute-target:
     module
 
 attributes:
-    attribute-sections
-
-attribute-sections:
-    attribute-section
-    attribute-sections   attribute-section
+    attribute-section*
 
 attribute-section:
-    '['   attribute-target-specifieropt   attribute-list   ','?   ']'
+    '['   attribute-target-specifier?   attribute-list   ','?   ']'
 
 attribute-target-specifier:
     attribute-target   ':'
@@ -1442,13 +1444,13 @@ attribute-list:
     attribute-list   ','   attribute
 
 attribute:
-    attribute-name   attribute-argumentsopt
+    attribute-name   attribute-argument*
 
 attribute-name:
     type-name
 
 attribute-arguments:
-    '('   positional-argument-listopt   ')'
+    '('   positional-argument-list?   ')'
     '('   positional-argument-list   ','   named-argument-list   ')'
     '('   named-argument-list   ')'
 
