@@ -3,8 +3,24 @@
 from node import Node
 debug = False
 
+class Logger:
+    def __init__(self):
+        self.level = 0
+    def log(self, *stuff):
+        if debug:
+            print '  '*self.level,
+            for i in stuff:
+                print i,
+            print
+    def inc(self):
+        self.level += 1
+    def dec(self):
+        self.level -= 1
+
+logger = Logger()
+
 def matchliteral(text, i, rule):
-    if debug:print i,'match?', text[i], rule
+    logger.log( i,'match?', text[i], rule)
     if rule[0] == '!':
         if rule == '!': # epsilon
             return Node('',i), i
@@ -27,7 +43,8 @@ def matchliteral(text, i, rule):
 def parserule(text, i, rule, state):
     grammar = state['grammar']
     at = list(state['at'])
-    if debug and i<len(text):print i,'rule: ',rule,text[i]
+    if i<len(text):logger.log( i,'rule: ',rule,text[i])
+    logger.inc()
     state['stack'] += (rule,)
     if i>=len(text):
         if i>state['error'][0]:
@@ -36,25 +53,27 @@ def parserule(text, i, rule, state):
             state['error'][1] = state['stack'] + (0,)
             state['error'][2] = None
         state['at'] = at
+        logger.dec()
         return False, 0
     res, di = matchliteral(text, i, rule)
     if res:
-        if debug:print 'yes!'
+        logger.log( 'yes!')
         if not isinstance(res, Node):
             if '\n' in res:
                 state['at'][0] += 1
                 state['at'][1] = i+1
+        logger.dec()
         return res, di
     elif not rule[1:] in grammar.rules: ## should be a literal, didn't match. an error occured
         if i>state['error'][0]:
             state['error'][3] = 'badrule'
             if isinstance(text[i], Node):
-                state['error'][0] = text[i].lineno(),text[i].charno()-len(text[i])
-            else:
-                state['error'][0] = i
+                state['error'][4] = text[i].lineno(),text[i].charno()-len(text[i])
+            state['error'][0] = i
             state['error'][1] = state['stack']+(str(text[i]),)
             state['error'][2] = text[i]
         state['at'] = at
+        logger.dec()
         return False,0
 
     rule = rule[1:]
@@ -66,23 +85,24 @@ def parserule(text, i, rule, state):
             res, di = parse_children(text, i, rule, one, state.copy())
             if not res:
                 continue
+            logger.dec()
             return res, di
     else:
         if debug>1:print 'no matches'
     if i>state['error'][0]:
         if debug>1:print i,text[i],text[i-2:i+3]
         if isinstance(text[i], Node):
-            state['error'][0] = text[i].lineno(),text[i].charno()
-        else:
-            state['error'][0] = i
+            state['error'][4] = text[i].lineno(),text[i].charno()
+        state['error'][0] = i
         state['error'][1] = state['stack']+(str(text[i]),)
         state['error'][2] = text[i]
     state['at'] = at
+    logger.dec()
     return False, 0
 
 def parse_children(text, i, rule, children, state):
     grammar = state['grammar']
-    if debug:print 'children:',text[i], rule, children
+    logger.log( 'children:',text[i], rule, children)
     at = list(state['at'])
     node = Node(rule, i)
     node.lno = state['at'][0]
@@ -130,32 +150,29 @@ def parse_children(text, i, rule, children, state):
                 res, di = parserule(text, i, children[a], state.copy())
                 a += 2
                 if not res:
-                    print 'no - fanciful'
                     continue
                 elif debug>3:print 'good',res,children[a]
                 node.children.append(res)
                 i = di
+                continue
         if children[a] == rule:
             a+=1
             continue
-        if debug:print 'nomods'
+        logger.log( 'nomods')
         res, di = parserule(text, i, children[a], state.copy())
         if not res:
-            if debug:
-                print i, 'bailing out of %s; %s' % (rule, children[a])
-            if isinstance(text[i], Node):
-                cat = text[i].lineno(),text[i].charno()
-            else:
-                cat = i
-            if cat > state['error'][0]:
+            logger.log(i, 'bailing out of %s; %s' % (rule, children[a]))
+            if i > state['error'][0]:
+                if isinstance(text[i], Node):
+                    state['error'][4] = text[i].lineno(),text[i].charno()
                 state['error'][3] = 'nochildren'
-                state['error'][0] = cat
+                state['error'][0] = i
                 state['error'][1] = state['stack']+(str(text[i]),)
                 state['error'][2] = text[i]
             state['at']=at
             return False, 0
-        elif debug:
-            print 'good!',children[a]
+        else:
+            logger.log( 'good!',children[a])
         node.children.append(res)
         i = di
         a += 1
@@ -168,7 +185,7 @@ def totokens(node):
         yield tokenw.children[0].children[0]
 
 def parse(text, grammar):
-    error = [0, None, None, 'unknown error']
+    error = [0, None, None, 'unknown error', (0,0)]
     state = {'error':error, 'stack':(), 'grammar':grammar, 'at':[0,0]}
     #print grammar.rules['<start>']
     node, char = parserule(text, 0, '@start', state.copy())
@@ -183,7 +200,7 @@ def parse(text, grammar):
             sys.exit(1)
             #raise Exception,etext
         else:
-            print 'idk what happened...'
+            print 'idk what happened...',state['error']
             fail
     if not node:
         raise Exception,str(state['error'])
@@ -221,14 +238,14 @@ if __name__=='__main__':
     res = parse(open(code).read(), grammar.tokens)
     tokens = res.tokens()
     print tokens
-    print ''.join(str(t) for t in tokens)
-    tokens = tuple(t for t in tokens if t.name != 'whites')
+    junk = 'whites'
+    tokens = tuple(t for t in tokens if t.name not in junk)
     print ''.join(str(t) for t in tokens)
 #    for t in tokens:
 #        print t.name,t.toXML()
     print 'tokened!'
-    debug = 1
+    #debug = 1
     full = parse(tokens, grammar.main)
     print full
-    print full.toXML()
+    #print full.toXML()
 

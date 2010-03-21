@@ -32,6 +32,9 @@ dot-identifier:
 ### C.2.2 Types
 
 type:
+    type-sub '*'*
+
+type-sub:
     value-type
     reference-type
 
@@ -505,6 +508,7 @@ using-namespace-directive:
 namespace-member-declaration:
     namespace-declaration
     type-declaration
+    pp-line
 
 type-declaration:
     class-declaration
@@ -619,7 +623,10 @@ fixed-parameter-tail:
     ','   fixed-parameter
 
 fixed-parameter:
-    attributes?   parameter-modifier?   type   identifier
+    attributes?   parameter-modifier?   type   identifier arraybit?
+
+arraybit:
+    '[' ']'
 
 parameter-modifier: one of
     ref
@@ -897,7 +904,6 @@ attribute-target: one of
     param
     property
     return
-    type
 
 attribute-list:
     attribute attribute-tail*

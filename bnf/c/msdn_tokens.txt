@@ -486,3 +486,4 @@ auto-rule-5:
 #    Paragraph separator character (U+2029)
 
 # used by new-line:, new-line-character:
+

@@ -1,10 +1,21 @@
 ### C specific tokens
-token: add
+token: replace
+    pp-line
+    boolean-literal
+    real-literal
+    integer-literal
+    string-literal
+    null-literal
+    keyword
+    identifier
+    comment
+    whites
     character-literal
     operator-or-punctuator
 
-token: sub
-    symbol
+pp-line:
+    '\n' '#' not-newline '\n'
+    '#' not-newline* '\n'
 
 operator-or-punctuator:
     symbol
@@ -15,3 +26,112 @@ character-literal:
 char:
     [^']
     '\\\''
+
+keyword: one of, replace
+    abstract
+    as
+    base
+    bool
+    break
+    byte
+    case
+    catch
+    char
+    checked
+    class
+    const
+    continue
+    decimal
+    default
+    delegate
+    do
+    double
+    else
+    enum
+    event
+    explicit
+    extern
+    false
+    finally
+    fixed
+    float
+    for
+    foreach
+    goto
+    if
+    implicit
+    in
+    int
+    interface
+    internal
+    is
+    lock
+    long
+    namespace
+    new
+    null
+    object
+    operator
+    out
+    override
+    params
+    private
+    protected
+    public
+    readonly
+    ref
+    return
+    sbyte
+    sealed
+    short
+    sizeof
+    stackalloc
+    static
+    string
+    struct
+    switch
+    this
+    throw
+    true
+    try
+    typeof
+    uint
+    ulong
+    unchecked
+    unsafe
+    ushort
+    using
+    virtual
+    void
+    volatile
+    while
+
+
+whitespace:
+    whites
+
+new-line:
+    '\n'
+    '\r'
+
+comment:add
+    single-line-comment
+    multi-line-comment
+
+single-line-comment:
+    '//' not-newline
+
+#TODO add \r
+not-newline:
+    [^\n]
+
+multi-line-comment:
+    '/*' comment-inner '*/'
+
+comment-inner:
+    [^*]
+    '*' not-slash
+
+not-slash:
+    [^/]
+

@@ -92,7 +92,7 @@ class Grammar:
 
         for rule in self.rules:
             errors += self.check_exists(rule)
-            if rule not in found:
+            if rule not in found and rule in self.lines:
                 print 'unreachable rule "%s" at line %d' % (rule, self.lines[rule][0]+1)
         return errors
 
