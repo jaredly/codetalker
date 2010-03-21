@@ -72,6 +72,9 @@ class Grammar(grammar.Grammar):
                     continue
                 name,opts = decl[2].split(':')
                 name = name.strip()
+                if self.lines.has_key(name):
+                    print 'prev line: ',decl[1:]
+                self.lines[name] = decl[1:]
                 options = tuple(x.strip() for x in opts.split(',') if x.strip())
                 try:
                     self.loadrule(name, options, decl[3:])
@@ -90,13 +93,15 @@ class Grammar(grammar.Grammar):
         mods = sum(['add' in options,'sub' in options,'replace' in options])
         if mods > 1:
             raise BNFError,'invalid options. only one of "add","sub","replace" is allowed'
+        if mods == 0 and self.rules.has_key(name):
+            raise BNFError,'duplicate declaration of %s. use add, sub, or replace' % name
 
         choices = []
         if 'add' in options or 'sub' in options:
             if not self.rules.has_key(name):
                 raise BNFError,'can\'t add: not previous definition of %s' % name
             choices = self.rules[name]
-        if 'replace' in options:
+        elif 'replace' in options:
             if name+'-old' in self.rules:
                 raise BNFError,'rule has already been replaced (%s-old exists): %s' % (name, name)
             self.rules[name+'-old'] = self.rules[name]
@@ -107,7 +112,7 @@ class Grammar(grammar.Grammar):
                 items = body[0].split(' ')
             else:
                 items = body
-            items = list(("'%s'" % x.strip().replace('\\','\\\\').replace("'","\\'"),) for x in items)
+            items = list(("!%s" % x.strip().replace('\\','\\\\').replace("'","\\'"),) for x in items if x.strip())
             if 'sub' in options:
                 for it in items:
                     if it not in choices:
@@ -127,6 +132,11 @@ class Grammar(grammar.Grammar):
                 else:
                     choices += parts
             self.rules[name] = choices
+        for choice in self.rules[name]:
+            if choice[0] == '@'+name:
+                print 'recursive rule; consider changing.', name, self.lines[name][0]+1
+        if self.debug:
+            pass#fail
 
 def rulesplit(line):
     '''split a rule end
@@ -142,7 +152,7 @@ def rulesplit(line):
     >>> rulesplit
     '''
     line = line.replace('\xc2\xa0',' ')
-    rx = r"([\w\-]+|\s|'(?:[^']|\\')*'|\*|\+|:|\?|\[(?:[^\]]|\\\]])+\])"
+    rx = r"([\w\-]+|\s|'(?:\\'|[^']|)*'|\*|\+|:|\?|\[(?:[^\]]|\\\]])+\])"
     parts = re.findall(rx, line)
     if ''.join(parts) != line:
         raise BNFError, 'invalid bnf:\nparsed  : %s\noriginal: %s' % (''.join(parts), line)
@@ -162,11 +172,11 @@ def rulesplit(line):
         if not part.strip():continue
         if part[0] == "'":
             part = part[1:-1]
-            ret.append('s'+part.replace('\\\'','\'').replace('\\n','\n').replace('\\t','\t').replace('\\\\','\\'))
+            ret.append('!'+part.replace('\\\'','\'').replace('\\n','\n').replace('\\t','\t').replace('\\\\','\\'))
         elif part in '*+:?':
             ret.append(part)
         else:
-            ret.append('r'+part)
+            ret.append('@'+part)
     return [tuple(ret)]
 
 def expand(crange):
@@ -214,7 +224,7 @@ def expand(crange):
         items.append(char)
         i += 1
     if exclude:
-        return list(('s'+a,) for a in string.printable if a not in items)
-    return list(('s'+a,) for a in items)
+        return list(('!'+a,) for a in string.printable if a not in items)
+    return list(('!'+a,) for a in items)
 
 # vim: et sw=4 sts=4

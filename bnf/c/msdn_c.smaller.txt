@@ -34,8 +34,10 @@ type-name:
     namespace-or-type-name
 
 namespace-or-type-name:
-    identifier
-    namespace-or-type-name   '.'   identifier
+    identifier dot-identifier*
+
+dot-identifier:
+    '.'   identifier
 
 ### C.2.2 Types
 
@@ -92,15 +94,8 @@ class-type:
 interface-type:
     type-name
 
-array-type:
-    non-array-type   rank-specifiers
-
-non-array-type:
-    type
-
 rank-specifiers:
-    rank-specifier
-    rank-specifiers   rank-specifier
+    rank-specifier+
 
 rank-specifier:
     '['   ','+   ']'
@@ -235,53 +230,53 @@ cast-expression:
 
 multiplicative-expression:
     unary-expression
-    multiplicative-expression   '*'   unary-expression
-    multiplicative-expression   '/'   unary-expression
-    multiplicative-expression   '%'   unary-expression
+    unary-expression   '*'   multiplicative-expression
+    unary-expression   '/'   multiplicative-expression
+    unary-expression   '%'   multiplicative-expression
 
 additive-expression:
     multiplicative-expression
-    additive-expression   '+'   multiplicative-expression
-    additive-expression   '–'   multiplicative-expression
+    multiplicative-expression   '+'   additive-expression
+    multiplicative-expression   '–'   additive-expression
 
 shift-expression:
     additive-expression 
-    shift-expression   '<<'   additive-expression
-    shift-expression   '>>'   additive-expression
+    additive-expression   '<<'   shift-expression
+    additive-expression   '>>'   shift-expression
 
 relational-expression:
     shift-expression
-    relational-expression   '<'   shift-expression
-    relational-expression   '>'   shift-expression
-    relational-expression   '<='   shift-expression
-    relational-expression   '>='   shift-expression
+    shift-expression   '<'   relational-expression
+    shift-expression   '>'   relational-expression
+    shift-expression   '<='   relational-expression
+    shift-expression   '>='   relational-expression
     relational-expression   'is'   type
     relational-expression   'as'   type
 
 equality-expression:
     relational-expression
-    equality-expression   '=='   relational-expression
-    equality-expression   '!='   relational-expression
+    relational-expression   '=='   equality-expression
+    relational-expression   '!='   equality-expression
 
 and-expression:
     equality-expression
-    and-expression   '&'   equality-expression
+    equality-expression   '&'   and-expression
 
 exclusive-or-expression:
     and-expression
-    exclusive-or-expression   '^'   and-expression
+    and-expression   '^'   exclusive-or-expression
 
 inclusive-or-expression:
     exclusive-or-expression
-    inclusive-or-expression   '|'   exclusive-or-expression
+    exclusive-or-expression   '|'   inclusive-or-expression
 
 conditional-and-expression:
     inclusive-or-expression
-    conditional-and-expression   '&&'   inclusive-or-expression
+    inclusive-or-expression   '&&'   conditional-and-expression
 
 conditional-or-expression:
     conditional-and-expression
-    conditional-or-expression   '||'   conditional-and-expression
+    conditional-and-expression   '||'   conditional-or-expression   
 
 conditional-expression:
     conditional-or-expression
@@ -298,9 +293,6 @@ expression:
     assignment
 
 constant-expression:
-    expression
-
-boolean-expression:
     expression
 
 ### C.2.5 Statements
@@ -324,11 +316,7 @@ embedded-statement:
     using-statement
 
 block:
-    '{'   statement-list?   '}'
-
-statement-list:
-    statement
-    statement-list   statement
+    '{'   statement*   '}'
 
 empty-statement:
     ';'
@@ -358,8 +346,10 @@ local-constant-declaration:
     'const'   type   constant-declarators
 
 constant-declarators:
-    constant-declarator
-    constant-declarators   ','   constant-declarator
+    constant-declarator constant-declarator-tail*
+
+constant-declarator-tail:
+    ',' constant-declarator
 
 constant-declarator:
     identifier   '='   constant-expression
@@ -603,13 +593,6 @@ constant-modifiers:
 constant-modifier:
     auto-rule-2
 
-constant-declarators:
-    constant-declarator
-    constant-declarators   ','   constant-declarator
-
-constant-declarator:
-    identifier   '='   constant-expression
-
 field-declaration:
     attributes?   field-modifiers?   type   variable-declarators   ';'
 
@@ -690,10 +673,6 @@ property-modifiers:
 
 property-modifier:
     auto-rule-4
-
-member-name:
-    identifier
-    interface-type   '.'   identifier
 
 accessor-declarations:
     get-accessor-declaration   set-accessor-declaration?
@@ -865,21 +844,10 @@ struct-member-declaration:
 ### C.2.9 Arrays
 
 array-type:
-    non-array-type   rank-specifiers
+    non-array-type   rank-specifier*
 
 non-array-type:
     type
-
-rank-specifiers:
-    rank-specifier
-    rank-specifiers   rank-specifier
-
-rank-specifier:
-    '['   dim-separator*   ']'
-
-dim-separators:
-    ','
-    dim-separators   ','
 
 array-initializer:
     '{'   variable-initializer-list?   '}'
@@ -888,9 +856,6 @@ array-initializer:
 variable-initializer-list:
     variable-initializer
     variable-initializer-list   ','   variable-initializer
-
-variable-initializer:
-    auto-rule-3
 
 ### C.2.10 Interfaces
 

@@ -5,8 +5,9 @@ import os
 
 lfile = lambda name:os.path.join(os.path.dirname(__file__),name)
 
-tokens = msbnf.Grammar(lfile('msdn_tokens.txt')), extends = generic.mtokens)
-tknames = tuple(x for x, in tokens.rules['token'])
+tokens = msbnf.Grammar(lfile('c.tokens.txt'), extends = generic.mtokens)
+tknames = tuple(x[1:] for x, in tokens.rules['token'])
+print tknames
 main = msbnf.Grammar(lfile('msdn_c.smaller.txt'), tokens = tknames)
 
 # vim: et sw=4 sts=4

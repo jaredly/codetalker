@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import string
+import sys
 import re
 
 class BNFException(Exception):
@@ -40,6 +41,7 @@ class Grammar:
         self.original = open(filename).read()
         self.extends = extends
         self.tokens = tokens
+        self.debug = False
         self.parse()
 
     def loadrules(self):
@@ -51,29 +53,38 @@ class Grammar:
         if self.extends:
             self.rules = self.extends.rules.copy()
         self.lines = {}
+        if self.filename.endswith('er.txt'):
+            self.debug = True
         self.loadrules()
+        if self.debug:
+            fail
         for name in self.rules:
-            self.loadfirst(name, 'base')
+            try:
+                self.loadfirst('@'+name, 'base')
+            except BNFException, e:
+                print>>sys.stderr, "Error in %s" % self.filename
+                print>>sys.stderr, '    %s' % e
+                sys.exit(1)
 
     def loadfirst(self, name, parent):
         if name in self.firsts:return self.firsts[name]
-        elif name == "''":return ["'"]
-        elif name.startswith("'"):
-            if name == "'":
-                print 'what?',parent,name
-                print self.rules[parent]
-            return [name[2]]
-        elif name.startswith('%'):
-            return [RxFirst(name)]
-        elif name == 'e':
+        elif name == '!':
+            ## means there was a '' in the rule; treat as epsilon
             return list(self.tokens)
-        elif name in self.tokens:
-            return [name]
-        elif name not in self.rules:
+        elif name[0] == '!':
+            return [name[1]]
+        elif name[0] == '@' and name[1:] in self.tokens:
+            return [name[1:]]
+        elif name[0] != '@':
             print self.tokens
-            raise Exception, 'invalid rule found in "%s", line %d: %s' % (self.filename, 
-                    self.lines[parent][0], name)
+            raise BNFException, 'invalid rule found in "%s", line %d for rule %s: %s' % (self.filename, 
+                    self.lines[parent][0]+1, parent, name)
+        elif name[1:] not in self.rules:
+            raise BNFException, 'rule not found on line %d (parent=%s): %s' % (
+                    self.lines[parent][0]+1, parent, name[1:])
 
+
+        name = name[1:]
         chars = []
         self.firsts[name] = chars
         for child in self.rules[name]:
@@ -81,6 +92,5 @@ class Grammar:
                 continue
             chars.append(flatten(self.loadfirst(child[0], name)))
         return chars
-
 
 # vim: et sw=4 sts=4
