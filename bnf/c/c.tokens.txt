@@ -1,0 +1,10 @@
+### C specific tokens
+token: add
+    character-literal
+
+character-literal:
+    '\'' char '\''
+
+char:
+    [^']
+    '\\\''
