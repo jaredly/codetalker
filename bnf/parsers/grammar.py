@@ -68,6 +68,7 @@ class Grammar:
 
         errors = self.test_reachability()
         errors += self.test_ordering()
+        errors += self.test_almost_dup()
         reach = self.check_circular('start')
         if reach:
             print 'front-end recursion found:',reach
@@ -83,6 +84,20 @@ class Grammar:
                 print>>sys.stderr, '    %s' % e
                 sys.exit(1)
     
+    def test_almost_dup(self):
+        errors = 0
+        for rule in self.rules:
+            for i,line in enumerate(self.rules[rule]):
+                for other in self.rules[rule]:
+                    if line is other:continue
+                    for a in range(len(line)):
+                        if a >= len(other):break
+                        if line[a]!=other[a]:
+                            break
+                    if a>0:
+                        print 'you could optimize %d %s' % (self.lines[rule][0]+1, rule)
+        return errors
+
     def test_ordering(self):
         errors = 0
         for rule in self.rules:
@@ -157,7 +172,6 @@ class Grammar:
         if len(ret) == 1:
             return ret[0]
         return ret
-
 
     def loadfirst(self, name, parent):
         if name == '!':
