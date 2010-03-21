@@ -510,9 +510,6 @@ using-alias-directive:
 using-namespace-directive:
     'using'   namespace-name   ';'
 
-namespace-member-declarations:
-    namespace-member-declaration+
-
 namespace-member-declaration:
     namespace-declaration
     type-declaration
@@ -528,10 +525,6 @@ type-declaration:
 
 class-declaration:
     attributes?   class-modifier*   'class'   identifier   class-base?   class-body   ';'?
-
-class-modifiers:
-    class-modifier
-    class-modifiers   class-modifier
 
 class-modifier: one of
     new
@@ -607,10 +600,6 @@ method-declaration:
 method-header:
     attributes?   method-modifier*   return-type   member-name   '('   formal-parameter-list?   ')'
 
-method-modifiers:
-    method-modifier
-    method-modifiers   method-modifier
-
 method-modifier:
     auto-rule-4
 
@@ -646,10 +635,6 @@ parameter-array:
 
 property-declaration:
     attributes?   property-modifier*   type   member-name   '{'   accessor-declarations   '}'
-
-property-modifiers:
-    property-modifier
-    property-modifiers   property-modifier
 
 property-modifier:
     auto-rule-4
@@ -746,10 +731,6 @@ operator-body:
 constructor-declaration:
     attributes?   constructor-modifier*   constructor-declarator   constructor-body
 
-constructor-modifiers:
-    constructor-modifier
-    constructor-modifiers   constructor-modifier
-
 constructor-modifier: one of
     public
     protected
@@ -788,10 +769,6 @@ destructor-body:
 struct-declaration:
     attributes?   struct-modifier*   'struct'   identifier   struct-interfaces?   struct-body   ';'?
 
-struct-modifiers:
-    struct-modifier
-    struct-modifiers   struct-modifier
-
 struct-modifier:
     auto-rule-2
 
@@ -800,10 +777,6 @@ struct-interfaces:
 
 struct-body:
     '{'   struct-member-declaration*   '}'
-
-struct-member-declarations:
-    struct-member-declaration
-    struct-member-declarations   struct-member-declaration
 
 struct-member-declaration:
     constant-declaration
@@ -883,16 +856,14 @@ enum-body:
     '{'   enum-member-declaration*   '}'
     '{'   enum-member-declarations   ','   '}'
 
-enum-modifiers:
-    enum-modifier
-    enum-modifiers   enum-modifier
-
 enum-modifier:
     auto-rule-2
 
 enum-member-declarations:
-    enum-member-declaration
-    enum-member-declarations   ','   enum-member-declaration
+    enum-member-declaration enum-member-declaration-tail*
+
+enum-member-declaration-tail:
+    ','   enum-member-declaration
 
 enum-member-declaration:
     attributes?   identifier
@@ -902,10 +873,6 @@ enum-member-declaration:
 
 delegate-declaration:
     attributes?   delegate-modifier*   'delegate'   return-type   identifier   '('   formal-parameter-list?   ')'   ';'
-
-delegate-modifiers:
-    delegate-modifier
-    delegate-modifiers   delegate-modifier
 
 delegate-modifier:
     auto-rule-2

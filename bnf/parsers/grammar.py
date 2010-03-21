@@ -85,7 +85,7 @@ class Grammar:
         for line in self.rules[rule]:
             for child in line:
                 if child[0]=='@':
-                    if child[1:] not in self.rules:
+                    if child[1:] not in self.rules and child[1:] not in self.tokens:
                         print 'undefined rule:',child[1:]
 
     def crawl_reach(self, at, found):
