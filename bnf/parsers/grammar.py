@@ -23,10 +23,16 @@ class RxFirst:
         self.rx = re.compile(rx[2:-1])
     def __eq__(self, other):
         if isinstance(other, RxFirst):
-            return other is self
+            return other.rx == self.rx
         if type(other) != str:
             return NotImplemented
         return self.rx.match(other) is not None
+    def __ne__(self, other):
+        if isinstance(other, RxFirst):
+            return other.rx == self.rx
+        if type(other) != str:
+            return NotImplemented
+        return self.rx.match(other) is None
 
 class Grammar:
     def __init__(self, filename, tokens = string.printable, extends = None):
