@@ -17,3 +17,14 @@ Todo
 - javascript parsing
 - python parsing
 - testing
+
+Examples
+--------
+
+I currently have one working and one non-working example ;)
+
+To prettyfy some C code, type::
+    python examples/c.py test/hanoi.c
+
+And the json parser (examples/json.py) is not working ATM (it was before, but
+some recent radical changes broke it).
