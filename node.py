@@ -36,7 +36,7 @@ class Node:
                 name)
     
     def tokens(self):
-        return list(a.children[0] for a in self.getElementsByTagName('<token>') if a.children[0].toliteral())
+        return list(a.children[0] for a in self.getElementsByTagName('token') if a.children[0].toliteral())
 
     def getElementsByTagName(self, name):
         res = []

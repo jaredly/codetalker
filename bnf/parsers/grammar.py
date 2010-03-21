@@ -6,6 +6,15 @@ import re
 class BNFException(Exception):
     pass
 
+class RuleFirst:
+    def __init__(self, name):
+        self.name = name
+
+    def __eq__(self, other):
+        if type(other) == tuple and len(other)==1 and other[0]==self.name:
+            return True
+        return NotImplemented
+
 def flatten(lst, seen = ()):
     """flatten a nested list"""
     seen += (lst,)
@@ -142,7 +151,7 @@ class Grammar:
         elif name[0] == '!':
             return [name[1]]
         elif name[0] == '@' and name[1:] in self.tokens:
-            return [name[1:]]
+            return [RuleFirst(name[1:])]
         elif name[0] != '@':
             print self.tokens
             raise BNFException, 'invalid rule found in "%s", line %d for rule %s: %s' % (self.filename, 
@@ -159,7 +168,12 @@ class Grammar:
             if not child:
                 continue
             f = self.loadfirst(child[0], name)
-            self.firsts[name].append(flatten(f))
+            i = 0
+            while len(child)>i+2 and child[i+1] in '*?':
+                f += self.loadfirst(child[i+2], name)
+                i+=2
+            f = flatten(f)
+            self.firsts[name].append(f)
         #print>>open('first.log','aw'), 'from ',name, self.firsts[name]
         return self.firsts[name]
 

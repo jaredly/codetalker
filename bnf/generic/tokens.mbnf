@@ -13,6 +13,7 @@ token:
     identifier
     comment
     symbol
+    whites
 
 identifier:
     id-start id-in*
@@ -34,6 +35,9 @@ notword:
     symbol
     white
 
+whites:
+    white+
+
 white:
     [\s]
 
@@ -53,7 +57,7 @@ digit: one of
     0 1 2 3 4 5 6 7 8 9 
 
 string-literal:
-    '"' string-contents '"'
+    '"' string-contents* '"'
 
 string-contents:
     [^"\n]

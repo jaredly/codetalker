@@ -1,3 +1,3 @@
 int main(){
-    cout << "hello" << endl;
+    printf("Hello World\n");
 }

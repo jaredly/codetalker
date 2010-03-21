@@ -352,6 +352,7 @@ expression-statement:
     statement-expression   ';'
 
 statement-expression:
+    primary-expression
     invocation-expression
     object-creation-expression
     assignment
@@ -511,6 +512,7 @@ type-declaration:
     interface-declaration
     enum-declaration
     delegate-declaration
+    method-declaration
 
 ### C.2.7 Classes
 
