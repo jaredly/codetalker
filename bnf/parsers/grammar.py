@@ -58,6 +58,10 @@ class Grammar:
         self.loadrules()
 
         errors = self.test_reachability()
+        reach = self.check_circular('start')
+        if reach:
+            print 'front-end recursion found:',reach
+            sys.exit(0)
         if errors>0:
             print>>sys.stderr, 'please correcto the above errors'
             sys.exit(1)
@@ -92,7 +96,7 @@ class Grammar:
                         print 'undefined rule:',child[1:]
                         errors += 1
         return errors
-
+    
     def crawl_reach(self, at, found):
         errors = 0
         if at in self.tokens:return errors
@@ -107,9 +111,32 @@ class Grammar:
                     errors += self.crawl_reach(child[1:], found)
         return errors
 
+    def check_circular(self, rule='start', stack = ()):
+        if rule in stack:
+            raise Exception,'recursion! %s '%(stack+(rule,),)
+            return stack+(rule,)
+        elif rule in self.tokens:
+            return False
+        ret = []
+        kids = set()
+        for line in self.rules[rule]:
+            for child in line:
+                if child[0]=='@':
+                    kids.add(child[1:])
+                    break
+
+        for child in kids:
+            res = self.check_circular(child, stack+(rule,))
+            if res:
+                ret.append(res)
+
+        if len(ret) == 1:
+            return ret[0]
+        return ret
+
+
     def loadfirst(self, name, parent):
-        if name in self.firsts:return self.firsts[name]
-        elif name == '!':
+        if name == '!':
             ## means there was a '' in the rule; treat as epsilon
             return list(self.tokens)
         elif name[0] == '!':
@@ -124,15 +151,16 @@ class Grammar:
             raise BNFException, 'rule not found on line %d (parent=%s): %s' % (
                     self.lines[parent][0]+1, parent, name[1:])
 
-
         name = name[1:]
-        chars = []
-        self.firsts[name] = chars
-        print>>open('first.log','aw'), 'firsting',name
+        if self.firsts.has_key(name):return self.firsts[name]
+        self.firsts[name] = []
+        #print>>open('first.log','aw'), 'firsting',name
         for child in self.rules[name]:
             if not child:
                 continue
-            chars.append(flatten(self.loadfirst(child[0], name)))
-        return chars
+            f = self.loadfirst(child[0], name)
+            self.firsts[name].append(flatten(f))
+        #print>>open('first.log','aw'), 'from ',name, self.firsts[name]
+        return self.firsts[name]
 
 # vim: et sw=4 sts=4

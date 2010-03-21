@@ -117,16 +117,22 @@ primary-expression:
     array-creation-expression
 
 primary-no-array-creation-expression:
+    primary-no-array-sub primary-no-array-tail*
+
+primary-no-array-tail:
+    '.' identifier
+    '(' argument-list? ')'
+    '[' expression-list ']'
+    '++'
+    '--'
+
+primary-no-array-sub:
     literal
     simple-name
     parenthesized-expression
     member-access
-    invocation-expression
-    element-access
     this-access
     base-access
-    post-increment-expression
-    post-decrement-expression
     object-creation-expression
     delegate-creation-expression
     typeof-expression
@@ -140,8 +146,9 @@ simple-name:
 parenthesized-expression:
     '('   expression   ')'
 
+# TODO: used to also have primary-expression.identifier;
+# this could prevent you from doing 'new abc[3].foo
 member-access:
-    primary-expression   '.'   identifier
     predefined-type   '.'   identifier
 
 predefined-type: one of
@@ -149,9 +156,6 @@ predefined-type: one of
 
 invocation-expression:
     primary-expression   '('   argument-list?   ')'
-
-element-access:
-    primary-no-array-creation-expression   '['   expression-list   ']'
 
 expression-list:
     expression expression-list-tail*
