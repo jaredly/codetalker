@@ -97,9 +97,6 @@ class-type:
 interface-type:
     type-name
 
-rank-specifiers:
-    rank-specifier+
-
 rank-specifier:
     '['   ','+   ']'
 
