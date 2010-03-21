@@ -27,12 +27,15 @@ def matchliteral(text, i, rule):
         else:
             char = rule[1:]
             if isinstance(text[i], Node):
-                txt = str(text[i])
+                otxt = txt = str(text[i])
                 while len(txt)<len(char) and i<len(text)-1:
                     i+=1
                     txt+=str(text[i])
                 if txt == char:
-                    return char, i+1
+                    if txt == otxt:
+                        return text[i], i+1
+                    else:
+                        return char, i+1
             elif text[i:i+len(char)] == char:
                 i += len(char)
                 return char, i
@@ -240,12 +243,11 @@ if __name__=='__main__':
     #print tokens
     junk = 'whites'
     tokens = tuple(t for t in tokens if t.name not in junk)
-    print ''.join(str(t) for t in tokens)
-#    for t in tokens:
-#        print t.name,t.toXML()
+    #for t in tokens:
+    #    if t.name == 'keyword':
+    #        print t,str(t),t.children
     print 'tokened!'
     #debug = 1
     full = parse(tokens, grammar.main)
     print full
-    #print full.toXML()
 

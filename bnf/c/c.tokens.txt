@@ -44,8 +44,8 @@ keyword: one of, replace
     decimal
     default
     delegate
-    do
     double
+    do
     else
     enum
     event
@@ -55,15 +55,15 @@ keyword: one of, replace
     finally
     fixed
     float
-    for
     foreach
+    for
     goto
     if
     implicit
-    in
     int
     interface
     internal
+    in
     is
     lock
     long

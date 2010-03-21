@@ -46,11 +46,16 @@ class Node:
             if type(child)!=str:
                 res += child.getElementsByTagName(name)
         return res
+    
+    gETN = getElementsByTagName
 
     def toliteral(self):
         self.children = [str(self)]
         self.isliteral = True
         return True
+    
+    def appendChild(self, child):
+        self.children.append(child)
 
     def __getitem__(self,x):
         if not self.isliteral:raise Exception,'not a literal'
