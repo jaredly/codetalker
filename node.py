@@ -5,7 +5,9 @@ class Node:
         self.index = index
         self.lno = -1
         self.cno = -1
+        self.pre = ''
         self.children = []
+        self.post = ''
         self.isliteral = False
         if literal:
             self.children = [name]
@@ -27,6 +29,15 @@ class Node:
         for c in self.children:
             res += str(c)
         return res
+    
+    def full(self):
+        res = self.pre
+        for c in self.children:
+            if type(c) == str:
+                res += c
+            else:
+                res += c.full()
+        return res + self.post
     
     def toXML(self):
         if not self.name:return ''

@@ -27,7 +27,7 @@ char:
     [^']
     '\\\''
 
-keyword: one of, replace
+reserved: one of, replace
     abstract
     as
     base

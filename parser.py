@@ -27,6 +27,8 @@ def matchliteral(text, i, rule):
         else:
             char = rule[1:]
             if isinstance(text[i], Node):
+                pre = text[i].pre
+                at = text[i].index
                 otxt = txt = str(text[i])
                 while len(txt)<len(char) and i<len(text)-1:
                     i+=1
@@ -35,6 +37,8 @@ def matchliteral(text, i, rule):
                     if txt == otxt:
                         return text[i], i+1
                     else:
+                        #char = Node(txt, at)
+                        #char.pre = pre
                         return char, i+1
             elif text[i:i+len(char)] == char:
                 i += len(char)
@@ -241,13 +245,24 @@ if __name__=='__main__':
     res = parse(open(code).read(), grammar.tokens)
     tokens = res.tokens()
     #print tokens
-    junk = 'whites'
+    junk = ('whites',)
+    junkn = Node('',-1)
+    for t in tokens:
+        if t.name in junk:
+            junkn.post += str(t)
+        else:
+            t.pre = junkn.full() + t.pre
+            junkn = Node('',-1)
+
     tokens = tuple(t for t in tokens if t.name not in junk)
-    #for t in tokens:
+
+    # print ''.join(a.full() for a in tokens)
+    # for t in tokens:
     #    if t.name == 'keyword':
     #        print t,str(t),t.children
-    print 'tokened!'
-    #debug = 1
+    # print 'tokened!'
+    # debug = 1
+
     full = parse(tokens, grammar.main)
-    print full
+    print full.full()
 

@@ -3,6 +3,13 @@ from codetalker.parser import Node
 from codetalker.bnf import c as grammar
 import codetalker
 
+'''
+to prettyfy c:
+
+
+'''
+
+
 def prettyfy(full):
     space = Node(' ',-1,True)
     lbreak = Node('\n',-1,True)
