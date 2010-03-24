@@ -20,7 +20,13 @@ class Logger:
 logger = Logger()
 
 def matchliteral(text, i, rule):
+    '''takes a text array (either strings or Nodes), current index, and the rule to be matched.
+    returns (Node, index)
+    or Null, index if there's no match'''
     logger.log( i,'match?', text[i], rule)
+    #while isinstance(text[i], Node) and text[i].name == 'whites':
+    #    print 'yeah'
+    #    i += 1
     if rule[0] == '!':
         if rule == '!': # epsilon
             return Node('',i), i
@@ -39,7 +45,10 @@ def matchliteral(text, i, rule):
                     else:
                         #char = Node(txt, at)
                         #char.pre = pre
-                        return char, i+1
+                        n = Node(txt, i, True)
+                        #n.pre = pre
+                        return n, i+1
+                        #return char, i+1
             elif text[i:i+len(char)] == char:
                 i += len(char)
                 return char, i
@@ -50,7 +59,9 @@ def matchliteral(text, i, rule):
 def parserule(text, i, rule, state):
     grammar = state['grammar']
     at = list(state['at'])
+
     if i<len(text):logger.log( i,'rule: ',rule,text[i])
+
     logger.inc()
     state['stack'] += (rule,)
     if i>=len(text):
@@ -62,6 +73,14 @@ def parserule(text, i, rule, state):
         state['at'] = at
         logger.dec()
         return False, 0
+
+    whites = []
+    while isinstance(text[i], Node) and text[i].name == 'whites':
+        whites.append(text[i])
+        i += 1
+        if i>=len(text):
+            return False,0
+
     res, di = matchliteral(text, i, rule)
     if res:
         logger.log( 'yes!')
@@ -70,6 +89,7 @@ def parserule(text, i, rule, state):
                 state['at'][0] += 1
                 state['at'][1] = i+1
         logger.dec()
+        
         return res, di
     elif not rule[1:] in grammar.rules: ## should be a literal, didn't match. an error occured
         if i>state['error'][0]:
@@ -99,7 +119,7 @@ def parserule(text, i, rule, state):
     if i>state['error'][0]:
         if debug>1:print i,text[i],text[i-2:i+3]
         if isinstance(text[i], Node):
-            state['error'][4] = text[i].lineno(),text[i].charno()
+            state['error'][4] = text[i].lineno(),0#text[i].charno()
         state['error'][0] = i
         state['error'][1] = state['stack']+(str(text[i]),)
         state['error'][2] = text[i]
@@ -211,7 +231,10 @@ def parse(text, grammar):
             fail
     if not node:
         raise Exception,str(state['error'])
-    if char<len(text):
+    last = len(text)-1
+    while last > 0 and isinstance(text[last],Node) and text[last].name == 'whites':
+        last -= 1
+    if char < last:
         print "error",state['error']
         raise Exception,"Didn't parse the whole thing: %d - %d"%(char,len(text))
     return node
@@ -245,7 +268,9 @@ if __name__=='__main__':
     res = parse(open(code).read(), grammar.tokens)
     tokens = res.tokens()
     #print tokens
-    junk = ('whites',)
+    junk = ()
+    #junk = ('whites',)
+    '''
     junkn = Node('',-1)
     for t in tokens:
         if t.name in junk:
@@ -253,8 +278,10 @@ if __name__=='__main__':
         else:
             t.pre = junkn.full() + t.pre
             junkn = Node('',-1)
+    '''
 
     tokens = tuple(t for t in tokens if t.name not in junk)
+    #debug = True
 
     # print ''.join(a.full() for a in tokens)
     # for t in tokens:
