@@ -1,17 +1,30 @@
 
 class Node:
-    def __init__(self, name, index, literal = False):
+    def __init__(self, name, index, literal = False, children = []):
         self.name = name
         self.index = index
         self.lno = -1
         self.cno = -1
         self.pre = ''
-        self.children = []
+        self.children = children[:]
         self.post = ''
+        self.parent = None
         self.isliteral = False
         if literal:
             self.children = [name]
             self.isliteral = True
+
+    def childrenize(self):
+        for node in self.children:
+            if not type(node)==str:
+                node.parent = self
+                node.childrenize()
+
+    def remove(self):
+        if self.parent is not None:
+            self.parent.children.remove(self)
+        else:
+            raise Exception,'no parent for node %s' % self.name
 
     def clone(self):
         n = Node(self.name, self.index, self.isliteral)
@@ -60,7 +73,8 @@ class Node:
 
     def getElementsByTagName(self, name):
         res = []
-        if self.name == name:
+        names = tuple(a.strip() for a in name.split(','))
+        if self.name in names:
             res.append(self)
         for child in self.children:
             if type(child)!=str:
@@ -69,6 +83,24 @@ class Node:
     
     gETN = getElementsByTagName
 
+    def nextNode(self):
+        if not self.parent:
+            raise Exception,'no parent for node %s' % self.name
+        i = self.parent.children.index(self)
+        if i < len(self.parent.children)-1:
+            return self.parent.children[i+1]
+        return self.parent.nextNode()
+
+    def walkNodes(self, strings=False):
+        yield self
+        for node in self.children:
+            if type(node) == str:
+                if strings:
+                    yield node
+                continue
+            for one in node.walkNodes():
+                yield one
+
     def toliteral(self):
         self.children = [str(self)]
         self.isliteral = True
@@ -76,6 +108,11 @@ class Node:
     
     def appendChild(self, child):
         self.children.append(child)
+
+    def appendAfter(self, other):
+        i = other.parent.children.index(other)
+        other.parent.children.insert(i+1,self)
+        self.parent = other.parent
 
     def __getitem__(self,x):
         if not self.isliteral:raise Exception,'not a literal'
@@ -86,5 +123,8 @@ class Node:
         return len(self.children[0])
 
     def __eq__(self,x):
-        if not self.isliteral:raise Exception,'not a literal'
+        if isinstance(x, Node):
+            return self is x
+        if not self.isliteral:
+            return NotImplemented
         return self.children[0] == x or self.name == x

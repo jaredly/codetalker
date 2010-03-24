@@ -34,6 +34,7 @@ def matchliteral(text, i, rule):
                 # Node(s) matching a literal
                 pre = text[i].pre
                 at = text[i].index
+                name = text[i].name
                 otxt = txt = str(text[i])
                 while len(txt)<len(char) and i<len(text)-1:
                     i+=1
@@ -43,6 +44,8 @@ def matchliteral(text, i, rule):
                         return text[i].clone(), i+1
                     else:
                         n = Node(txt, i, True)
+                        n = Node(name, i, False)
+                        n.children = [txt]
                         return n, i+1
             elif text[i:i+len(char)] == char:
                 # chars matching a literal
@@ -85,13 +88,14 @@ def parserule(text, i, rule, state):
     if res:
         logger.log( 'yes!')
         if '\n' in str(res):
-            state['at'][0] += 1
+            state['at'][0] += str(res).count('\n')
             state['at'][1] = i+1
         logger.dec()
         if whites:
-            white = ''.join(str(w) for w in whites)
-            res = Node(str(res), res.index, True)
-            res.children = [white] + res.children
+            #white = ''.join(str(w) for w in whites)
+            old = res
+            res = Node(old.name, old.index, True)
+            res.children = whites + old.children
         return res, di
     elif rule[0] != '@' or not rule[1:] in grammar.rules: 
         ## should be a literal, didn't match. an error occured
@@ -274,8 +278,7 @@ if __name__=='__main__':
         from bnf import c as grammar
     else:
         raise Exception,'no grammar found for that file type'
-    global debug
-    #debug=1
+    debug=False
     #debug = True
     res = parse(open(code).read(), grammar.tokens)
     tokens = res.tokens()
@@ -303,5 +306,5 @@ if __name__=='__main__':
     # debug = 1
 
     full = parse(tokens, grammar.main)
-    print full.full()
+    print full
 

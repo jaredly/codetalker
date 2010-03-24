@@ -3,6 +3,8 @@ import string
 import sys
 import re
 
+debug = False
+
 class BNFException(Exception):
     pass
 
@@ -74,7 +76,7 @@ class Grammar:
             print 'front-end recursion found:',reach
             sys.exit(0)
         if errors>0:
-            print>>sys.stderr, 'please correcto the above errors'
+            print>>sys.stderr, 'please correct the above errors'
             sys.exit(1)
         for name in self.rules:
             try:
@@ -124,7 +126,7 @@ class Grammar:
         for rule in self.rules:
             errors += self.check_exists(rule)
             if rule not in found and rule in self.lines:
-                print 'unreachable rule "%s" at line %d' % (rule, self.lines[rule][0]+1)
+                if debug:print 'unreachable rule "%s" at line %d' % (rule, self.lines[rule][0]+1)
         return errors
 
     def check_exists(self, rule):
