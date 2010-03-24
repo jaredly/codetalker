@@ -13,6 +13,15 @@ class Node:
             self.children = [name]
             self.isliteral = True
 
+    def clone(self):
+        n = Node(self.name, self.index, self.isliteral)
+        n.children = self.children[:]
+        n.lno = self.lno
+        n.cno = self.cno
+        n.pre = self.pre
+        n.post = self.post
+        return n
+
     def lineno(self):
         if self.lno>=0:return self.lno
         return self.children[0].lineno()

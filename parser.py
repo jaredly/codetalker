@@ -24,15 +24,14 @@ def matchliteral(text, i, rule):
     returns (Node, index)
     or Null, index if there's no match'''
     logger.log( i,'match?', text[i], rule)
-    #while isinstance(text[i], Node) and text[i].name == 'whites':
-    #    print 'yeah'
-    #    i += 1
     if rule[0] == '!':
-        if rule == '!': # epsilon
+        if rule == '!':
+            # epsilon; matches everythin, doesn't increment the index
             return Node('',i), i
         else:
             char = rule[1:]
             if isinstance(text[i], Node):
+                # Node(s) matching a literal
                 pre = text[i].pre
                 at = text[i].index
                 otxt = txt = str(text[i])
@@ -41,20 +40,20 @@ def matchliteral(text, i, rule):
                     txt+=str(text[i])
                 if txt == char:
                     if txt == otxt:
-                        return text[i], i+1
+                        return text[i].clone(), i+1
                     else:
-                        #char = Node(txt, at)
-                        #char.pre = pre
                         n = Node(txt, i, True)
-                        #n.pre = pre
                         return n, i+1
-                        #return char, i+1
             elif text[i:i+len(char)] == char:
+                # chars matching a literal
                 i += len(char)
-                return char, i
+                return Node(char,i,True), i
     elif rule[0] == '@' and isinstance(text[i],Node) and text[i].name == rule[1:]:
+        # rule matching a token
         return text[i], i+1
     return False,0
+
+ignore = ('whites', 'comment')
 
 def parserule(text, i, rule, state):
     grammar = state['grammar']
@@ -70,28 +69,32 @@ def parserule(text, i, rule, state):
             state['error'][0] = i
             state['error'][1] = state['stack'] + (0,)
             state['error'][2] = None
-        state['at'] = at
         logger.dec()
         return False, 0
 
+    ## gather up the whitespace
     whites = []
-    while isinstance(text[i], Node) and text[i].name == 'whites':
+    while isinstance(text[i], Node) and text[i].name in ignore:
         whites.append(text[i])
         i += 1
         if i>=len(text):
             return False,0
 
+    # check for a literal match
     res, di = matchliteral(text, i, rule)
     if res:
         logger.log( 'yes!')
-        if not isinstance(res, Node):
-            if '\n' in res:
-                state['at'][0] += 1
-                state['at'][1] = i+1
+        if '\n' in str(res):
+            state['at'][0] += 1
+            state['at'][1] = i+1
         logger.dec()
-        
+        if whites:
+            white = ''.join(str(w) for w in whites)
+            res = Node(str(res), res.index, True)
+            res.children = [white] + res.children
         return res, di
-    elif not rule[1:] in grammar.rules: ## should be a literal, didn't match. an error occured
+    elif rule[0] != '@' or not rule[1:] in grammar.rules: 
+        ## should be a literal, didn't match. an error occured
         if i>state['error'][0]:
             state['error'][3] = 'badrule'
             if isinstance(text[i], Node):
@@ -105,17 +108,22 @@ def parserule(text, i, rule, state):
 
     rule = rule[1:]
     if debug>1:print rule,grammar.firsts[rule]
+
+    # go through rules for the specific rulename, checking each in order
     for n,one in enumerate(grammar.rules[rule]):
         if one == rule:continue
-        if debug>1:print grammar.firsts[rule][n]
+        if debug>1:
+            print grammar.firsts[rule][n]
+        # check "first" against the current character / Node
         if text[i][0] in grammar.firsts[rule][n] or hasattr(text[i],'name') and (text[i].name,) in grammar.firsts[rule][n]:
             res, di = parse_children(text, i, rule, one, state.copy())
             if not res:
                 continue
             logger.dec()
+            res.children = whites + res.children
             return res, di
-    else:
-        if debug>1:print 'no matches'
+    # nothing was matched, this rule doesn't work. bail out
+    if debug>1:print 'no matches'
     if i>state['error'][0]:
         if debug>1:print i,text[i],text[i-2:i+3]
         if isinstance(text[i], Node):
@@ -128,8 +136,10 @@ def parserule(text, i, rule, state):
     return False, 0
 
 def parse_children(text, i, rule, children, state):
+    '''parses the text for a sequence of "child" tokens/chars.
+    '''
     grammar = state['grammar']
-    logger.log( 'children:',text[i], rule, children)
+    logger.log('children:',text[i], rule, children)
     at = list(state['at'])
     node = Node(rule, i)
     node.lno = state['at'][0]
@@ -139,6 +149,7 @@ def parse_children(text, i, rule, children, state):
     while a < clen:
         if debug>1:
             print 'child of %s; item %d: %s' % (rule, a, children[a])
+        # check for repeaters
         if a < clen-1:
             if debug>3:print 'check multi;',children[a+1],a,children[a]
             if children[a+1] == '+':
@@ -185,6 +196,7 @@ def parse_children(text, i, rule, children, state):
         if children[a] == rule:
             a+=1
             continue
+        # otherwise, try it straight
         logger.log( 'nomods')
         res, di = parserule(text, i, children[a], state.copy())
         if not res:
