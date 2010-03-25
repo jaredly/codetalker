@@ -1,15 +1,24 @@
 #!/usr/bin/env python
 
-from nnode import Node
+from nnode import Node, TextNode
 
-import logging
-logger = logging.getLogger('refresh')
-logger.setLevel(logging.DEBUG)
+debug = 0
 
-ch = logging.StreamHandler()
-ch.setFormatter(logging.Formatter('%(name)s:\t\t%(message)s'))
+class Logger:
+    def __init__(self):
+        self.level = 0
+    def log(self, *stuff):
+        if debug:
+            print '  '*self.level,
+            for i in stuff:
+                print i,
+            print
+    def inc(self):
+        self.level += 1
+    def dec(self):
+        self.level -= 1
 
-logger.addHandler(ch)
+logger = Logger()
 
 def match_whitespace(i, const):
     white = []
@@ -27,6 +36,11 @@ def match_whitespace(i, const):
     return white, i
 
 def match_rule(rule, i, const):
+    if i >= len(const['text']):
+        if rule == '!':
+            return Node(None, i), i
+        return False, i
+    logger.log('match? "%s" "%s"' % (rule, const['text'][i]), i)
     node = const['text'][i]
     ppos = const['pos'][:]
     oi = i
@@ -34,16 +48,16 @@ def match_rule(rule, i, const):
     if rule[0] == '@':
         ## rule -- must match a token Node
         if isinstance(node, Node) and node.name == rule[1:]:
-            return node.copy(), i+1
+            return node.clone(), i+1
     else:
         # essentially espilon; matches anything and doesn't consume
         if rule == '!': 
-            return Node('', i), i
+            return Node(None, i), i
         # other literal
         literal = rule[1:]
         if isinstance(node, Node):
             text = str(node)
-            while len(txt) < len(literal) and i < len(const['text'])-1:
+            while len(text) < len(literal) and i < len(const['text'])-1:
                 i += 1
                 text += str(const['text'][i])
             if text == literal:
@@ -53,35 +67,66 @@ def match_rule(rule, i, const):
                 new.children = [text]
                 return new, i+1
         elif const['text'][i:i+len(literal)] == literal:
-            node = Node(None, i, children = [literal], pos = const['pos'])
+            logger.log('match!',rule)
+            node = TextNode(literal, i, pos = const['pos'])
             if '\n' in literal:
                 const['pos'][0] += literal.count('\n')
                 const['pos'][1] = 0
             const['pos'][1] += len(literal.split('\n')[-1])
             return node, i + len(literal)
+        else:
+            logger.log([const['text'][i:i+len(literal)]],i,len(literal),[literal])
 
     const['pos'] = ppos
     return False, oi
 
 def parse_rule(rule, i, const):
     '''parse the text for a certain rule'''
+    if i < len(const['text']):
+        logger.log('parse "%s" "%s"' % (rule,const['text'][i]))
+    const['stack'].append(rule)
+    logger.inc()
     oi = i
     white, i = match_whitespace(i, const)
     node, i = match_rule(rule, i, const)
     if node:
+        const['stack'].pop(-1)
+        logger.dec()
         return white + [node], i
+    elif i < len(const['text']):
+        node = const['text'][i]
+        logger.log('no match', i, rule, len(const['text']), [node])
 
-    if rule[0] == '!' or rule[1:] not in const['grammar'].rules:
-        set_error(const, 'Expected: %(rule)s, found %(name)s')
+    if i >= len(const['text']):
+        logger.log('what? out of input',len(const['text']),i)
+        set_error(const, i, rule, 'Ran out of input')
+        const['stack'].pop(-1)
+        logger.dec()
         return [], oi
+    if rule[0] == '!' or rule[1:] not in const['grammar'].rules:
+        set_error(const, i, rule)
+        logger.log('nope. wanted "%s" got "%s"' % (rule[1:],const['text'][i]))
+        const['stack'].pop(-1)
+        logger.dec()
+        return [], oi
+        
 
     name = rule[1:]
     node = const['text'][i]
     for o, option in enumerate(const['grammar'].rules[name]):
         if node in const['grammar'].firsts[name][o]:
-            node, i = parse_option(rule, i, option, const)
-            if node:
-                return white + [node], i
+            #logger.log(const['grammar'].firsts[name][o], node)
+            logger.log('first good',[node],rule)
+            result, i = parse_option(rule, i, option, const)
+            if result:
+                const['stack'].pop(-1)
+                logger.dec()
+                return white + [result], i
+    set_error(const,i,rule,'No matches found for rule "%s" on input "%s"' % (rule, node))
+    #if debug:
+    #    print const['grammar'].firsts[name]
+    const['stack'].pop(-1)
+    logger.dec()
     return [], oi
 
 def parse_option(rule, i, option, const):
@@ -89,7 +134,7 @@ def parse_option(rule, i, option, const):
     oi = i
     ppos = const['pos'][:]
 
-    node = Node(rule, i)
+    node = Node(rule[1:], i)
     node.pos = const['pos']
 
     olen = len(option)
@@ -99,7 +144,7 @@ def parse_option(rule, i, option, const):
         if o < olen - 1: # check repeaters
             if option[o+1] == '+':
                 nodes, i = parse_rule(option[o], i, const)
-                if not result:
+                if not nodes:
                     const['pos'] = ppos
                     return False, oi
                 node.add(nodes)
@@ -115,12 +160,13 @@ def parse_option(rule, i, option, const):
                             node.children += result.children
                             return node, i
                     nodes, i = parse_rule(option[o], i, const)
-                    if not result:break
+                    if not nodes:
+                        break
                     node.add(nodes)
                 o += 2
                 continue
             elif option[o+1] in ':?':
-                nodes, i = parse_rule(option[o], i, const)
+                nodes, ni = parse_rule(option[o], i, const)
                 if not nodes:
                     if option[o+1] == '?':
                         o += 2
@@ -129,6 +175,7 @@ def parse_option(rule, i, option, const):
                     return False, oi
                 if option[o+1] != ':':
                     node.add(nodes)
+                    i = ni
                 o += 2
                 continue
         if option[o] == rule:
@@ -136,20 +183,56 @@ def parse_option(rule, i, option, const):
         nodes, i = parse_rule(option[o], i, const)
         #if not result:
         #    set_error(const, 'Expected
-        if not result:
+        if not nodes:
             const['pos'] = ppos
             return False, oi
         node.add(nodes)
         o += 1
     return node, i
 
+def set_error(const, i, rule, message = None):
+    if message is None:
+        message = 'Found "%s", expected "%s"' % (const['text'][i], rule[1:])
+        message += '\n' + ''.join(str(a) for a in const['text'][i-10:i])
+    if i > const['error']['i']:
+        const['error'] = {'i':i, 'pos':const['pos'],
+                'stack':const['stack'][:],
+                'message':message}
+
+import sys
+
 def parse(text, grammar):
-    const = {'pos':[0,0],'text':text,'error':{},'grammar':grammar}
+    const = {'pos':[0,0],'ignore':('whites','comment'),'text':text,'stack':[],'error':{'i':0},'grammar':grammar}
     nodes, i = parse_rule('@start', 0, const)
+
     if not nodes:
-        print 'error'
-    print 'ya'
-    print nodes
+        print>>sys.stderr, 'Parsing Aborted'
+        print
+        if const['error'] == {'i':0}:
+            print>>sys.stderr, '    Strange error...'
+        else:
+            print>>sys.stderr, '    Error found at %s: %s' % (const['error']['pos'],
+                    const['error']['message'])
+            print>>sys.stderr, '    stack:',const['error']['stack']
+        sys.exit(1)
+
+    elif i < len(text) - 1:
+        print>>sys.stderr, 'Not everything was parsed: %d out of %d items' % (i, len(text))
+        print
+        if const['error'] == {'i':0}:
+            print>>sys.stderr, '    Strange error...'
+        else:
+            print>>sys.stderr, '    Error found at %s: %s' % (const['error']['pos'],
+                    const['error']['message'])
+            print>>sys.stderr, '    stack:',const['error']['stack']
+        sys.exit(1)
+
+    root = nodes[-1]
+    for node in nodes[:-1]:
+        node.parent = root
+    root.children = nodes[:-1] + root.children
+    
+    return root, i, const
 
 
 

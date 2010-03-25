@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-import parser
+import refresh as parser
 from node import Node
 
 def parse(text, lang, junk = ()):
-    node = parser.parse(text, lang.tokens)
-    tokens = tuple(t for t in node.tokens() if t.name not in junk)
-    full = parser.parse(tokens, lang.main)
-    full.childrenize()
-    return tokens,full
+    root, i, const = parser.parse(text, lang.tokens)
+    tokens = list(node.children[0] for node in root.find('token'))
+    #parser.debug = 1
+    root, i, const = parser.parse(tokens, lang.main)
+    return root
 
 # vim: et sw=4 sts=4

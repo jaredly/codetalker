@@ -13,6 +13,8 @@ class RuleFirst:
         self.name = name
 
     def __eq__(self, other):
+        if hasattr(other, 'name') and other.name == self.name:
+            return True
         if type(other) == tuple and len(other)==1 and other[0]==self.name:
             return True
         return NotImplemented

@@ -3,10 +3,13 @@
 import codetalker
 from codetalker.bnf import c
 
-if __name__=='__main__':
-    text = open('test/hanoi.c').read()
+import os,sys
+BASE = os.path.dirname(__file__)
+
+def main():
+    text = open(os.path.join(BASE,'..','test','hanoi.c')).read()
     r = codetalker.parse(text, c)
-    [w.remove() for w in r.gETN('comment')]
+    '''[w.remove() for w in r.gETN('comment')]
     for w in r.gETN('whites'):
         if '\n' not in str(w):
             w.remove()
@@ -17,8 +20,12 @@ if __name__=='__main__':
         next = word.nextNode()
         if str(next)[0].isalnum():
             codetalker.Node('whites',-1,False,[' ']).appendAfter(word)
+            '''
     print r
+    return r
 
+if __name__=='__main__':
+    main()
 
 
 # vim: et sw=4 sts=4
