@@ -7,17 +7,14 @@ Here's how simple it is::
 
     import codetalker
     from codetalker.bnf import c
-    
     text = open('myfile.c').read()
     root = codetalker.parse(text, c)
     print root ## this print your code back verbatim
-
     # say you want to remove all whitespace
     whitespace = root.getElementsByTagName('whites')
     for node in whitespace:
         node.remove()
     print root
-
     # or just look at the comments
     comments = root.getElementsByTagName('comment')
     for node in comments:
@@ -44,6 +41,7 @@ Examples
 I currently have one working and one non-working example ;)
 
 To prettyfy some C code, type::
+
     python examples/c.py test/hanoi.c
 
 And the json parser (examples/json.py) is not working ATM (it was before, but
