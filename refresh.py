@@ -64,7 +64,7 @@ def match_rule(rule, i, const):
                 if text == str(node):
                     return node.clone(), i+1
                 new = node.clone()
-                new.children = [text]
+                new.children = [TextNode(text,i)]
                 return new, i+1
         elif const['text'][i:i+len(literal)] == literal:
             logger.log('match!',rule)

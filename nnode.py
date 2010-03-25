@@ -14,7 +14,7 @@ class Node:
         return self._str
 
     def __repr__(self):
-        return '<Node name="%s" children="%d">' % (self.name, len(self.children))
+        return '<Node name="%s" children="%d" at="%s">' % (self.name, len(self.children), self.pos)
 
     def clone(self):
         new = Node(self.name, self.index, self.children, self.pos)
@@ -33,23 +33,37 @@ class Node:
 
     def remove(self):
         if self.parent and self in self.parent.children:
-            self.parent.children.remove(self)
-            self.parent = None
+            self.parent.removeChild(self)
         else:
             raise Exception,'I have no parents'
+
+    def dirty(self):
+        self._str = None
+        if self.parent:
+            self.parent.dirty()
 
     def appendAfter(self, node):
         i = self.parent.children.index(self)
         self.parent.insert(i+1, node)
 
+    def removeChild(self, child):
+        self.children.remove(child)
+        child.parent = None
+        self.dirty()
+
     def insert(self, i, node):
         node.parent = self
         self.children.insert(i, node)
-        self._str = None
+        self.dirty()
 
     def insertBefore(self, node):
         i = self.parent.children.index(self)
         self.parent.insert(i-1, node)
+
+    def lineage(self):
+        if self.parent:
+            return self.parent.lineage() + ' > ' + self.name
+        return self.name
 
     def find(self, name):
         if name[0] == '!':
@@ -66,6 +80,30 @@ class Node:
         for child in self.children:
             for one in child.walk(strings):
                 yield one
+
+    def nextNode(self):
+        if not self.parent:
+            return None
+        i = self.parent.children.index(self)
+        if i < len(self.parent.children) - 1:
+            return self.parent.children[i+1]
+        if self.parent:
+            next = self.parent.nextNode()
+            if next:
+                return next.children[-1]
+        return None
+
+    def prevNode(self):
+        if not self.parent:
+            return None
+        i = self.parent.children.index(self)
+        if i > 0:
+            return self.parent.children[i-1]
+        if self.parent:
+            prev = self.parent.prevNode()
+            if prev:
+                return prev.children[-1]
+        return None
 
     def __eq__(self, other):
         if type(other) == str:
