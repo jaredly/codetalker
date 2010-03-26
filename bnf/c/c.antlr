@@ -369,7 +369,7 @@ expression_statement
     ;
 
 selection_statement
-    : 'if' '(' expression ')' statement (options {k=1; backtrack=false;}:'else' statement)?
+    : 'if' '(' expression ')' statement ('else' statement)?
     | 'switch' '(' expression ')' statement
     ;
 
@@ -457,7 +457,7 @@ WS  :  (' '|'\r'|'\t'|'\u000C'|'\n') {$channel=HIDDEN;}
     ;
 
 COMMENT
-    :   '/*' ( options {greedy=false;} : . )* '*/' {$channel=HIDDEN;}
+    :   '/*' ('0'..'9'|'a'..'z'|'A'..'Z')* '*/' {$channel=HIDDEN;}
     ;
 
 LINE_COMMENT
