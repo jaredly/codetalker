@@ -194,7 +194,7 @@ def set_error(const, i, rule, message = None):
     if message is None:
         message = 'Found "%s", expected "%s"' % (const['text'][i], rule[1:])
         message += '\n' + ''.join(str(a) for a in const['text'][i-10:i])
-    if i > const['error']['i']:
+    if i >= const['error']['i']:
         const['error'] = {'i':i, 'pos':const['pos'],
                 'stack':const['stack'][:],
                 'message':message}

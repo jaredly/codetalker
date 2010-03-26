@@ -13,10 +13,6 @@
 %start file
 %%
 
-start
-        : file
-        ;
-
 primary_expr
 	: identifier
 	| CONSTANT
@@ -160,10 +156,10 @@ declaration
 	;
 
 declaration_specifiers
-	: storage_class_specifier declaration_specifiers
-	| storage_class_specifier
-	| type_specifier declaration_specifiers
+	: storage_class_specifier
+	| storage_class_specifier declaration_specifiers
 	| type_specifier
+	| type_specifier declaration_specifiers
 	;
 
 init_declarator_list
@@ -249,8 +245,8 @@ enumerator
 	;
 
 declarator
-	: pointer declarator2
-	| declarator2
+	: declarator2
+	| pointer declarator2
 	;
 
 declarator2
@@ -400,7 +396,7 @@ jump_statement
 
 file
 	: external_definition
-	| external_definition file 
+	| file external_definition
 	;
 
 external_definition
@@ -421,3 +417,16 @@ function_body
 identifier
 	: IDENTIFIER
 	;
+%%
+
+#include <stdio.h>
+
+extern char yytext[];
+extern int column;
+
+yyerror(s)
+char *s;
+{
+	fflush(stdout);
+	printf("\n%*s\n%*s\n", column, "^", column, s);
+}

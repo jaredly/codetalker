@@ -1,0 +1,12 @@
+<token> : <preproc>|<string>|<char_const>|<number>|<reserved_>|<id>|<uoperator>|<aoperator>|<boperator>|<op_punc>|<symbol>|<comment>
+
+<string>:<dstring>
+<char_const>:''<char>''|'' '\' <char> ''
+
+<comment>:'//'<nolb>*'\n'|'/*'<char>*?'*/'
+<preproc>  : '#'<nolb>*'\n'
+
+<reserved> : 'auto'|'if'|'break'|'int'|'case'|'long'|'char'|'register'|'continue'|'return'|'default'|'short'|'do'|'sizeof'|'double'|'static'|'else'|'struct'|'entry'|'switch'|'extern'|'typedef'|'float'|'union'|'for'|'unsigned'|'goto'|'while'|'also'|'in'|'modern'|'implementations':|'enum'|'void'|'const'|'signed'|'volatile'
+
+
+<op_punc> | '{'|'}'|'['|']'|'('|')'|'.'|','|':'|';'|'+'|'-'|'*'|'/'|'%'|'&'|'|'|'^'|'!'|'~'|'='|'<'|'>'|'?'|'++'|'--'|'&&'|'||'|'<<'|'>>'|'=='|'!='|'<='|'>='|'+='|'-='|'*='|'/='|'%='|'&='|'|='|'^='|'<<='|'>>='|'->'

@@ -1,0 +1,225 @@
+## Operators
+
+# Precedence
+#  postfix  =  ID/CONST/STRING/(expr) ( [expr] | (args) | . id | -> id | ++ | -- ) *
+#   
+
+## My try
+
+primary-expression:
+    identifier
+    constant
+    string-literal
+    '(' expression ')'
+
+expression:
+    throw-ex expression-tail*
+
+expression-tail:
+    ',' throw-ex
+
+throw-ex:
+    'throw'? assignment-ex
+
+assignment-ex:
+    assignment-prex* ternary-ex
+
+assignemnt-prex:
+    lvalue assignemnt-op
+
+ternary-ex:
+    or-ex ternary-tail*
+
+ternary-tail:
+    '?' or-ex ':' or-ex
+
+or-ex:
+    and-ex or-tail*
+
+or-tail:
+    '||' and-ex
+
+and-ex:
+    bit-or-ex and-tail*
+
+and-tail:
+    '&&' bit-or-ex
+
+bit-or-ex:
+     bit-xor-ex bit-or-tail*
+
+bit-or-tail:
+    '|' bit-xor-ex
+
+bit-xor-ex:
+    bit-and-ex bit-xor-tail*
+
+bit-xor-tail:
+    '^' bit-and-ex
+
+bit-and-ex:
+    equal-ex bit-and-tail*
+
+bit-and-tail:
+    '&' equal-ex
+
+equal-ex:
+    relation-ex equal-tail*
+
+equal-tail:
+    '==' relation-ex
+    '!=' relation-ex
+
+relation-ex:
+    shift-ex relation-tail*
+
+relation-tail:
+    relation-op shift-ex
+
+relation-op: one of
+    < <= > >=
+
+shift-ex:
+    add-sub-ex shift-tail*
+
+shift-tail:
+    '<<' add-sub-ex
+    '>>' add-sub-ex
+
+add-sub-ex:
+    mul-ex add-sub-tail*
+
+add-sub-tail:
+    '+' mul-ex
+    '-' mul-ex
+
+mul-ex:
+    point-member-ex mul-tail*
+
+mul-tail:
+    mul-op point-member-ex
+
+mul-op: one of
+    * / %
+
+point-member-ex:
+    unary-ex point-member-tail*
+
+point-member-tail:
+    '.*' unary-ex
+    '->*' unary-ex
+
+unary-ex:
+    unary-op* postfix-ex
+
+unary-op: one of
+    ++ -- + - ! ~ * & sizeof new[] new delete[] delete
+
+unary-op: add
+    '(' type-name ')'
+
+
+
+    
+
+primary-expression: 
+    identifier 
+    constant
+    string-literal 
+    '(' expression ')'
+
+expression: 
+    assignment-expression expression-tail*
+
+expression-tail:
+    ',' assignment-expression
+
+constant-expression: 
+    conditional-expression
+
+conditional-expression: 
+    logical-OR-expression '?' expression ':' conditional-expression
+    logical-OR-expression
+
+assignment-expression: 
+    unary-expression assignment-operator assignment-expression
+    conditional-expression
+
+postfix-expression: 
+    primary-expression postfix-tail*
+
+postfix-tail:
+    '[' expression ']' 
+    '(' argument-expression-list? ')' 
+    '.' identifier
+    '–>' identifier 
+    '++'
+    '--'
+
+argument-expression-list: 
+    assignment-expression ',' argument-expression-list 
+    assignment-expression
+
+unary-expression: 
+    'sizeof' '(' type-name ')'
+    unary-operator+ postfix-expression
+    cast-expression
+    postfix-expression 
+
+unary-operator: one of 
+    ++ -- & * + – ~ ! sizeof
+
+cast-expression: 
+    cast-expression-prex+ cast-expression
+
+cast-expression-prex:
+    '(' type-name ')' 
+
+multiplicative-expression: 
+    cast-expression '*' multiplicative-expression 
+    cast-expression '/' multiplicative-expression 
+    cast-expression '%' multiplicative-expression 
+    cast-expression 
+
+additive-expression: 
+    multiplicative-expression '+' additive-expression 
+    multiplicative-expression '-' additive-expression 
+    multiplicative-expression
+
+shift-expression: 
+    additive-expression '<<' shift-expression 
+    additive-expression '>>' shift-expression 
+    additive-expression 
+
+relational-expression: 
+    shift-expression '<=' relational-expression 
+    shift-expression '>=' relational-expression 
+    shift-expression '<' relational-expression 
+    shift-expression '>' relational-expression 
+    shift-expression 
+
+equality-expression: 
+    relational-expression '==' equality-expression 
+    relational-expression '!=' equality-expression 
+    relational-expression 
+
+AND-expression: 
+    equality-expression '&' AND-expression 
+    equality-expression 
+
+exclusive-OR-expression: 
+    AND-expression '^' exclusive-OR-expression 
+    AND-expression 
+
+inclusive-OR-expression: 
+    exclusive-OR-expression '|' inclusive-OR-expression 
+    exclusive-OR-expression 
+
+logical-AND-expression: 
+    inclusive-OR-expression '&&' logical-AND-expression 
+    inclusive-OR-expression 
+
+logical-OR-expression: 
+    logical-AND-expression '||' logical-OR-expression 
+    logical-AND-expression 
+ 
