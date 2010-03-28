@@ -20,6 +20,20 @@ import re
 import sys
 import string
 
+def output_grammar(gmr):
+    txt = ''
+    for rule,options in sorted(gmr.rules.iteritems()):
+        txt += '%s:\n'
+        for option in options:
+            txt += '    '
+            for child in option:
+                if child[0] == '@':
+                    txt += child[1:]+' '
+                elif child[0] == '!':
+                    txt += "'%s'" % escape(child[0][1:])
+
+
+
 def splitsections(text):
     '''Sections look like:
         ["### header", [startline, decl...]]
@@ -112,7 +126,7 @@ class Grammar(grammar.Grammar):
                 items = body[0].split(' ')
             else:
                 items = body
-            items = list(("!%s" % x.strip().replace('\\','\\\\').replace("'","\\'"),) for x in items if x.strip())
+            items = list(("!%s" % x.strip().decode('string_escape'),) for x in items if x.strip())
             if 'sub' in options:
                 for it in items:
                     if it not in choices:
@@ -151,7 +165,6 @@ def rulesplit(line):
 
     >>> rulesplit
     '''
-    line = line.replace('\xc2\xa0',' ')
     rx = r"([\w\-]+|\s|'(?:\\'|[^']|)*'|\*|\+|:|\?|\[(?:[^\]]|\\\]])+\])"
     parts = re.findall(rx, line)
     if ''.join(parts) != line:
@@ -172,7 +185,7 @@ def rulesplit(line):
         if not part.strip():continue
         if part[0] == "'":
             part = part[1:-1]
-            ret.append('!'+part.replace('\\\'','\'').replace('\\n','\n').replace('\\t','\t').replace('\\\\','\\'))
+            ret.append('!'+part.decode('string_escape'))
         elif part in '*+:?':
             ret.append(part)
         else:

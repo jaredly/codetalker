@@ -1,14 +1,39 @@
 
-<start>  : <value>
-<value>  : <number>|<string>|<list>|<object>|<tfn>
-<tfn>    : 'true'|'false'|'null'
-<list>   : '['<list contents>']'
-<object> : '{'<object contents>'}'
+start:
+    value
 
-<list contents>   : <value><list tail>*|e
-<list tail>       : ','<value>|','
-<object contents> : <value>':'<value><object tail>*|e
-<object tail>     : ','<value>':'<value>|','
+value:
+    number
+    string-literal
+    list
+    object
+    tfn
 
-<ignorewhite> : <wchar>|e
-<wchar> : ' '|'\t'|'\n'
+number:
+    real-literal
+    integer-literal
+
+tfn: one of
+    true
+    false
+    null
+
+list:
+    '[' list-contents? ']'
+
+list-constents:
+    value list-tail*
+
+list-tail:
+    ',' value?
+
+object:
+    '{' object-contents? '}'
+
+object-contents:
+    value ':' value object-tail*
+
+object-tail:
+    ',' value ':' value
+    ','
+

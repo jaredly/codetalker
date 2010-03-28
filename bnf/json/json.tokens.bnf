@@ -1,0 +1,14 @@
+string-literal: replace
+    '\'' sstring-content* '\''
+    '"' dstring-content* '"'
+
+sstring-content:
+    [^'\n]
+    '\\\''
+    '\\\n'
+
+dstring-content:
+    [^"\n]
+    '\\"'
+    '\\\n'
+

@@ -3,13 +3,6 @@
 import string
 import grammar
 
-regex = '''
-    (?<rule>[\w_]+)|
-    (?<literal>'([^']|\\')*')|
-    (?<notchars>~\([^\)]+\))|
-    (?<repeat>\*\+\?)
-    '''
-
 def match(lchar,rchar,line,i,strings=True):
     depth = 1
     start = i
