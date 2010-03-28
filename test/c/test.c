@@ -1,4 +1,4 @@
-int main(){
-    int a,b;
-    a & b = 3;
+
+int plus(int x){
+    return x*2;
 }
