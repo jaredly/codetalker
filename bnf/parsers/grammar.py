@@ -164,10 +164,9 @@ class Grammar:
         ret = []
         kids = set()
         for line in self.rules[rule]:
-            for child in line:
-                if child[0]=='@':
-                    kids.add(child[1:])
-                    break
+            if line[0][0]=='@':
+                kids.add(line[0][1:])
+                break
 
         for child in kids:
             res = self.check_circular(child, stack+(rule,))
