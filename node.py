@@ -124,6 +124,9 @@ class TextNode(Node):
     def __init__(self, string, i, pos=(0,0)):
         Node.__init__(self, None, i, children=[string], pos=pos)
 
+    def clone(self):
+        return TextNode(self.children[0], self.index, self.pos)
+
     def add(self, children):
         self.children[0] += ''.join(children)
 
