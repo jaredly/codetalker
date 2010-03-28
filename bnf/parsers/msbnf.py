@@ -44,7 +44,7 @@ def splitsections(text):
     type: one of
         comment, rule'''
 
-    sections = []
+    sections = [["### Global", [0]]]
     decl = None
     for i,line in enumerate(text.split('\n')):
         if not line.strip():continue
@@ -126,7 +126,7 @@ class Grammar(grammar.Grammar):
                 items = body[0].split(' ')
             else:
                 items = body
-            items = list(("!%s" % x.strip().decode('string_escape'),) for x in items if x.strip())
+            items = list(("!%s" % x.strip(),) for x in items if x.strip())
             if 'sub' in options:
                 for it in items:
                     if it not in choices:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import refresh as parser
+import parser
 from node import Node
 
 def parse(text, lang, junk = ()):

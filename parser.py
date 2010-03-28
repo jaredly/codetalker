@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from nnode import Node, TextNode
+from node import Node, TextNode
 
 debug = 0
 
@@ -181,8 +181,6 @@ def parse_option(rule, i, option, const):
         if option[o] == rule:
             pass # o+=1;continue ? that eliminates recursion....right?
         nodes, i = parse_rule(option[o], i, const)
-        #if not result:
-        #    set_error(const, 'Expected
         if not nodes:
             const['pos'] = ppos
             return False, oi
@@ -240,6 +238,5 @@ def parse(text, grammar):
 
 
     
-
 
 # vim: et sw=4 sts=4
