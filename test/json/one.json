@@ -1,0 +1,5 @@
+{1:"hello","party":23,
+"manhatten yeah":'stoo',
+"kids":["green","red",
+{"good":false},null],
+"embedded":{1:2,2:3,3:5,5:8}}
