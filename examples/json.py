@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+'''Json.py
+
+An example included in the package "codetalker". Can parse any json.
+
+to use::
+    ~: python examples/json.py some/file.json
+
+'''
+
 import codetalker
 from codetalker.bnf import json
 from codetalker.node import TextNode
