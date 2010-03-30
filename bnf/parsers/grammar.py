@@ -55,6 +55,7 @@ class Grammar:
         self.extends = extends
         self.tokens = tokens
         self.debug = False
+        self.start = 'start'
         self.parse()
 
     def loadrules(self):
@@ -66,14 +67,14 @@ class Grammar:
         if self.extends:
             self.rules = self.extends.rules.copy()
         self.lines = {}
-        if self.filename.endswith('er.txt'):
-            self.debug = True
+        #if self.filename.endswith('er.txt'):
+        #    self.debug = True
         self.loadrules()
 
         errors = self.test_reachability()
         errors += self.test_ordering()
         errors += self.test_almost_dup()
-        reach = self.check_circular('start')
+        reach = self.check_circular(self.start)
         if reach:
             print 'front-end recursion found:',reach
             sys.exit(0)
@@ -118,7 +119,7 @@ class Grammar:
         return errors
 
     def test_reachability(self):
-        at = 'start'
+        at = self.start
         found = set([at])
 #        for rule in self.rules:
 #            if rule in found:continue
@@ -155,7 +156,9 @@ class Grammar:
                     errors += self.crawl_reach(child[1:], found)
         return errors
 
-    def check_circular(self, rule='start', stack = ()):
+    def check_circular(self, rule=None, stack = ()):
+        if rule is None:
+            rule = self.start
         if rule in stack:
             raise Exception,'recursion! %s '%(stack+(rule,),)
             return stack+(rule,)

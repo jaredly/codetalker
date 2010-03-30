@@ -32,8 +32,6 @@ def output_grammar(gmr):
                 elif child[0] == '!':
                     txt += "'%s'" % escape(child[0][1:])
 
-
-
 def splitsections(text):
     '''Sections look like:
         ["### header", [startline, decl...]]
@@ -45,6 +43,7 @@ def splitsections(text):
         comment, rule'''
 
     sections = [["### Global", [0]]]
+    special = {}
     decl = None
     for i,line in enumerate(text.split('\n')):
         if not line.strip():continue
@@ -66,20 +65,25 @@ def splitsections(text):
                 decl.append(line)
             else:
                 raise Exception,'orphaned rule-item at line %d: %s' % (i, line)
+        elif line.startswith('@'):
+            name, val = line[1:].split(':')
+            special[name.strip()] = val.strip()
         else:
             if decl:
                 sections[-1][1].append(decl)
             decl = ['rule',i,line]
     if decl:
         sections[-1][1].append(decl)
-    return sections
+    return sections, special
 
 class BNFError(Exception):
     pass
 
 class Grammar(grammar.Grammar):
     def loadrules(self):
-        sections = splitsections(self.original)
+        sections, special = splitsections(self.original)
+        if special.has_key('start'):
+            self.start = special['start']
         for section in sections:
             for decl in section[1][1:]:
                 if decl[0] == 'comment':
