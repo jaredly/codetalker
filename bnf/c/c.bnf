@@ -1,0 +1,553 @@
+character-literal:
+    '\'' character-literal-1 '\''
+
+character-literal-0:
+    [0-9a-zA-Z!-&(-/:-@\[\]-`{-~ \t\n\r\x0b\x0c]
+
+character-literal-1:
+    EscapeSequence
+    character-literal-0
+
+DECIMAL_LITERAL:
+    DECIMAL_LITERAL-2 IntegerTypeSuffix?
+
+DECIMAL_LITERAL-0:
+    [1-9]
+
+DECIMAL_LITERAL-1:
+    [0-9]
+
+DECIMAL_LITERAL-2:
+    '0'
+    DECIMAL_LITERAL-0 DECIMAL_LITERAL-1*
+
+EscapeSequence:
+    '\\' EscapeSequence-0
+    OctalEscape
+
+EscapeSequence-0: one of
+    b t n f r " ' \
+
+Exponent:
+    Exponent-0 Exponent-1? Exponent-2+
+
+Exponent-0:
+    [eE]
+
+Exponent-1:
+    [+\-]
+
+Exponent-2:
+    [0-9]
+
+FLOATING_POINT_LITERAL:
+    DECIMAL_LITERAL-1+ '.' DECIMAL_LITERAL-1* Exponent? FloatTypeSuffix?
+    '.' DECIMAL_LITERAL-1+ Exponent? FloatTypeSuffix?
+    DECIMAL_LITERAL-1+ Exponent FloatTypeSuffix?
+    DECIMAL_LITERAL-1+ Exponent? FloatTypeSuffix
+
+FloatTypeSuffix:
+    FloatTypeSuffix-0
+
+FloatTypeSuffix-0:
+    [fFdD]
+
+HEX_LITERAL:
+    '0' HEX_LITERAL-0 HexDigit+ IntegerTypeSuffix?
+
+HEX_LITERAL-0:
+    [xX]
+
+HexDigit:
+    HexDigit-0
+
+HexDigit-0:
+    [0-9a-fA-F]
+
+#identifier:
+#    LETTER identifier-0*
+
+#identifier-0:
+#    LETTER
+#    '0'
+#    '1'
+#    '2'
+#    '3'
+#    '4'
+#    '5'
+#    '6'
+#    '7'
+#    '8'
+#    '9'
+
+IntegerTypeSuffix:
+    IntegerTypeSuffix-0? IntegerTypeSuffix-1
+    IntegerTypeSuffix-0 IntegerTypeSuffix-1?
+
+IntegerTypeSuffix-0:
+    [uU]
+
+IntegerTypeSuffix-1:
+    [lL]
+
+LETTER:
+    [$A-Za-z_]
+
+LINE_COMMAND:
+    '#' LINE_COMMENT-0* '\r'? '\n'
+
+LINE_COMMENT:
+    '//' LINE_COMMENT-0* '\r'? '\n'
+
+LINE_COMMENT-0:
+    [0-9a-zA-Z!-/:-@\[-`{-~ \t\x0b\x0c]
+
+OCTAL_LITERAL:
+    '0' OCTAL_LITERAL-0+ IntegerTypeSuffix?
+
+OCTAL_LITERAL-0:
+    [0-7]
+
+OctalEscape:
+    '\\' OctalEscape-0 OCTAL_LITERAL-0 OCTAL_LITERAL-0
+    '\\' OCTAL_LITERAL-0 OCTAL_LITERAL-0
+    '\\' OCTAL_LITERAL-0
+
+OctalEscape-0:
+    [0-3]
+
+string-literal:
+    '"' string-literal-1* '"'
+
+string-literal-0:
+    [0-9a-zA-Z!#-/:-@\[\]-`{-~ \t\n\r\x0b\x0c]
+
+string-literal-1:
+    EscapeSequence
+    string-literal-0
+
+UnicodeEscape:
+    '\\' 'u' HexDigit HexDigit HexDigit HexDigit
+
+WS:
+    '/*' WS-0* '*/'
+
+WS-0:
+    [0-9a-zA-Z]
+
+abstract_declarator:
+    pointer direct_abstract_declarator?
+    direct_abstract_declarator
+
+abstract_declarator_suffix:
+    '[' ']'
+    '[' constant_expression ']'
+    '(' ')'
+    '(' parameter_type_list ')'
+
+additive_expression:
+    additive_expression-0 additive_expression-1*
+
+additive_expression-0:
+    multiplicative_expression
+
+additive_expression-1:
+    '+' multiplicative_expression
+    '-' multiplicative_expression
+
+and_expression:
+    equality_expression and_expression-0*
+
+and_expression-0:
+    '&' equality_expression
+
+argument_expression_list:
+    assignment_expression argument_expression_list-0*
+
+argument_expression_list-0:
+    ',' assignment_expression
+
+assignment_expression:
+    lvalue assignment_operator assignment_expression
+    conditional_expression
+
+assignment_operator: one of
+    = *= /= %= += -= <<= >>= &= ^= |=
+
+cast_expression:
+    '(' type_name ')' cast_expression
+    unary_expression
+
+compound_statement:
+    '{' declaration* statement_list? '}'
+
+conditional_expression:
+    logical_or_expression conditional_expression-0?
+
+conditional_expression-0:
+    '?' expression ':' conditional_expression
+
+constant:
+    HEX_LITERAL
+    OCTAL_LITERAL
+    DECIMAL_LITERAL
+    character-literal
+    string-literal
+    FLOATING_POINT_LITERAL
+
+constant_expression:
+    conditional_expression
+
+declaration:
+    'typedef' declaration_specifiers? init_declarator_list ';'
+    declaration_specifiers init_declarator_list? ';'
+
+declaration_specifiers:
+    declaration_specifiers-0+
+
+declaration_specifiers-0:
+    storage_class_specifier
+    type_specifier
+    type_qualifier
+
+declarator:
+    pointer? direct_declarator
+    pointer
+
+declarator_suffix:
+    '[' constant_expression ']'
+    '[' ']'
+    '(' parameter_type_list ')'
+    '(' identifier_list ')'
+    '(' ')'
+
+direct_abstract_declarator:
+    direct_abstract_declarator-0 abstract_declarator_suffix*
+
+direct_abstract_declarator-0:
+    '(' abstract_declarator ')'
+    abstract_declarator_suffix
+
+direct_declarator:
+    direct_declarator-0 declarator_suffix*
+
+direct_declarator-0:
+    identifier
+    '(' declarator ')'
+
+enum_specifier:
+    'enum' '{' enumerator_list '}'
+    'enum' identifier '{' enumerator_list '}'
+    'enum' identifier
+
+enumerator:
+    identifier enumerator-0?
+
+enumerator-0:
+    '=' constant_expression
+
+enumerator_list:
+    enumerator enumerator_list-0*
+
+enumerator_list-0:
+    ',' enumerator
+
+equality_expression:
+    relational_expression equality_expression-1*
+
+equality_expression-0: one of
+    == !=
+
+equality_expression-1:
+    equality_expression-0 relational_expression
+
+exclusive_or_expression:
+    and_expression exclusive_or_expression-0*
+
+exclusive_or_expression-0:
+    '^' and_expression
+
+expression:
+    assignment_expression argument_expression_list-0*
+
+expression_statement:
+    ';'
+    expression ';'
+
+external_declaration:
+    external_declaration-0*
+
+external_declaration-0:
+    pp-line
+    function_definition
+    declaration
+
+function_definition:
+    return-type member-name '(' formal-parameter-list? ')' compound_statement
+
+return-type:
+    type_specifier
+
+member-name:
+    identifier
+
+formal-parameter-list:
+    fixed-parameters formal-p-right?
+#    parameter-array
+
+formal-p-right:
+#    ','   parameter-array
+
+fixed-parameters:
+    fixed-parameter fixed-parameter-tail*
+
+fixed-parameter-tail:
+    ','   fixed-parameter
+
+fixed-parameter:
+    parameter-modifier?   type_specifier   identifier arraybit?
+
+arraybit:
+    '[' ']'
+
+parameter-modifier: one of
+    ref
+    out
+    const
+
+identifier_list:
+    identifier identifier_list-0*
+
+identifier_list-0:
+    ',' identifier
+
+inclusive_or_expression:
+    exclusive_or_expression inclusive_or_expression-0*
+
+inclusive_or_expression-0:
+    '|' exclusive_or_expression
+
+init_declarator:
+    declarator init_declarator-0?
+
+init_declarator-0:
+    '=' initializer
+
+init_declarator_list:
+    init_declarator init_declarator_list-0*
+
+init_declarator_list-0:
+    ',' init_declarator
+
+initializer:
+    assignment_expression
+    '{' initializer_list ','? '}'
+
+initializer_list:
+    initializer initializer_list-0*
+
+initializer_list-0:
+    ',' initializer
+
+iteration_statement:
+    'while' '(' expression ')' statement
+    'do' statement 'while' '(' expression ')' ';'
+    'for' '(' expression_statement expression_statement expression? ')' statement
+
+jump_statement:
+    'goto' identifier ';'
+    'continue' ';'
+    'break' ';'
+    'return' ';'
+    'return' expression ';'
+
+labeled_statement:
+    identifier ':' statement
+    'case' constant_expression ':' statement
+    'default' ':' statement
+
+logical_and_expression:
+    inclusive_or_expression logical_and_expression-0*
+
+logical_and_expression-0:
+    '&&' inclusive_or_expression
+
+logical_or_expression:
+    logical_and_expression logical_or_expression-0*
+
+logical_or_expression-0:
+    '||' logical_and_expression
+
+lvalue:
+    unary_expression
+
+multiplicative_expression:
+    multiplicative_expression-0 multiplicative_expression-1*
+
+multiplicative_expression-0:
+    cast_expression
+
+multiplicative_expression-1:
+    '*' cast_expression
+    '/' cast_expression
+    '%' cast_expression
+
+parameter_declaration:
+    declaration_specifiers parameter_declaration-0*
+
+parameter_declaration-0:
+    declarator
+    abstract_declarator
+
+parameter_list:
+    parameter_declaration parameter_list-0*
+
+parameter_list-0:
+    ',' parameter_declaration
+
+parameter_type_list:
+    parameter_list parameter_type_list-0?
+
+parameter_type_list-0:
+    ',' '...'
+
+pointer:
+    '*' type_qualifier+ pointer?
+    '*' pointer
+    '*'
+
+postfix_expression:
+    primary_expression postfix_expression-0*
+
+postfix_expression-0:
+    '[' expression ']'
+    '(' ')'
+    '(' argument_expression_list ')'
+    '.' identifier
+    '->' identifier
+    '++'
+    '--'
+
+primary_expression:
+    identifier
+    constant
+    '(' expression ')'
+
+relational_expression:
+    shift_expression relational_expression-1*
+
+relational_expression-0: one of
+    < > <= >=
+
+relational_expression-1:
+    relational_expression-0 shift_expression
+
+selection_statement:
+    'if' '(' expression ')' statement selection_statement-0?
+    'switch' '(' expression ')' statement
+
+selection_statement-0:
+    'else' statement
+
+shift_expression:
+    additive_expression shift_expression-1*
+
+shift_expression-0: one of
+    << >>
+
+shift_expression-1:
+    shift_expression-0 additive_expression
+
+specifier_qualifier_list:
+    specifier_qualifier_list-0+
+
+specifier_qualifier_list-0:
+    type_qualifier
+    type_specifier
+
+start:
+    external_declaration
+
+statement:
+    labeled_statement
+    compound_statement
+    expression_statement
+    selection_statement
+    iteration_statement
+    jump_statement
+
+statement_list:
+    statement+
+
+storage_class_specifier: one of
+    extern
+    static
+    auto
+    register
+
+struct_declaration:
+    specifier_qualifier_list struct_declarator_list ';'
+
+struct_declaration_list:
+    struct_declaration+
+
+struct_declarator:
+    declarator struct_declarator-0?
+    ':' constant_expression
+
+struct_declarator-0:
+    ':' constant_expression
+
+struct_declarator_list:
+    struct_declarator struct_declarator_list-0*
+
+struct_declarator_list-0:
+    ',' struct_declarator
+
+struct_or_union: one of
+    struct
+    union
+
+struct_or_union_specifier:
+    struct_or_union identifier? '{' struct_declaration_list '}'
+    struct_or_union identifier
+
+type_id:
+    identifier
+
+type_name:
+    specifier_qualifier_list abstract_declarator?
+
+type_qualifier: one of
+    const
+    volatile
+
+type_specifier:
+    type_spec_sub '*'*
+
+type_spec_sub:
+    'void'
+    'char'
+    'short'
+    'int'
+    'long'
+    'float'
+    'double'
+    'signed'
+    'unsigned'
+    struct_or_union_specifier
+    enum_specifier
+    type_id
+
+unary_expression:
+    postfix_expression
+    '++' unary_expression
+    '--' unary_expression
+    unary_operator cast_expression
+    'sizeof' unary_expression
+    'sizeof' '(' type_name ')'
+
+unary_operator: one of
+    & * + - ~ !
+
+
