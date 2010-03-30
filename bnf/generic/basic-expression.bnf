@@ -1,0 +1,136 @@
+@start: expression
+
+## precedence rules
+
+expression:
+    assignment-ex
+
+assignment-ex:
+    assignment-pre? cond-ex
+
+assignment-pre:
+    unary-ex assignment-op
+
+cond-ex:
+    or-ex cond-ex-tail?
+
+cond-ex-tail:
+    '?' or-ex ':' or-ex
+
+or-ex:
+    and-ex or-ex-tail*
+
+or-ex-tail:
+    or-op and-ex
+
+and-ex:
+    bit-or-ex and-ex-tail*
+
+and-ex-tail:
+    and-op bit-or-ex
+
+bit-or-ex:
+    bit-xor-ex bit-or-tail*
+
+bit-or-tail:
+    bit-or-op bit-xor-ex
+
+bit-xor-ex:
+    bit-and-ex bit-xor-tail*
+
+bit-xor-tail:
+    bit-xor-op bit-and-ex
+
+bit-and-ex:
+    compare-ex bit-and-tail*
+
+bit-and-tail:
+    bit-and-op compare-ex
+
+compare-ex:
+    compare2-ex compare-tail*
+
+compare-tail:
+    compare-op compare2-ex
+
+compare2-ex:
+    shift-ex compare2-tail*
+
+compare2-tail:
+    compare2-op shift-ex
+
+shift-ex:
+    add-ex shift-tail*
+
+shift-tail:
+    shift-op add-ex
+
+add-ex:
+    mul-ex add-tail*
+
+add-tail:
+    add-op mul-ex
+
+mul-ex:
+    unary-op* atomic-ex
+
+atomic-ex:
+    '(' expression ')'
+    identifier post-op*
+    literal
+
+## operators
+
+or-op:
+    '||'
+
+and-op:
+    '&&'
+
+bit-or-op:
+    '|'
+
+bit-xor-op:
+    '^'
+
+bit-and-op:
+    '&'
+
+compare-op: one of
+    == !=
+
+compare2-op: one of
+    >= > <= <
+
+shift-op: one of
+    << >>
+
+add-op: one of
+    + -
+
+mul-op: one of
+    * / %
+
+unary-op:
+    '++'
+    '+'
+    '--'
+    '-'
+    '!'
+    '~'
+    '*'
+    '&'
+    'sizeof'
+    cast-op
+
+cast-op:
+    '(' type ')'
+
+post-op:
+    '(' argument-list? ')'
+    '[' expression ']'
+    '++'
+    '--'
+    '.' identifier
+    '->' identifier
+

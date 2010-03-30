@@ -1,0 +1,79 @@
+
+start:
+    external-declaration*
+
+external-declaration:
+    function
+    declaration
+
+## function stuff
+
+function:
+    declaration-specifier* declarator declaration* compound-statement
+
+compound-statement:
+    '{' declaration* statement* '}'
+
+declaration:
+    declaration-specifier* init-declarator-list? ';'
+
+expression:replace
+    assignment-ex expression-tail*
+
+expression-tail:
+    ',' assignment-ex
+
+declaration-specifier:
+    storage-class-specifier
+    type-specifier
+    type-quantifier
+
+type-qualifier: one of
+    const
+    volatile
+
+storage-class-specifier: one of
+    typedef
+    extern
+    static
+    auto
+    register
+
+type-specifier:
+    type-keyword
+    enum-specifier
+    struct-specifier
+    identifier
+
+type-keyword: one of
+    void
+    char
+    short
+    int
+    long
+    float
+    double
+    signed
+    unsigned
+
+declarator:
+    pointer* direct-declarator
+
+pointer:
+    '*' type-qualifier*
+
+direct-declarator:
+    direct-base direct-post*
+
+direct-base:
+    identifier
+    '(' declarator ')'
+
+direct-post:
+    '[' expression? ']'
+    '(' direct-contents? ')'
+
+direct-contents:
+    parameter-list
+    identifier-list
+
