@@ -11,8 +11,6 @@ BASE = os.path.dirname(__file__)
 def remove_whitespace(filename):
     text = open(filename).read()
     root = codetalker.parse(text, c)
-    root.reparent()
-    root.finalize()
     ## remove comments
     [w.remove() for w in root.find('comment')]
     ## remove all whitespace that doesnt come between two words
