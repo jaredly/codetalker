@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from codetalker.bnf import generic
-from codetalker.bnf.parsers import jbnf, cbnf, antlrbnf
+from codetalker.bnf.parsers import jbnf, cbnf, antlrbnf, msbnf
 import os
 
 lfile = lambda name:os.path.join(os.path.dirname(__file__),name)

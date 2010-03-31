@@ -1,4 +1,9 @@
 
+# modifications to the stock basic-expression.bnf
+
+literal:add
+    character-literal
+
 start:
     external-declaration*
 
@@ -9,13 +14,29 @@ external-declaration:
 ## function stuff
 
 function:
-    declaration-specifier* declarator declaration* compound-statement
+    declaration-specifier*? declarator declaration* compound-statement
 
 compound-statement:
     '{' declaration* statement* '}'
 
+## basic declaration + initalization
+
 declaration:
     declaration-specifier* init-declarator-list? ';'
+
+init-declarator-list:
+    init-declarator init-tail*
+
+init-declarator:
+    declarator init-declarator-tail?
+
+init-declarator-tail:
+    '=' initializer
+
+init-tail:
+    ',' init-declarator
+
+## basic expression
 
 expression:replace
     assignment-ex expression-tail*
@@ -23,10 +44,12 @@ expression:replace
 expression-tail:
     ',' assignment-ex
 
+## const, auto, int, etc declarator prefixes
+
 declaration-specifier:
     storage-class-specifier
     type-specifier
-    type-quantifier
+    type-qualifier
 
 type-qualifier: one of
     const
@@ -56,6 +79,8 @@ type-keyword: one of
     signed
     unsigned
 
+## declarator -- the base of regular variable initalizaton and functions
+
 declarator:
     pointer* direct-declarator
 
@@ -70,10 +95,155 @@ direct-base:
     '(' declarator ')'
 
 direct-post:
-    '[' expression? ']'
+    '[' cond-ex? ']'
     '(' direct-contents? ')'
 
 direct-contents:
     parameter-list
     identifier-list
+
+identifier-list:
+    identifier identifier-tail*
+
+identifier-tail:
+    ',' identifier
+
+parameter-list:
+    parameter-declaration parameter-tail*
+
+parameter-tail:
+    ',' parameter-declaration
+
+parameter-declaration:
+    declaration-specifier* abstract-declarator?
+
+abstract-declarator:
+    declarator
+    pointer? direct-abstract-declarator
+    pointer
+
+direct-abstract-declarator:
+    direct-abs-base? direct-abs-tail*
+
+direct-abs-base:
+    '(' abstract-declarator ')'
+
+direct-abs-tail:
+    '(' parameter-list? ')'
+    '[' cond-ex? ']'
+
+## initializers
+
+initializer:
+    '{' initializer-list ','? '}'
+    assignment-ex
+
+initializer-list:
+    initializer initializer-tail*
+
+initializer-tail:
+    ',' initializer
+
+## statements
+
+statement:
+    labeled-st
+    compound-st
+    expression-st
+    selection-st
+    iteration-st
+    jump-st
+
+labeled-st:
+    'case' cond-ex ':' statement
+    'default' ':' statement
+    identifier ':' statement
+
+compound-st:
+    '{' declaration* statement* '}'
+
+expression-st:
+    expression ';'
+
+selection-st:
+    if-statement
+    switch-statement
+
+if-statement:
+    'if' '(' expression ')' statement if-tail?
+
+if-tail:
+    'else' statement
+
+switch-statement:
+    'switch' '(' expression ')' statement
+
+iteration-st:
+    while-statement
+    do-statement
+    for-statement
+
+while-statement:
+    'while' '(' expression ')' statement
+
+do-statement:
+    'do' statement 'while' '(' expression ')' ';'
+
+for-statement:
+    'for' '(' expression-st expression-st expression? ')' statement
+
+jump-st:
+    'goto' identifier ';'
+    'continue' ';'
+    'break' ';'
+    'return' expression? ';'
+
+## other -- struct, enum
+
+struct-specifier:
+    struct struct-tail
+
+struct: one of
+    struct onion
+
+struct-tail:
+    identifier '{' struct-declaration* '}'
+    '{' struct-declaration* '}'
+
+struct-declaration:
+    specifier-qualifier+ struct-declarator-list ';'
+
+struct-declarator-list:
+    struct-declarator struct-list-tail*
+
+struct-list-tail:
+    ',' struct-declarator
+
+struct-declarator:
+    declarator? ':' cond-ex
+    declarator
+
+specifier-qualifier:
+    type-specifier
+    type-qualifier
+
+## enum
+
+enum-specifier:
+    'enum' identifier? '{' enum-list '}'
+    'enum' identifier
+
+enum-list:
+    enumerator enum-tail*
+
+enum-tail:
+    ',' enumerator
+
+enumerator:
+    identifier enumerator-tail?
+
+enumerator-tail:
+    '=' cond-ex
+    
+
 

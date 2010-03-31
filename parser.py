@@ -155,7 +155,7 @@ def parse_option(rule, i, option, const):
 
                     if o < olen-2 and option[o+2] == '?':
                         # non greedy
-                        result, i = parse_children(rule, i, option[o+3:], const)
+                        result, i = parse_option(rule, i, option[o+3:], const)
                         if result:
                             node.children += result.children
                             return node, i

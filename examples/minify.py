@@ -3,7 +3,7 @@
 import codetalker
 from codetalker.bnf import c
 
-from codetalker.nnode import TextNode
+from codetalker.node import TextNode
 
 import os,sys
 BASE = os.path.dirname(__file__)

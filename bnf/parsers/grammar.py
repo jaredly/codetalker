@@ -207,6 +207,8 @@ class Grammar:
             f = self.loadfirst(child[0], name)
             i = 0
             while len(child)>i+2 and child[i+1] in '*?':
+                if child[i+2] == '?':
+                    i += 1
                 f += self.loadfirst(child[i+2], name)
                 i+=2
             f = flatten(f)

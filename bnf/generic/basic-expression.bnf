@@ -1,5 +1,12 @@
 @start: expression
 
+literal:
+    boolean-literal
+    real-literal
+    integer-literal
+    string-literal
+    null-literal
+
 ## precedence rules
 
 expression:
@@ -72,6 +79,12 @@ add-tail:
     add-op mul-ex
 
 mul-ex:
+    unary-ex mul-tail*
+
+mul-tail:
+    mul-op unary-ex
+
+unary-ex:
     unary-op* atomic-ex
 
 atomic-ex:
@@ -111,6 +124,9 @@ add-op: one of
 mul-op: one of
     * / %
 
+assignment-op: one of
+    += -= %= ^= |= /= *= >>= <<=
+
 unary-op:
     '++'
     '+'
@@ -124,7 +140,7 @@ unary-op:
     cast-op
 
 cast-op:
-    '(' type ')'
+    '(' identifier ')'
 
 post-op:
     '(' argument-list? ')'
@@ -133,4 +149,10 @@ post-op:
     '--'
     '.' identifier
     '->' identifier
+
+argument-list:
+    expression argument-tail*
+
+argument-tail:
+    ',' expression
 
