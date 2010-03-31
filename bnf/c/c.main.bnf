@@ -8,13 +8,18 @@ start:
     external-declaration*
 
 external-declaration:
+    pp-line
     function
     declaration
 
 ## function stuff
 
 function:
-    declaration-specifier*? declarator declaration* compound-statement
+    declaration-specifier*? declarator function-tail
+
+function-tail:
+    ';'
+    declaration* compound-statement
 
 compound-statement:
     '{' declaration* statement* '}'
@@ -22,7 +27,7 @@ compound-statement:
 ## basic declaration + initalization
 
 declaration:
-    declaration-specifier* init-declarator-list? ';'
+    declaration-specifier*? init-declarator-list ';'
 
 init-declarator-list:
     init-declarator init-tail*
@@ -163,7 +168,7 @@ compound-st:
     '{' declaration* statement* '}'
 
 expression-st:
-    expression ';'
+    expression? ';'
 
 selection-st:
     if-statement

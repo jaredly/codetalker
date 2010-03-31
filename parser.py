@@ -38,7 +38,7 @@ def match_whitespace(i, const):
 def match_rule(rule, i, const):
     if i >= len(const['text']):
         if rule == '!':
-            return Node(None, i), i
+            return Node(None, i, False), i
         return False, i
     logger.log('match? "%s" "%s"' % (rule, const['text'][i]), i)
     node = const['text'][i]
@@ -52,7 +52,7 @@ def match_rule(rule, i, const):
     else:
         # essentially espilon; matches anything and doesn't consume
         if rule == '!': 
-            return Node(None, i), i
+            return Node(None, i, False), i
         # other literal
         literal = rule[1:]
         if isinstance(node, Node):
@@ -64,11 +64,11 @@ def match_rule(rule, i, const):
                 if text == str(node):
                     return node.clone(), i+1
                 new = node.clone()
-                new.children = [TextNode(text,i)]
+                new.children = [TextNode(text,i, False)]
                 return new, i+1
         elif const['text'][i:i+len(literal)] == literal:
             logger.log('match!',rule)
-            node = TextNode(literal, i, pos = const['pos'])
+            node = TextNode(literal, i, False, pos = const['pos'])
             if '\n' in literal:
                 const['pos'][0] += literal.count('\n')
                 const['pos'][1] = 0
@@ -134,7 +134,7 @@ def parse_option(rule, i, option, const):
     oi = i
     ppos = const['pos'][:]
 
-    node = Node(rule[1:], i)
+    node = Node(rule[1:], i, False)
     node.pos = const['pos']
 
     olen = len(option)
@@ -165,6 +165,21 @@ def parse_option(rule, i, option, const):
                     node.add(nodes)
                 o += 2
                 continue
+            elif option[o+1] == '?':
+                nodes, ni = parse_rule(option[o], i ,const)
+                if nodes:
+                    node.add(nodes)
+                    i = ni
+                o += 2
+                continue
+            elif option[o+1] == ':':
+                nodes, ni = parse_rule(option[o], i, const)
+                const['pos'] = ppos
+                if not nodes:
+                    return False, oi
+                o += 2
+                continue
+                '''
             elif option[o+1] in ':?':
                 nodes, ni = parse_rule(option[o], i, const)
                 if not nodes:
@@ -178,6 +193,7 @@ def parse_option(rule, i, option, const):
                     i = ni
                 o += 2
                 continue
+                '''
         if option[o] == rule:
             pass # o+=1;continue ? that eliminates recursion....right?
         nodes, i = parse_rule(option[o], i, const)

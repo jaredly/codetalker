@@ -1,11 +1,15 @@
 
 class Node:
-    def __init__(self, name, index, children = (), pos=(0,0)):
+    def __init__(self, name, index, final=True, children = (), pos=(0,0)):
         self.name = name
         self.index = index
         self.children = list(children)
+        for child in self.children:
+            if isinstance(child,Node):
+                child.parent = self
         self.pos = list(pos)
         self.parent = None
+        self.final = final
         self._str = None
 
     def __str__(self):
@@ -15,18 +19,27 @@ class Node:
 
     def __repr__(self):
         return '<Node name="%s" children="%d" at="%s">' % (self.name, len(self.children), self.pos)
+    
+    def finalize(self):
+        self.final = True
+        for child in self.children:
+            child.finalize()
 
     def clone(self):
-        new = Node(self.name, self.index, self.children, self.pos)
+        new = Node(self.name, self.index, self.final, self.children, self.pos)
         return new
 
     def add(self, children):
         for child in children:
+            if child.parent is not None:
+                child.remove()
             child.parent = self
             self.children.append(child)
             self._str = None
 
     def appendChild(self, node):
+        if node.parent is not None:
+            node.remove()
         node.parent = self
         self.children.append(node)
         self._str = None
@@ -47,11 +60,18 @@ class Node:
         self.parent.insert(i+1, node)
 
     def removeChild(self, child):
-        self.children.remove(child)
+        for i,node in enumerate(self.children):
+            if child is node:
+                break
+        else:
+            raise Exception,'child not found "%s"' % child
+        self.children = self.children[:i] + self.children[i+1:]
         child.parent = None
         self.dirty()
 
     def insert(self, i, node):
+        if node.parent is not None:
+            node.remove()
         node.parent = self
         self.children.insert(i, node)
         self.dirty()
@@ -111,6 +131,8 @@ class Node:
         return None
 
     def __eq__(self, other):
+        if self.final:
+            return NotImplemented
         if type(other) == str:
             return other[0] == str(self)[0]
         elif type(other) == tuple:
@@ -119,13 +141,25 @@ class Node:
     
     def __getitem__(self, i):
         return str(self)[i]
+    
+    def reparent(self):
+        for child in self.children:
+            if child.parent is not None and child.parent is not self:
+                child.remove()
+            #if child.parent != self:
+            #    print 'what?',self.name,[child],[child.parent],[self]
+            child.parent = self
+            child.reparent()
 
 class TextNode(Node):
-    def __init__(self, string, i, pos=(0,0)):
-        Node.__init__(self, None, i, children=[string], pos=pos)
+    def __init__(self, string, i, final=True, pos=(0,0)):
+        Node.__init__(self, None, i, final, children=[string], pos=pos)
+
+    def finalize(self):
+        self.final = True
 
     def clone(self):
-        return TextNode(self.children[0], self.index, self.pos)
+        return TextNode(self.children[0], self.index, self.final, self.pos)
 
     def add(self, children):
         self.children[0] += ''.join(children)
@@ -148,5 +182,8 @@ class TextNode(Node):
     def walk(self, strings=False):
         if strings:
             yield self
+
+    def reparent(self):
+        pass
 
 # vim: et sw=4 sts=4
