@@ -74,6 +74,11 @@ class Node:
         for child in self.children:
             for one in child.find(name):
                 yield one
+    
+    def sfind(self, name):
+        for child in self.children:
+            for one in child.sfind(name):
+                yield one
 
     def walk(self, strings=False):
         yield self
@@ -119,6 +124,9 @@ class TextNode(Node):
     def __init__(self, string, i, pos=(0,0)):
         Node.__init__(self, None, i, children=[string], pos=pos)
 
+    def clone(self):
+        return TextNode(self.children[0], self.index, self.pos)
+
     def add(self, children):
         self.children[0] += ''.join(children)
 
@@ -132,6 +140,10 @@ class TextNode(Node):
         if name[0] == '!':
             if self.children[0] == name[1:]:
                 yield self
+
+    def sfind(self, name):
+        if self.children[0].find(name)!=-1:
+            yield self
 
     def walk(self, strings=False):
         if strings:

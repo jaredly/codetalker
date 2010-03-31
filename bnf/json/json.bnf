@@ -21,7 +21,7 @@ tfn: one of
 list:
     '[' list-contents? ']'
 
-list-constents:
+list-contents:
     value list-tail*
 
 list-tail:

@@ -138,8 +138,12 @@ class Grammar:
             for child in line:
                 if child[0]=='@':
                     if child[1:] not in self.rules and child[1:] not in self.tokens:
-                        print 'undefined rule:',child[1:]
+                        print 'undefined rule:',child[1:],child,'in',rule
+                        print line
                         errors += 1
+                elif child[0] not in '!*?:+':
+                    print 'invalid child: "%s" in %s' % (child, rule)
+                    errors += 1
         return errors
     
     def crawl_reach(self, at, found):
@@ -167,10 +171,9 @@ class Grammar:
         ret = []
         kids = set()
         for line in self.rules[rule]:
-            for child in line:
-                if child[0]=='@':
-                    kids.add(child[1:])
-                    break
+            if line[0][0]=='@':
+                kids.add(line[0][1:])
+                break
 
         for child in kids:
             res = self.check_circular(child, stack+(rule,))

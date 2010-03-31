@@ -20,17 +20,77 @@ import re
 import sys
 import string
 
+def escaperange(options):
+    chars = []
+    for o in options:
+        if len(o) != 1 or o[0][0]!='!' or len(o[0])!=2:
+            return False
+        chars.append(o[0][1:])
+    ranges = [[chars[0]]]
+    for o in chars[1:]:
+        if ord(o) == ord(ranges[-1][-1]) + 1:
+            ranges[-1].append(o)
+        else:
+            ranges.append([o])
+    if len(ranges) > len(options)/2 and len(options)>5:
+        return False
+    text = ''
+    for rng in ranges:
+        if len(rng) < 3:
+            text += ''.join(range_escape(a) for a in rng)
+        else:
+            text += range_escape(rng[0]) + '-' + range_escape(rng[-1])
+    return '[' + text + ']'
+
+def range_escape(char):
+    char = char.encode('string_escape')
+    if char == '\\\'':char = "'"
+    if char in '-[]^':
+        char = '\\' + char
+    return char
+
+def oneof(options):
+    ones = []
+    for o in options:
+        if len(o)!=1 or o[0][0] != '!':
+            return False
+        ones.append(o[0][1:])
+    ml = max(len(o) for o in ones)
+    if ml > 3:
+        sep = '\n    '
+    else:
+        sep = ' '
+    return '    ' + sep.join(ones) + '\n\n'
+
 def output_grammar(gmr):
     txt = ''
     for rule,options in sorted(gmr.rules.iteritems()):
-        txt += '%s:\n'
-        for option in options:
-            txt += '    '
-            for child in option:
-                if child[0] == '@':
-                    txt += child[1:]+' '
-                elif child[0] == '!':
-                    txt += "'%s'" % escape(child[0][1:])
+        rng = escaperange(options)
+        onf = oneof(options)
+        if onf and not rng:
+            txt += '%s: one of\n' % rule
+        else:
+            txt += '%s:\n' % rule
+
+        if rng:
+            txt += '    ' + rng + '\n\n'
+        elif onf:
+            txt += onf
+        else:
+            for option in options:
+                txt += '   '
+                for child in option:
+                    if child[0] == '@':
+                        txt += ' ' + child[1:]
+                    elif child[0] == '!':
+                        txt += " '%s'" % (child[1:].encode('string_escape'))
+                    elif child in '+*?:':
+                        txt += child
+                    else:
+                        raise Exception,'invalid child: %s' % child
+                txt += '\n'
+            txt += '\n'
+    return txt
 
 def splitsections(text):
     '''Sections look like:
@@ -88,7 +148,11 @@ class Grammar(grammar.Grammar):
             for decl in section[1][1:]:
                 if decl[0] == 'comment':
                     continue
-                name,opts = decl[2].split(':')
+                try:
+                    name,opts = decl[2].split(':')
+                except ValueError:
+                    print 'bad line:',decl,decl[2]
+                    raise
                 name = name.strip()
                 if self.lines.has_key(name):
                     print 'prev line: ',decl[1:]
@@ -169,7 +233,7 @@ def rulesplit(line):
 
     >>> rulesplit
     '''
-    rx = r"([\w\-]+|\s|'(?:\\'|[^']|)*'|\*|\+|:|\?|\[(?:[^\]]|\\\]])+\])"
+    rx = r"([\w\-]+|\s|'(?:\\'|\\\\|[^'])*'|\*|\+|:|\?|\[(?:[^\]]|\])+\])"
     parts = re.findall(rx, line)
     if ''.join(parts) != line:
         raise BNFError, 'invalid bnf:\nparsed  : %s\noriginal: %s' % (''.join(parts), line)
@@ -202,7 +266,7 @@ def expand(crange):
     \s whitespace
     \. all printable'''
     if crange[0]!='[' or crange[-1]!=']':
-        raise BNFError
+        raise BNFError, 'regex range must begin and end with []'
     items = []
     i = 1
     exclude = False
@@ -221,12 +285,29 @@ def expand(crange):
                 items += list(' \t\n\r\x0b\x0c')
             elif next in '-][':
                 items.append(next)
-            elif next == 'n':
-                items.append('\n')
-            elif next == 't':
-                items.append('\t')
+            elif next in 'xo':
+                octal = crange[i:i+4]
+                try:
+                    de = octal.decode('string_escape')
+                except ValueError:
+                    raise BNFError, 'invalid escape: %s' % octal
+                items.append(de)
+                i += 4
+                continue
+            elif next in 'uU':
+                width = {'u':4, 'U':8}[next]
+                uni = crange[i:i+width]
+                try:
+                    de = uni.decode('unicode_escape')
+                except ValueError:
+                    raise BNFError, 'invalid unicode escape: %s' % uni
+                items.append(de)
+                i += 2 + width
             else:
-                raise BNFError, 'invalid escape "%s"; the only valid escapes are \\n \\t \\w \\. \\s \\- \\[ \\]' % next
+                de = (char+next).decode('string_escape')
+                if len(de)==2:
+                    raise BNFError, 'invalid escape "%s"; the only valid escapes are \\n \\t \\w \\. \\s \\- \\[ \\]' % next
+                items.append(de)
             i += 2
             continue
         elif char == '-':
