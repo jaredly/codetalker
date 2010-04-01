@@ -86,6 +86,7 @@ mul-tail:
     mul-op unary-ex
 
 unary-ex:
+    unary-op* cast-op+ unary-op* atomic-ex
     unary-op* atomic-ex
 
 atomic-ex:
@@ -138,10 +139,10 @@ unary-op:
     '*'
     '&'
     'sizeof'
-    cast-op
 
 cast-op:
     '(' identifier ')'
+    '(' keyword ')'
 
 post-op:
     '(' argument-list? ')'

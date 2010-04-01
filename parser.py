@@ -155,10 +155,13 @@ def parse_option(rule, i, option, const):
 
                     if o < olen-2 and option[o+2] == '?':
                         # non greedy
+                        logger.log('speculate...')
                         result, i = parse_option(rule, i, option[o+3:], const)
                         if result:
                             node.children += result.children
+                            logger.log('spec done')
                             return node, i
+                        logger.log('spec failed')
                     nodes, i = parse_rule(option[o], i, const)
                     if not nodes:
                         break

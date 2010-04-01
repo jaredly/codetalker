@@ -15,11 +15,26 @@ external-declaration:
 ## function stuff
 
 function:
-    declaration-specifier*? declarator function-tail
+    declaration-specifier*? function-head function-tail
+
+function-head:
+    identifier function-args
+
+function-args:
+    '(' parameter-list? ')'
+
+declare-argument-list:
+    declare-argument declare-argument-tail*
+
+declare-argument-tail:
+    ',' declare-argument
+
+declare-argument:
+    declarator
 
 function-tail:
     ';'
-    declaration* compound-st
+    compound-st
 
 ## basic declaration + initalization
 
@@ -65,10 +80,13 @@ storage-class-specifier: one of
     register
 
 type-specifier:
-    type-keyword
     enum-specifier
     struct-specifier
+    type-keyword
     identifier
+
+cast-op:replace
+    '(' type-specifier+ ')'
 
 type-keyword: one of
     struct
@@ -217,7 +235,7 @@ struct-tail:
     '{' struct-declaration* '}'
 
 struct-declaration:
-    specifier-qualifier+ struct-declarator-list ';'
+    specifier-qualifier+? struct-declarator-list ';'
 
 struct-declarator-list:
     struct-declarator struct-list-tail*
