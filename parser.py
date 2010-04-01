@@ -203,8 +203,8 @@ def set_error(const, i, rule, message = None):
 
 import sys
 
-def parse(text, grammar):
-    const = {'pos':[0,0],'ignore':('whites','comment'),'text':text,'stack':[],'error':{'i':0},'grammar':grammar}
+def parse(text, grammar, ignore=('whites','comment')):
+    const = {'pos':[0,0],'ignore':ignore,'text':text,'stack':[],'error':{'i':0},'grammar':grammar}
     nodes, i = parse_rule('@start', 0, const)
 
     if not nodes:
