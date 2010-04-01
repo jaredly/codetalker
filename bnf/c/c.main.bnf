@@ -174,14 +174,17 @@ selection-st:
     if-statement
     switch-statement
 
+paren-expression:
+    '(' expression ')'
+
 if-statement:
-    'if' '(' expression ')' statement if-tail?
+    'if' paren-expression statement if-tail?
 
 if-tail:
     'else' statement
 
 switch-statement:
-    'switch' '(' expression ')' statement
+    'switch' paren-expression statement
 
 iteration-st:
     while-statement
@@ -189,10 +192,10 @@ iteration-st:
     for-statement
 
 while-statement:
-    'while' '(' expression ')' statement
+    'while' paren-expression statement
 
 do-statement:
-    'do' statement 'while' '(' expression ')' ';'
+    'do' statement 'while' paren-expression ';'
 
 for-statement:
     'for' '(' expression-st expression-st expression? ')' statement

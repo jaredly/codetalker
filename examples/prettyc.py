@@ -48,9 +48,10 @@ def prettyc(root):
             else:
                 line.insertBefore(tab.clone())
 
-    for node in root.find('assignment-op'):
+    for node in root.find('assignment-op,paren-expression'):
         node.insertBefore(space.clone())
         node.appendAfter(space.clone())
+
 
     '''
     for white in root.sfind('\n'):
