@@ -78,7 +78,7 @@ class Node:
 
     def insertBefore(self, node):
         i = self.parent.children.index(self)
-        self.parent.insert(i-1, node)
+        self.parent.insert(i, node)
 
     def lineage(self):
         if self.parent:
@@ -91,7 +91,8 @@ class Node:
                 yield self
         elif self.name in (x.strip() for x in name.split(',')):
             yield self
-        for child in self.children:
+        children = self.children[:]
+        for child in children:
             for one in child.find(name):
                 yield one
     

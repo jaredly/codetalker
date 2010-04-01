@@ -179,21 +179,6 @@ def parse_option(rule, i, option, const):
                     return False, oi
                 o += 2
                 continue
-                '''
-            elif option[o+1] in ':?':
-                nodes, ni = parse_rule(option[o], i, const)
-                if not nodes:
-                    if option[o+1] == '?':
-                        o += 2
-                        continue
-                    const['pos'] = ppos
-                    return False, oi
-                if option[o+1] != ':':
-                    node.add(nodes)
-                    i = ni
-                o += 2
-                continue
-                '''
         if option[o] == rule:
             pass # o+=1;continue ? that eliminates recursion....right?
         nodes, i = parse_rule(option[o], i, const)
