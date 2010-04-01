@@ -13,7 +13,7 @@ Here's how simple it is::
 
     # say you want to remove all whitespace
     # which isn't actually great -- it will turn "int foo" into "intfoo"
-    # -- see examples/white.py for a smart way to remove whitespace
+    # -- see examples/minify.py for a smart way to remove whitespace
 
     whitespace = root.find('whites')
     for node in whitespace:
@@ -21,7 +21,7 @@ Here's how simple it is::
     print root
 
     # or just look at the comments
-    comments = root.getElementsByTagName('comment')
+    comments = root.find('comment')
     for node in comments:
         print node
 
@@ -29,17 +29,16 @@ Features
 --------
 
 - parsing is entirely driven by modular grammers in BNF
-- modular structue; can accomodate many different formats of BNF
+- modular structure; can accomodate many different formats of BNF
 - C parsing (C BNF file included)
+- JSON parsing, proof of concept (really small grammar)
 
 Todo
 ----
 
-- get JSON parsing working again
 - javascript parsing
 - python parsing
 - build a c to python translator using codetalker
-- testing
 
 Examples
 --------
@@ -48,7 +47,12 @@ I currently have one working and one non-working example ;)
 
 To prettyfy some C code, type::
 
-    python examples/c.py test/hanoi.c
+    python examples/prettyc.py test/c/hanoi.c
 
-And the json parser (examples/json.py) is not working ATM (it was before, but
-some recent radical changes broke it).
+To parse some json (and return a python object) take a look at
+examples/json.py
+
+Or if you want pretty json, try to following::
+    
+    python examples/prettyjson.py test/json/json.json
+
