@@ -140,11 +140,15 @@ if __name__=='__main__':
     if len(sys.argv) < 2:
         print 'usage: parse.py [code file]'
         sys.exit(1)
-    code, = sys.argv[1:]
+    if len(sys.argv) == 3:
+        code, debug = sys.argv[1:]
+        debug = int(debug)
+    else:
+        code, = sys.argv[1:]
+        debug = 0
 
     import codetalker.parser
-    codetalker.parser.debug = False
-    full = codetalker.parse(open(code).read(), grammar)
+    full = codetalker.parse(open(code).read(), grammar, debug=debug)
     print prettyc(full)
 
 

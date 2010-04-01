@@ -90,7 +90,7 @@ unary-ex:
     unary-op* atomic-ex
 
 atomic-ex:
-    '(' expression ')'
+    '(' expression ')' post-op*
     identifier post-op*
     literal
 
@@ -141,8 +141,7 @@ unary-op:
     'sizeof'
 
 cast-op:
-    '(' identifier ')'
-    '(' keyword ')'
+
 
 post-op:
     '(' argument-list? ')'

@@ -18,7 +18,7 @@ function:
     declaration-specifier*? function-head function-tail
 
 function-head:
-    identifier function-args
+    pointer* identifier function-args
 
 function-args:
     '(' parameter-list? ')'
@@ -86,7 +86,7 @@ type-specifier:
     identifier
 
 cast-op:replace
-    '(' type-specifier+ ')'
+    '(' type-specifier+ '*'* ')'
 
 type-keyword: one of
     struct
