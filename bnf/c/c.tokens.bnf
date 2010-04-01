@@ -137,9 +137,12 @@ not-slash:
 
 ## adding hex
 integer-literal:replace
-    '0' 'x' hex-digit+
-    digit+
+    '0' 'x' hex-digit+ number-modifier?
+    digit+ number-modifier?
 
 hex-digit:
-    [0-9a-f]
+    [0-9a-fA-F]
+
+number-modifier:one of
+    L
 
