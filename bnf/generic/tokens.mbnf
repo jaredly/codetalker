@@ -60,9 +60,11 @@ string-literal:
     '"' string-contents* '"'
 
 string-contents:
-    '\\"'
-    '\\\n'
+    '\\' any-char
     [^"\n]
+
+any-char:
+    [\.]
 
 null-literal:
     'null'

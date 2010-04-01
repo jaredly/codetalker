@@ -13,7 +13,7 @@ expression:
     assignment-ex
 
 assignment-ex:
-    unary-ex assignment-op cond-ex
+    assignment-pre+ cond-ex
     cond-ex
 
 assignment-pre:

@@ -39,6 +39,7 @@ function-tail:
 ## basic declaration + initalization
 
 declaration:
+    enum-specifier ';'
     declaration-specifier+? init-declarator-list ';'
 
 init-declarator-list:

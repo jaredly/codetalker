@@ -1,7 +1,7 @@
 
 // File functions
 
-Open a file, read a file and write to a file
+// Open a file, read a file and write to a file
 #include <stdio.h> 
 int main()
 {
