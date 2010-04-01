@@ -9,7 +9,7 @@ class Logger:
         self.level = 0
     def log(self, *stuff):
         if debug:
-            print '  '*self.level,
+            print '..'*self.level,
             for i in stuff:
                 print i,
             print

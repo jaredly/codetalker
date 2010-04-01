@@ -71,6 +71,7 @@ type-specifier:
     identifier
 
 type-keyword: one of
+    struct
     void
     char
     short
@@ -209,7 +210,7 @@ struct-specifier:
     struct struct-tail
 
 struct: one of
-    struct onion
+    struct union
 
 struct-tail:
     identifier '{' struct-declaration* '}'
