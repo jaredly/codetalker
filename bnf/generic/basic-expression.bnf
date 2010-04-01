@@ -88,6 +88,11 @@ mul-tail:
 unary-ex:
     unary-op* cast-op+ unary-op* atomic-ex
     unary-op* atomic-ex
+    unary-op*? 'sizeof' '(' keyword-or-id ')'
+
+keyword-or-id:
+    keyword
+    identifier
 
 atomic-ex:
     '(' expression ')' post-op*

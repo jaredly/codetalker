@@ -206,6 +206,9 @@ import sys
 def parse(text, grammar, ignore=('whites','comment')):
     const = {'pos':[0,0],'ignore':ignore,'text':text,'stack':[],'error':{'i':0},'grammar':grammar}
     nodes, i = parse_rule('@start', 0, const)
+    last_white = len(text) - 1
+    while isinstance(text[last_white],Node) and text[last_white].name in ignore:
+        last_white -= 1
 
     if not nodes:
         print>>sys.stderr, 'Parsing Aborted'
@@ -218,7 +221,7 @@ def parse(text, grammar, ignore=('whites','comment')):
             print>>sys.stderr, '    stack:',const['error']['stack']
         sys.exit(1)
 
-    elif i < len(text) - 1:
+    elif i < last_white:
         print>>sys.stderr, 'Not everything was parsed: %d out of %d items' % (i, len(text))
         print
         if const['error'] == {'i':0}:
@@ -234,6 +237,7 @@ def parse(text, grammar, ignore=('whites','comment')):
     for node in nodes[:-1]:
         node.parent = root
     root.children = nodes[:-1] + root.children
+    root.add(text[last_white + 1:])
     
     return root, i, const
 
