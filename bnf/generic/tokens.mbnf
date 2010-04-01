@@ -60,9 +60,9 @@ string-literal:
     '"' string-contents* '"'
 
 string-contents:
-    [^"\n]
     '\\"'
     '\\\n'
+    [^"\n]
 
 null-literal:
     'null'

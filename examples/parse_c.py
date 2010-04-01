@@ -12,10 +12,16 @@ import os,sys
 
 if __name__=='__main__':
     if len(sys.argv) < 2:
-        print 'usage: parse_c.py file.c'
+        print 'usage: parse_c.py file.c -q'
         sys.exit(1)
-    text = open(sys.argv[1]).read()
+    if len(sys.argv) == 3:
+        filen, op = sys.argv[1:]
+    else:
+        filen, = sys.argv[1:]
+        op = None
+    text = open(filen).read()
     root = codetalker.parse(text, c)
-    print root
+    if op != '-q':
+        print root
 
 # vim: et sw=4 sts=4
