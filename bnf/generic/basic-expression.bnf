@@ -13,7 +13,8 @@ expression:
     assignment-ex
 
 assignment-ex:
-    assignment-pre? cond-ex
+    unary-ex assignment-op cond-ex
+    cond-ex
 
 assignment-pre:
     unary-ex assignment-op
@@ -125,7 +126,7 @@ mul-op: one of
     * / %
 
 assignment-op: one of
-    += -= %= ^= |= /= *= >>= <<=
+    += -= %= ^= |= /= *= >>= <<= =
 
 unary-op:
     '++'

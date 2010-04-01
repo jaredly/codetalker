@@ -52,6 +52,24 @@ def prettyc(root):
         node.insertBefore(space.clone())
         node.appendAfter(space.clone())
 
+    for node in root.find(
+            'and-op,or-op,bit-or-op,bit-and-op,'
+            'compare-op,compare2-op,shift-op,'
+            'add-op,mul-op'):
+        node.insertBefore(space.clone())
+        node.appendAfter(space.clone())
+
+    for node in root.sfind(','):
+        node.appendAfter(space.clone())
+
+    for node in root.find('function'):
+        node.appendChild(br.clone())
+
+    for node in root.sfind('else'):
+        #codetalker.node.debug = True
+        node.insertBefore(space.clone())
+
+
 
     '''
     for white in root.sfind('\n'):

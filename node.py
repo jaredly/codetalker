@@ -97,7 +97,8 @@ class Node:
                 yield one
     
     def sfind(self, name):
-        for child in self.children:
+        children = self.children[:]
+        for child in children:
             for one in child.sfind(name):
                 yield one
 

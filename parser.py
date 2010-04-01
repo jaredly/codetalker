@@ -224,6 +224,7 @@ def parse(text, grammar):
             print>>sys.stderr, '    Error found at %s: %s' % (const['error']['pos'],
                     const['error']['message'])
             print>>sys.stderr, '    stack:',const['error']['stack']
+            print>>sys.stderr, 'text:',''.join(str(a) for a in const['text'][const['error']['i']-5:const['error']['i']+5])
         sys.exit(1)
 
     root = nodes[-1]

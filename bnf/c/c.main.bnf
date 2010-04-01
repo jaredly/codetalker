@@ -19,15 +19,12 @@ function:
 
 function-tail:
     ';'
-    declaration* compound-statement
-
-compound-statement:
-    '{' declaration* statement* '}'
+    declaration* compound-st
 
 ## basic declaration + initalization
 
 declaration:
-    declaration-specifier*? init-declarator-list ';'
+    declaration-specifier+? init-declarator-list ';'
 
 init-declarator-list:
     init-declarator init-tail*
