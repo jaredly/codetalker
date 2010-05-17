@@ -1,4 +1,17 @@
 
+token:replace
+    regex-literal
+    boolean-literal
+    real-literal
+    integer-literal
+    string-literal
+    null-literal
+    keyword
+    identifier
+    comment
+    symbol
+    whites
+
 id-start:replace
     [a-zA-Z_$]
 
@@ -112,4 +125,19 @@ integer-literal:replace
 
 hex-digit:
     [0-9a-fA-F]
+
+regex-literal:
+    '/' regex-char+ '/' flag*
+
+regex-char:
+    '[' range-char* ']'
+    '\\' any-char
+    [^/\[\n]
+
+range-char:
+    '\\' any-char
+    [^\]\n]
+
+flag:
+    [a-zA-Z]
 

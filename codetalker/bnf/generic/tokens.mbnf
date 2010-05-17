@@ -42,7 +42,7 @@ white:
     [\s]
 
 symbol: one of
-    ~ ! @ # $ % ^ & * ( ) _ + - = ` [ ] \ { } | ; ' : " , . / < > ? 
+    ~ ! @ # % ^ & * ( ) + - = ` [ ] \ { } | ; ' : " , . / < > ? 
 
 boolean-literal: one of
     true false

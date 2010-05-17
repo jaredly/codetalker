@@ -4,6 +4,7 @@ compare-op:replace,one of
 
 unary-op:add,one of
     typeof
+    new
 
 atomic-ex:replace
     '(' expression ')' post-op*
@@ -14,6 +15,7 @@ literal:add
     function
     list
     object
+    regex-literal
     tfn
     'this'
 
@@ -67,13 +69,17 @@ statement:
     expression-st
     selection-st
     iteration-st
+    try-st
     jump-st
     declare-st
     function
     value
 
+declare:
+    'var' declare-sub declare-tail*
+
 declare-st:
-    'var' declare-sub declare-tail* ex-end
+    declare ex-end
 
 declare-sub:
     identifier declare-rest?
@@ -83,6 +89,9 @@ declare-rest:
 
 declare-tail:
     ',' declare-sub
+
+try-st:
+    'try' statement 'catch' '(' identifier? ')' statement
 
 compound-st:
     '{' statement* '}'
@@ -125,13 +134,19 @@ do-statement:
     'do' statement 'while' paren-expression ';'
 
 for-sub:
-    declare-st
-    expression ';'
+    declare
+    expression
 
 for-statement:
-    'for' '(' for-sub? expression? ';' expression? ')' statement
+    'for' '(' for-inner ')' statement
+
+for-inner:
+    identifier 'in' expression
+    declare 'in' expression
+    for-sub? ';' expression? ';' expression?
 
 jump-st:
     'continue' ex-end
     'break' ex-end
+    'throw' expression? ex-end
     'return' expression? ex-end
