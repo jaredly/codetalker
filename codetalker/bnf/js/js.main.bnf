@@ -1,0 +1,137 @@
+
+compare-op:replace,one of
+    === !== == != in instanceof
+
+unary-op:add,one of
+    typeof
+
+atomic-ex:replace
+    '(' expression ')' post-op*
+    identifier post-op*
+    literal post-op*
+
+literal:add
+    function
+    list
+    object
+    tfn
+    'this'
+
+start:
+    statement*
+
+value:
+    literal
+
+tfn: one of
+    true
+    false
+    null
+
+list:
+    '[' list-contents? ']'
+
+list-contents:
+    expression list-tail*
+
+list-tail:
+    ',' expression?
+
+object:
+    '{' object-contents? '}'
+
+object-contents:
+    obj-head ':' expression object-tail*
+
+obj-head:
+    identifier
+    value
+
+object-tail:
+    ',' obj-head ':' expression
+    ','
+
+function:
+    'function' identifier? '(' arg-list? ')' compound-st
+
+arg-list:
+    identifier argtail*
+
+argtail:
+    ',' identifier
+    
+## statements
+
+statement:
+    compound-st
+    expression-st
+    selection-st
+    iteration-st
+    jump-st
+    declare-st
+    function
+    value
+
+declare-st:
+    'var' declare-sub declare-tail* ex-end
+
+declare-sub:
+    identifier declare-rest?
+
+declare-rest:
+    '=' expression
+
+declare-tail:
+    ',' declare-sub
+
+compound-st:
+    '{' statement* '}'
+
+expression-st:
+    expression? ex-end
+
+ex-end:
+    [\n;]
+
+selection-st:
+    if-statement
+    switch-statement
+
+paren-expression:
+    '(' expression ')'
+
+if-statement:
+    'if' paren-expression statement if-tail?
+
+if-tail:
+    'else' statement
+
+switch-statement:
+    'switch' paren-expression '{' case-st* '}'
+
+case-st:
+    'case' value ':' statement*
+    'default' ':' statement*
+
+iteration-st:
+    while-statement
+    do-statement
+    for-statement
+
+while-statement:
+    'while' paren-expression statement
+
+do-statement:
+    'do' statement 'while' paren-expression ';'
+
+for-sub:
+    declare-st
+    expression ';'
+
+for-statement:
+    'for' '(' for-sub? expression? ';' expression? ')' statement
+
+jump-st:
+    'continue' ex-end
+    'break' ex-end
+    'return' expression? ex-end
