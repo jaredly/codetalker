@@ -8,7 +8,7 @@ echo 'mini'
 python examples/minify.py test/c/hanoi.c
 
 for i in test/c/more/*.c;do
-    echo "parsing $i"
+    echo -n "parsing $i"
     python examples/prettyc.py $i>/dev/null
-    echo "..parsed"
+    echo -n "..parsed.."
 done
