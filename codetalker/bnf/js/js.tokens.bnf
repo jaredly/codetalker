@@ -1,5 +1,6 @@
 
 token:replace
+    comment
     regex-literal
     boolean-literal
     real-literal
@@ -8,7 +9,6 @@ token:replace
     null-literal
     keyword
     identifier
-    comment
     symbol
     whites
 
@@ -97,7 +97,7 @@ new-line:
     '\n'
     '\r'
 
-comment:add
+comment:replace
     single-line-comment
     multi-line-comment
 

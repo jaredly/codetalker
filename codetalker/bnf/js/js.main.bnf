@@ -97,7 +97,10 @@ declare-tail:
     ',' declare-sub
 
 try-st:
-    'try' statement 'catch' '(' identifier? ')' statement
+    'try' compound-st 'catch' catch-head compound-st
+
+catch-head:
+    '(' identifier? ')'
 
 compound-st:
     '{' statement* '}'
@@ -132,7 +135,10 @@ switch-sub:
     default-sub
 
 case-sub:
-    'case' expression ':' switch-sub-body
+    'case' case-expression ':' switch-sub-body
+
+case-expression:
+    expression
 
 default-sub:
     'default' ':' switch-sub-body

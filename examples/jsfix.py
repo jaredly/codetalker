@@ -12,22 +12,24 @@ space = TextNode(' ', -1)
 br = TextNode('\n', -1)
 tab = TextNode('    ', -1)
 
-def pad(node, what=space):
-    lpad(node, what)
-    rpad(node, what)
+def pad(node, fn=str.isspace, what=space):
+    lpad(node, fn)
+    rpad(node, fn)
 
-def lpad(node, what=space):
+def lpad(node, fn=str.isspace, what=space):
     p = node.prevNode()
-    if p and not str(p)[-1].isspace():
+    if p and not fn(str(p)[-1]):
         node.insertBefore(what.clone())
 
-def rpad(node, what=space):
+def rpad(node, fn=str.isspace, what=space):
     n = node.nextNode()
-    if n and not str(n)[0].isspace():
+    if n and not fn(str(n)[0]):
         node.appendAfter(what.clone())
 
 def fix(root):
     fix_braces(root)
+    # should this be automatic? could introduce regressions
+    # fix_eqeq(root)
     strip_white(root)
     fix_indent(root)
     fix_switch(root)
@@ -71,11 +73,13 @@ def fix_indent(root):
         if str(node.nextNode())[0]!='\n':
             node.appendChild(br.clone())
     for comp in root.find('compound-st'):
-        for node in comp.find('statement'):
-            if node.children[0].name == 'compound-st':
-                node.children[0].insert(-1, tab.clone())
-            else:
+        for node in comp.find('statement,single-line-comment'):
+            if node.children[0].name != 'compound-st':
                 node.insert(0, tab.clone())
+        for node in comp.find('compound-st'):
+            if node is comp:
+                continue
+            node.insert(-1, tab.clone())
 
 def fix_switch(root):
     for node in root.find('switch-body'):
@@ -113,15 +117,27 @@ def fix_nitspace(root):
     for node in root.find(
             'and-op,or-op,bit-or-op,bit-and-op,'
             'compare-op,compare2-op,shift-op,'
-            'add-op,mul-op,assignment-op,declare-op'):
+            'add-op,mul-op,assignment-op,declare-op,catch-head'):
         pad(node)
     for node in root.sfind(','):
         rpad(node.parent)
     for node in root.sfind(';'):
         rpad(node.parent)
+    for node in root.sfind(':'):
+        rpad(node.parent)
 
     for node in root.find('function-args,paren-expression'):
         pad(node)
+    for node in root.find('compound-st'):
+        lpad(node)
+        rpad(node, lambda a:not str.isalnum(a))
+    for node in root.find('case-expression'):
+        lpad(node)
+
+def fix_eqeq(root):
+    for node in root.sfind('=='):
+        node.children[0] = TextNode('===', node.index)
+        node.dirty()
 
 if __name__=='__main__':
     if len(sys.argv) < 2:
@@ -136,6 +152,5 @@ if __name__=='__main__':
     root = codetalker.parse(text, js)
     fix(root)
     print codetalker.node.str_node(root)
-    #print codetalker.node.xml_node(root, 30)
 
 # vim: et sw=4 sts=4

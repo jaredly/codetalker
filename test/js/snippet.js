@@ -17,7 +17,7 @@ $('#textBoxId').keydown(function(event) {
                                     }
                                     });
 switch(someval){
-      case a:break;
+      case 'a':break;
       case 'b':
              do_somethin;
              more_sts();
