@@ -54,7 +54,10 @@ object-tail:
     ','
 
 function:
-    'function' identifier? '(' arg-list? ')' compound-st
+    'function' identifier? function-args compound-st
+
+function-args:
+    '(' arg-list? ')'
 
 arg-list:
     identifier argtail*
@@ -85,7 +88,10 @@ declare-sub:
     identifier declare-rest?
 
 declare-rest:
-    '=' expression
+    declare-op expression
+
+declare-op:one of
+    =
 
 declare-tail:
     ',' declare-sub
@@ -116,11 +122,23 @@ if-tail:
     'else' statement
 
 switch-statement:
-    'switch' paren-expression '{' case-st* '}'
+    'switch' paren-expression switch-body
 
-case-st:
-    'case' value ':' statement*
-    'default' ':' statement*
+switch-body:
+    '{' switch-sub* '}'
+
+switch-sub:
+    case-sub
+    default-sub
+
+case-sub:
+    'case' expression ':' switch-sub-body
+
+default-sub:
+    'default' ':' switch-sub-body
+
+switch-sub-body:
+    statement*
 
 iteration-st:
     while-statement

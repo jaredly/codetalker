@@ -1,4 +1,14 @@
 
+def str_node(node):
+    text = ''
+    for child in node.walk(True):
+        if isinstance(child, TextNode):
+            text += str(child)
+    return text
+
+def xml_node(node, level=10):
+    return ''.join(node.walkXML(level))
+
 class Node:
     def __init__(self, name, index, final=True, children = (), pos=(0,0)):
         self.name = name
@@ -19,6 +29,23 @@ class Node:
 
     def __repr__(self):
         return '<Node name="%s" children="%d" at="%s">' % (self.name, len(self.children), self.pos)
+
+    def walkXML(self, level=5):
+        if level <= 0:
+            yield str_node(self) + '\n'
+        else:
+            start = '<%s at="%s">' % (self.name, self.pos)
+            if 1 or len(self.children) > 1:
+                start += '\n'
+            yield start
+            for child in self.children:
+                for string in child.walkXML(level-1):
+                    string = '  ' + string
+                    yield string.replace('\n', '\n  ')
+            end = '</%s>' % self.name
+            if 1 or self.parent and len(self.parent.children) > 1:
+                end += '\n'
+            yield end
     
     def finalize(self):
         self.final = True
@@ -116,6 +143,8 @@ class Node:
             return self.parent.children[i+1]
         if self.parent:
             next = self.parent.nextNode()
+            if type(next) == str:
+                return next
             if next:
                 return next.children[-1]
         return None
@@ -156,6 +185,9 @@ class Node:
 class TextNode(Node):
     def __init__(self, string, i, final=True, pos=(0,0)):
         Node.__init__(self, None, i, final, children=[string], pos=pos)
+
+    def walkXML(self, level):
+        return ''.join(self.children) + '\n'
 
     def finalize(self):
         self.final = True
