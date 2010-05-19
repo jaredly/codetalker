@@ -14,8 +14,9 @@ switch(2){
         man;
 }
 a;
-
+var man = ho = 2===3?4:5;
 man = 3 === 4?'yes':'no';
+man = ho = 'hi'==='ho'?1:2;
 for (a in b){}
 new man();
 /regex/
