@@ -14,6 +14,8 @@ switch(2){
         man;
 }
 a;
+
+man = 3 === 4?'yes':'no';
 for (a in b){}
 new man();
 /regex/

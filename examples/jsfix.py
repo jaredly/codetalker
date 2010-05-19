@@ -6,11 +6,13 @@ import codetalker
 from codetalker.bnf import js
 from codetalker.node import TextNode, Node
 
+import cPickle
+
 import os,sys
 
 space = TextNode(' ', -1)
 br = TextNode('\n', -1)
-tab = TextNode('    ', -1)
+tab = TextNode('  ', -1)
 
 def pad(node, fn=str.isspace, what=space):
     lpad(node, fn)
@@ -30,28 +32,53 @@ def fix(root):
     fix_braces(root)
     # should this be automatic? could introduce regressions
     # fix_eqeq(root)
-    strip_white(root)
-    fix_indent(root)
-    fix_switch(root)
-    fix_else(root)
+    # strip_white(root)
+    # fix_indent(root)
+    # fix_switch(root)
+    # fix_else(root)
     fix_nitspace(root)
 
-def compoundize(old):
+def compoundize(child):
+    old = child.children[0]
     st = Node('statement', old.index, old.final, (old,), old.pos)
     c = Node('compound-st', old.index, old.final, (TextNode('{', -1), st, TextNode('}', -1)), old.pos)
+    child.children[0] = c
+    c.parent = child
+    ind = indent_at(c.children[1]) + 1
+    for i in range(ind):
+        c.insert(1, tab.clone())
+    c.insert(1, br.clone())
+    c.insert(-1, br.clone())
+    for i in range(ind-1):
+        c.insert(-1, tab.clone())
+
+def indent_at(node):
+    p = node.parent
+    c = 0
+    while p.parent != None:
+        if p.name == 'compound-st':
+            c += 1
+        p = p.parent
     return c
 
-
 def fix_braces(root):
-    sts = list(root.find('if-statement,iteration-st, if-tail'))
+    sts = list(root.find('if-statement,iteration-st,if-tail'))
     for node in sts:
         while len(node.children) == 1:
             node = node.children[0]
-        for child in node.children:
+        for i, child in enumerate(node.children):
             if isinstance(child, Node) and child.name == 'statement' and child.children[0].name != 'compound-st':
-                old = child.children[0]
-                child.children = [compoundize(old)]
-                child.dirty()
+                break
+        else:
+            continue
+        # p = getPrevLine(child)
+        compoundize(child)
+        joinPrevLine(child)
+        child.dirty()
+        
+def joinPrevLine(node):
+    p = node.prevNode()
+    p.remove()
 
 def strip_white(root):
     whites = list(root.find('whites'))
@@ -148,9 +175,16 @@ if __name__=='__main__':
     else:
         filen, = sys.argv[1:]
         op = None
-    text = open(filen).read()
-    root = codetalker.parse(text, js)
+    if filen.endswith('.pcl'):
+        root = cPickle.load(open(filen))
+    else:
+        text = open(filen).read()
+        root = codetalker.parse(text, js)
+        if op == '-s':
+            cPickle.dump(root, open(filen+'.pcl', 'w'))
+            sys.exit(0)
     fix(root)
-    print codetalker.node.str_node(root)
+    if op != '-q':
+        print codetalker.node.str_node(root)
 
 # vim: et sw=4 sts=4
