@@ -1,4 +1,6 @@
 *.pyc
 *.pyo
 *.swp
+*.swo
 *.sess
+CodeTalker.egg-info
