@@ -20,7 +20,7 @@ if __name__=='__main__':
         filen, = sys.argv[1:]
         op = None
     text = open(filen).read()
-    root = codetalker.parse(text, js)
+    root = codetalker.parse(text, js, debug=2)
     if op != '-q':
         print root
 

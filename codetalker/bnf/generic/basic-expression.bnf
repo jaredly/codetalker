@@ -15,6 +15,7 @@ expression:
 assignment-ex:
     assignment-pre assignment-pre cond-ex
     assignment-pre cond-ex
+    assignment-pre assignment-ex
     cond-ex
 
 assignment-pre:
