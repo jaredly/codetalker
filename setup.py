@@ -13,10 +13,9 @@ setup(
     name='CodeTalker',
     author='Jared Forsyth',
     author_email='jared@jaredforsyth.com',
-    version='0.2',
+    version='0.3',
     url='http://jaredforsyth.com/projects/codetalker/',
     download_url='http://github.com/jabapyth/codetalker/tree',
-    py_modules=['codetalker'],
     description='a module for dynamic, pythonic language parsing',
     long_description=readme_text,
     classifiers=[

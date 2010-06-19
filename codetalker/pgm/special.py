@@ -14,6 +14,6 @@ class Special:
 
 star = Special.factory('star')
 plus = Special.factory('plus')
-_os = Special.factory('or')
+_or = Special.factory('or')
 
 # vim: et sw=4 sts=4
