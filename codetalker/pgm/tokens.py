@@ -9,7 +9,8 @@ class Token:
         self.charno = charno
 
     def __repr__(self):
-        return u'<%s token "%s" at (%d, %d)>' % (self.type, self.val, self.lineno, self.charno)
+        return u'<%s token "%s" at (%d, %d)>' % (self.type,
+                self.val.encode('string_escape'), self.lineno, self.charno)
 
 class TokenMatcher:
     def __init__(self, name):
@@ -27,7 +28,7 @@ class StringToken(TokenMatcher):
     
     def check(self, text):
         for item in self.items:
-            if text.text[text.at:].startswith(item):
+            if text.text[text.at:text.at + len(item)] == item:
                 return item
 
 class CharToken(StringToken):

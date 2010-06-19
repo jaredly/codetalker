@@ -13,6 +13,6 @@ def statement(rule):
 def assign(rule):
     rule | (ID, '=', plus(ID), NEWLINE)
 
-grammar = Grammar(start=start, tokens=[STRING, ID, NUMBER, SYMBOL, WHITE], ignore=[WHITE])
+grammar = Grammar(start=start, tokens=[STRING, ID, NUMBER, SYMBOL, NEWLINE, WHITE], ignore=[WHITE])
 
 # vim: et sw=4 sts=4

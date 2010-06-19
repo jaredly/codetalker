@@ -13,14 +13,14 @@ class Text:
     def advance(self, num):
         lines = self.text[self.at:self.at+num].count('\n')
         if lines:
-            self.charno = len(self.text[at:at+num].split('\n')[-1])
+            self.charno = len(self.text[self.at:self.at+num].split('\n')[-1])
             self.lineno += lines
         else:
             self.charno += num
         self.at += num
 
     def hasMore(self):
-        return self.at < self.ln - 1
+        return self.at < self.ln
 
 class Grammar:
     def __init__(self, start, tokens, ignore=[]):
