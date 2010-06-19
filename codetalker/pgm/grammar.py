@@ -27,6 +27,21 @@ class Grammar:
         self.start = start
         self.tokens = tokens
         self.ignore = ignore
+        self.load_grammar()
+
+    def load_grammar(self):
+        self.rules = []
+        self.rule_dict = {}
+        self.load_func(self.start)
+
+    def load_func(self, func):
+        if func in self.rule_dict:
+            return self.rule_dict[func]
+        num = len(self.rules)
+        self.rule_dict[func] = num
+        self.rules.append(RuleLoader(self))
+        func(self.rules[-1])
+        return num
 
     def get_tokens(self, text):
         return tokenize(self.tokens, text)

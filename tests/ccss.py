@@ -16,8 +16,6 @@ class CCSSTest(TestCase):
     def token_lines(self):
         text = Text('hello\nworld = 6')
         tokens = list(grammar.get_tokens(text))
-        print 
-        print tokens
         self.assertEqual(len(tokens), 8)
         self.assertEqual(tokens[-2].lineno, 2)
 
