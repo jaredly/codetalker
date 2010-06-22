@@ -142,8 +142,14 @@ class Grammar:
                             error[1] = 'Unexpected token %s; expected %s' % (ctoken, self.tokens[-(current + 1)])
                         return None
                 else:
+                    ctoken = tokens.current()
+                    at = tokens.at
                     sres = self.parse_rule(current, tokens, error)
                     if sres is None:
+                        tokens.at = at
+                        if tokens.at >= error[0]:
+                            error[0] = tokens.at
+                            error[1] = 'Unexpected token %s; expected %s' % (ctoken, self.rule_names[current])
                         return None
                     res.append(sres)
                     i += 1
@@ -155,7 +161,7 @@ class Grammar:
                     tokens.advance()
                     i += 1
                     continue
-                if tokens.at > errors[0]:
+                if tokens.at > error[0]:
                     error[0] = tokens.at
                     error[1] = 'Unexpected token %s; expected \'%s\'' % (ctoken, current.encode('string_escape'))
                 print>>logger, 'FAIL string compare:', [current, tokens.current().value]

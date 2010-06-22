@@ -42,8 +42,8 @@ def commas(item):
     return (item, star(',', item), [','])
 
 
-mul_ex = binop('MulDiv', '*/', atomic)
-add_ex = binop('AddSub', '+-', mul_ex)
+mul_ex = binop('muldiv', '*/', atomic)
+add_ex = binop('expression', '+-', mul_ex)
 
 grammar = Grammar(start=start, tokens=[STRING, ID, CSSNUMBER, CCOMMENT, SYMBOL, NEWLINE, WHITE, EOF], ignore=[WHITE, CCOMMENT])
 
