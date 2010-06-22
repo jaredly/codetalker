@@ -202,6 +202,15 @@ class Grammar:
                         return None
                     i += 1
                     continue
+                elif st == '?':
+                    at = tokens.at
+                    sres = self.parse_children(current[1:], tokens)
+                    if sres:
+                        res += sres
+                    else:
+                        at = tokens.at
+                    i += 1
+                    continue
                 else:
                     raise ParseError('invalid special token: %s' % st)
             return None
