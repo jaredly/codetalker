@@ -95,21 +95,20 @@ class Grammar:
         logger.output = debug
         text = Text(text)
         tokens = self.get_tokens(text)
-        tree = self.parse_rule(0, tokens)
-        if tokens.hasNext():
-            raise ParseError("not everything was parsed: '%s' left" % (''.join(tok.value for tok in tokens.tokens[tokens.at:])))
-        if tree == None:
-            raise ParseError('failed to parse')
+        error = [0, None]
+        tree = self.parse_rule(0, tokens, error)
+        if tokens.hasNext() or tree is None:
+            raise ParseError(error[1])
         return tree
 
-    def parse_rule(self, rule, tokens):
+    def parse_rule(self, rule, tokens, error):
         if rule < 0 or rule >= len(self.rules):
             raise ParseError('invalid rule: %d' % rule)
         print>>logger, 'parsing for rule', self.rule_names[rule]
         logger.indent += 1
         node = ParseTree(self.rule_names[rule])
         for option in self.rules[rule]:
-            res = self.parse_children(option, tokens)
+            res = self.parse_children(option, tokens, error)
             if res is not None:
                 print>>logger, 'yes!',self.rule_names[rule], res
                 logger.indent -= 1
@@ -119,7 +118,7 @@ class Grammar:
         logger.indent -= 1
         return None
     
-    def parse_children(self, children, tokens):
+    def parse_children(self, children, tokens, error):
         i = 0
         res = []
         while i < len(children):
@@ -130,27 +129,35 @@ class Grammar:
             print>>logger, 'parsing child',current,i
             if type(current) == int:
                 if current < 0:
-                    if isinstance(tokens.current(), self.tokens[-(current + 1)]):
-                        res.append(tokens.current())
+                    ctoken = tokens.current()
+                    if isinstance(ctoken, self.tokens[-(current + 1)]):
+                        res.append(ctoken)
                         tokens.advance()
                         i += 1
                         continue
                     else:
-                        print>>logger, 'token mismatch', tokens.current(), self.tokens[-(current + 1)]
+                        print>>logger, 'token mismatch', ctoken, self.tokens[-(current + 1)]
+                        if tokens.at > error[0]:
+                            error[0] = tokens.at
+                            error[1] = 'Unexpected token %s; expected %s' % (ctoken, self.tokens[-(current + 1)])
                         return None
                 else:
-                    sres = self.parse_rule(current, tokens)
+                    sres = self.parse_rule(current, tokens, error)
                     if sres is None:
                         return None
                     res.append(sres)
                     i += 1
                     continue
             elif type(current) == str:
-                if current == tokens.current().value:
-                    res.append(tokens.current())
+                ctoken = tokens.current()
+                if current == ctoken.value:
+                    res.append(ctoken)
                     tokens.advance()
                     i += 1
                     continue
+                if tokens.at > errors[0]:
+                    error[0] = tokens.at
+                    error[1] = 'Unexpected token %s; expected \'%s\'' % (ctoken, current.encode('string_escape'))
                 print>>logger, 'FAIL string compare:', [current, tokens.current().value]
                 return None
             elif type(current) == tuple:
@@ -160,7 +167,7 @@ class Grammar:
                     while 1:
                         print>>logger, 'trying one'
                         at = tokens.at
-                        sres = self.parse_children(current[1:], tokens)
+                        sres = self.parse_children(current[1:], tokens, error)
                         if sres:
                             print>>logger, 'yes! (star)'
                             res += sres
@@ -172,14 +179,14 @@ class Grammar:
                     continue
                 elif st == '+':
                     at = tokens.at
-                    sres = self.parse_children(current[1:], tokens)
+                    sres = self.parse_children(current[1:], tokens, error)
                     if sres is not None:
                         res += sres
                     else:
                         return None
                     while 1:
                         at = tokens.at
-                        sres = self.parse_children(current[1:], tokens)
+                        sres = self.parse_children(current[1:], tokens, error)
                         if sres:
                             res += sres
                         else:
@@ -192,7 +199,7 @@ class Grammar:
                     for item in current[1:]:
                         if type(item) != tuple:
                             item = (item,)
-                        sres = self.parse_children(item, tokens)
+                        sres = self.parse_children(item, tokens, error)
                         if sres:
                             res += sres
                             break
@@ -204,7 +211,7 @@ class Grammar:
                     continue
                 elif st == '?':
                     at = tokens.at
-                    sres = self.parse_children(current[1:], tokens)
+                    sres = self.parse_children(current[1:], tokens, error)
                     if sres:
                         res += sres
                     else:
