@@ -1,5 +1,5 @@
 from tokenize import tokenize
-from text import Text
+from text import Text, IndentText
 from rules import RuleLoader
 from tokens import EOF
 from errors import *
@@ -60,10 +60,11 @@ class Logger:
 logger = Logger(DEBUG)
 
 class Grammar:
-    def __init__(self, start, tokens, ignore=[]):
+    def __init__(self, start, tokens, indent=False, ignore=[]):
         self.start = start
         self.tokens = tokens
-        self.ignore = ignore
+        self.indent = indent
+        self.ignore = tuple(ignore)
         self.load_grammar()
 
     def load_grammar(self):
@@ -93,7 +94,10 @@ class Grammar:
 
     def process(self, text, debug = False):
         logger.output = debug
-        text = Text(text)
+        if self.indent:
+            text = IndentText(text)
+        else:
+            text = Text(text)
         tokens = self.get_tokens(text)
         error = [0, None]
         tree = self.parse_rule(0, tokens, error)
@@ -122,7 +126,7 @@ class Grammar:
         i = 0
         res = []
         while i < len(children):
-            while tokens.current().__class__ in self.ignore:
+            while isinstance(tokens.current(), self.ignore):
                 res.append(tokens.current())
                 tokens.advance()
             current = children[i]

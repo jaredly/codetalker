@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import re
-from text import Text
 
 class Token:
     def __init__(self, value, *more):
@@ -53,6 +52,12 @@ class EOF(Token):
         if not len(text.text[text.at:]):
             return cls('', text)
 
+class INDENT(Token):
+    '''special token -- used by the preprocessor to indicate the start of an indented block'''
+
+class DEDENT(Token):
+    '''special token -- used by the preprocessor to indicate the end of an indented block'''
+
 class STRING(ReToken):
     rx = re.compile(r'"[^"]*"|' + r"'[^']*'")
 
@@ -72,5 +77,5 @@ class NEWLINE(StringToken):
 class CCOMMENT(ReToken):
     rx = re.compile(r'/\*.*?\*/|//[^\n]*', re.S)
 
-
+from text import Text
 # vim: et sw=4 sts=4

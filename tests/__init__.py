@@ -4,7 +4,8 @@ import magictest
 
 import ccss
 import small
+import indent
 
-all_tests = magictest.modsuite(ccss, small)
+all_tests = magictest.modsuite(ccss, small, indent)
 
 # vim: et sw=4 sts=4

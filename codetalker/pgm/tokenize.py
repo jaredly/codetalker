@@ -8,6 +8,9 @@ class TokenError(CodeTalkerException):
 
 def tokenize(tokens, text):
     while text.hasMore():
+        if text.special:
+            yield text.special
+            text.special = None
         for token in tokens:
             one = token.check(text)
             if one is not None:
@@ -18,6 +21,6 @@ def tokenize(tokens, text):
                 text.charno, text.text[text.at:text.at+10].encode('string_escape')))
         text.advance(len(one.value))
 
-    yield EOF('')
+    yield EOF('', text)
 
 # vim: et sw=4 sts=4
