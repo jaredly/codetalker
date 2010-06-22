@@ -66,7 +66,7 @@ class NUMBER(ReToken):
 class WHITE(ReToken):
     rx = re.compile(r'[ \t]+')
 class SYMBOL(StringToken):
-    items = list('~!@#$%^&*()_+-=[]{}|\\<>?,./;\':"')
+    items = list('~!@#$%^&*()_+-=[]{}|\\<>?,./;:')
 class NEWLINE(StringToken):
     items = ['\n']
 class CCOMMENT(ReToken):

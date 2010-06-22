@@ -18,7 +18,7 @@ def assign(rule):
     rule | (ID, '=', plus(add_ex), _or(NEWLINE, EOF))
 
 def declare(rule):
-    rule | ('@', ID, '(', commas(add_ex), ')', _or(NEWLINE, EOF))
+    rule | ('@', ID, '(', [commas(add_ex)], ')', _or(NEWLINE, EOF))
 
 def rule_def(rule):
     rule | (selector, INDENT, plus(_or(statement, NEWLINE)), DEDENT)
@@ -36,7 +36,7 @@ def paren(rule):
     rule | ('(', add_ex, ')')
 
 def post(rule):
-    rule | ('.', ID) | ('[', add_ex, ']') | ('(', commas(add_ex), ')')
+    rule | ('.', ID) | ('[', add_ex, ']') | ('(', [commas(add_ex)], ')')
 
 def commas(item):
     return (item, star(',', item), [','])
