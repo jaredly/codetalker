@@ -2,18 +2,18 @@
 
 class Special:
     '''a special sub-rule for doing more complicated regular expression-like stuff'''
-    def __init__(self, type, *items):
-        self.type = type
+    def __init__(self, *items):
         self.items = items
 
-    @classmethod
-    def factory(cls, name):
-        def meta(*items):
-            return cls(name, *items)
-        return meta
-
-star = Special.factory('star')
-plus = Special.factory('plus')
-_or = Special.factory('or')
+class star(Special):
+    char = '*'
+class plus(Special):
+    char = '+'
+class _or(Special):
+    char = '|'
+class qstart(Special):
+    char = '*?'
+class qplus(Special):
+    char = '+?'
 
 # vim: et sw=4 sts=4
