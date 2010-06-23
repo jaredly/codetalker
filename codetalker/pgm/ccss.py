@@ -9,7 +9,7 @@ class CSSNUMBER(ReToken):
     rx = re.compile(r'(?:\d+(?:\.\d+)?|\.\d+)(px|em|%|pt)?')
 
 class CSSSELECTOR(ReToken):
-    rx = re.compile(r'(?:[ \t]+|[.:#]?[\w-]+|[>,+])+:(?=\n|$)')
+    rx = re.compile(r'(?:[ \t]+|[.:#]?[\w-]+|[>,+&])+:(?=\n|$)')
 
 class CSSID(ReToken):
     rx = re.compile(r'[a-zA-Z_-][a-zA-Z0-9_-]*')
@@ -17,19 +17,24 @@ class CSSID(ReToken):
 class CSSCOLOR(ReToken):
     rx = re.compile(r'#(?:[\da-fA-F]{3}|[\da-fA-F]{6})')
 
-ID = CSSID
-
 class SYMBOL(StringToken):
-    items = tuple('+-*/@(),=:')
+    items = tuple('+-*/@(),=:.')
 
 def start(rule):
     rule | (star(_or(statement, NEWLINE)))
 
 def statement(rule):
-    rule | assign | declare | rule_def
+    rule | assign | declare | rule_def | attribute
 
 def assign(rule):
     rule | (ID, '=', plus(add_ex), _or(NEWLINE, EOF))
+
+def attribute(rule):
+    rule | (cssid, ':', plus(add_ex), _or(NEWLINE, EOF))
+
+def cssid(rule):
+    rule.no_white = True
+    rule | (_or(('-', ID), (ID)), star('-', ID))
 
 def declare(rule):
     rule | ('@', ID, '(', [commas(add_ex)], ')', _or(NEWLINE, EOF))

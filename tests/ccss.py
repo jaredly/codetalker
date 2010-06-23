@@ -38,6 +38,26 @@ class CCSSTest(TestCase):
             raise Exception('supposed to fail on #1111')
         except:
             pass
+    def attr(self):
+        check_parse('one:\n two: 4\n three = 7')
+        check_parse('one:\n -moz-something: 17')
+        check_fail('two: 4')
+        check_fail('one:\n -moz -space: 5')
+        check_fail('one:\n -moz--double: 5')
+
+def check_parse(text):
+    try:
+        return grammar.process(text)
+    except:
+        return grammar.process(text, debug=True)
+
+def check_fail(text):
+    try:
+        grammar.process(text)
+        raise Exception('was supposed to fail on \'%s\'' % text.encode('string_escape'))
+    except:
+        pass
+
 
 def make_pass(grammar, text):
     def meta(self):
@@ -77,12 +97,6 @@ for i, good in enumerate(strings[0]):
 for i, bad in enumerate(strings[1]):
     setattr(CCSSTest, '%d_bad' % i, make_fail(grammar, good))
  
-def check_parse(text):
-    try:
-        return grammar.process(text)
-    except:
-        return grammar.process(text, debug=True)
-
 all_tests = magictest.suite(__name__)
 
 # vim: et sw=4 sts=4

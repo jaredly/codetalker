@@ -42,7 +42,10 @@ class RuleLoader:
         elif isinstance(what, Special):
             options = []
             for item in what.items:
-                options += self.process(item)
+                if what.char == '|':
+                    options.append(tuple(self.process(item)))
+                else:
+                    options += self.process(item)
             return [(what.char,) + tuple(options)]
         elif type(what) == types.FunctionType:
             return [self.grammar.load_func(what)]
