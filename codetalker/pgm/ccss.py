@@ -9,7 +9,7 @@ class CSSNUMBER(ReToken):
     rx = re.compile(r'(?:\d+(?:\.\d+)?|\.\d+)(px|em|%|pt)?')
 
 class CSSSELECTOR(ReToken):
-    rx = re.compile(r'(?:[ \t]+|[.:#]?[\w-]+|[>,+&])+:(?=\n|$)')
+    rx = re.compile(r'[^\n]+:(?=\n)') #r'(?:[ \t]+|[.:#]?[\w-]+|[>,+&])+:(?=\n|$)')
 
 class CSSID(ReToken):
     rx = re.compile(r'[a-zA-Z_-][a-zA-Z0-9_-]*')
@@ -40,7 +40,7 @@ def declare(rule):
     rule | ('@', ID, '(', [commas(add_ex)], ')', _or(NEWLINE, EOF))
 
 def rule_def(rule):
-    rule | (CSSSELECTOR, NEWLINE, INDENT, plus(_or(statement, attribute, NEWLINE)), _or(DEDENT, EOF))
+    rule | (CSSSELECTOR, plus(NEWLINE), INDENT, plus(_or(statement, attribute, NEWLINE)), _or(DEDENT, EOF))
 
 def binop(name, ops, next):
     def meta(rule):

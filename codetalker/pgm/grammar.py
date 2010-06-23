@@ -58,6 +58,7 @@ class Logger:
         self.text += text
 
 logger = Logger(DEBUG)
+import time
 
 class Grammar:
     def __init__(self, start, tokens, indent=False, ignore=[]):
@@ -65,7 +66,9 @@ class Grammar:
         self.tokens = tuple(tokens) + (INDENT, DEDENT, EOF)
         self.indent = indent
         self.ignore = tuple(ignore)
+        t = time.time()
         self.load_grammar()
+        print 'to load', time.time()-t
 
     def load_grammar(self):
         self.rules = []
@@ -101,9 +104,13 @@ class Grammar:
             text = IndentText(text)
         else:
             text = Text(text)
+        t = time.time()
         tokens = self.get_tokens(text)
+        print 'tokenize', time.time()-t
         error = [0, None]
+        t = time.time()
         tree = self.parse_rule(0, tokens, error)
+        print 'parse', time.time()-t
         if tokens.hasNext() or tree is None:
             raise ParseError(error[1])
         return tree
