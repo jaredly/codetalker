@@ -1,7 +1,7 @@
 from tokenize import tokenize
 from text import Text, IndentText
 from rules import RuleLoader
-from tokens import EOF
+from tokens import EOF, INDENT, DEDENT
 from errors import *
 
 import sys
@@ -13,7 +13,7 @@ class ParseError(CodeTalkerException):
 
 class TokenStream:
     def __init__(self, tokens):
-        self.tokens = list(tokens)
+        self.tokens = tuple(tokens)
         self.at = 0
 
     def current(self):
@@ -62,7 +62,7 @@ logger = Logger(DEBUG)
 class Grammar:
     def __init__(self, start, tokens, indent=False, ignore=[]):
         self.start = start
-        self.tokens = tokens
+        self.tokens = tuple(tokens) + (INDENT, DEDENT, EOF)
         self.indent = indent
         self.ignore = tuple(ignore)
         self.load_grammar()

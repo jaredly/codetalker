@@ -9,7 +9,7 @@ from codetalker.pgm.grammar import ParseError
 from codetalker.pgm.text import IndentText
 from codetalker.pgm.tokenize import tokenize
 
-class TokenTest(TestCase):
+class IndentTest(TestCase):
     def tokens(self):
         text = IndentText("hi\n and\n\n more\nstuff")
         tokens = tuple(tokenize([ID, WHITE, NEWLINE], text))

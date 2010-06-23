@@ -22,6 +22,16 @@ class CCSSTest(TestCase):
     def parse(self):
         text = 'hello=orld\n\nother=bar\n'
         tree = check_parse(text)
+    def rule_def(self):
+        text = 'div:\n  a = b\n  @import(d)'
+        tree = check_parse(text)
+    def selectors(self):
+        text = '#some:\n stuff = 3\n\n#other .stuff:\n k = ok'
+        tree = check_parse(text)
+    def hyphen(self):
+        text = '.a-b-c:\n and = other'
+        tree = check_parse(text)
+        pass
 
 def make_pass(grammar, text):
     def meta(self):

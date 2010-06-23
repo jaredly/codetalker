@@ -44,18 +44,19 @@ class ReToken(Token):
         if m:
             return cls(m.group(), text)
 
-class EOF(Token):
-    '''singleton -- special token for signifying the end of file'''
-
+class SpecialToken(Token):
+    '''a special token which is automatically provided by the parser'''
     @classmethod
     def check(cls, text):
-        if not len(text.text[text.at:]):
-            return cls('', text)
+        pass
 
-class INDENT(Token):
+class EOF(SpecialToken):
+    '''singleton -- special token for signifying the end of file'''
+
+class INDENT(SpecialToken):
     '''special token -- used by the preprocessor to indicate the start of an indented block'''
 
-class DEDENT(Token):
+class DEDENT(SpecialToken):
     '''special token -- used by the preprocessor to indicate the end of an indented block'''
 
 class STRING(ReToken):
