@@ -24,7 +24,7 @@ def start(rule):
     rule | (star(_or(statement, NEWLINE)))
 
 def statement(rule):
-    rule | assign | declare | rule_def | attribute
+    rule | assign | declare | rule_def
 
 def assign(rule):
     rule | (ID, '=', plus(add_ex), _or(NEWLINE, EOF))
@@ -33,14 +33,14 @@ def attribute(rule):
     rule | (cssid, ':', plus(add_ex), _or(NEWLINE, EOF))
 
 def cssid(rule):
-    rule.no_white = True
+    rule.no_ignore = True
     rule | (_or(('-', ID), (ID)), star('-', ID))
 
 def declare(rule):
     rule | ('@', ID, '(', [commas(add_ex)], ')', _or(NEWLINE, EOF))
 
 def rule_def(rule):
-    rule | (CSSSELECTOR, NEWLINE, INDENT, plus(_or(statement, NEWLINE)), _or(DEDENT, EOF))
+    rule | (CSSSELECTOR, NEWLINE, INDENT, plus(_or(statement, attribute, NEWLINE)), _or(DEDENT, EOF))
 
 def binop(name, ops, next):
     def meta(rule):

@@ -54,9 +54,11 @@ def check_parse(text):
 def check_fail(text):
     try:
         grammar.process(text)
-        raise Exception('was supposed to fail on \'%s\'' % text.encode('string_escape'))
     except:
         pass
+    else:
+        grammar.process(text, debug=True)
+        raise Exception('was supposed to fail on \'%s\'' % text.encode('string_escape'))
 
 
 def make_pass(grammar, text):

@@ -72,6 +72,7 @@ class Grammar:
         self.rule_dict = {}
         self.rule_names = []
         self.real_rules = []
+        self.no_ignore = []
         self.load_func(self.start)
         print>>logger, self.rule_names
         print>>logger, self.rules
@@ -87,6 +88,8 @@ class Grammar:
         self.rule_names.append(name)
         self.real_rules.append(rule)
         func(rule)
+        if getattr(rule, 'no_ignore', False):
+            self.no_ignore.append(num)
         return num
 
     def get_tokens(self, text):
@@ -126,9 +129,10 @@ class Grammar:
         i = 0
         res = []
         while i < len(children):
-            while isinstance(tokens.current(), self.ignore):
-                res.append(tokens.current())
-                tokens.advance()
+            if rule not in self.no_ignore:
+                while isinstance(tokens.current(), self.ignore):
+                    res.append(tokens.current())
+                    tokens.advance()
             current = children[i]
             print>>logger, 'parsing child',current,i
             if type(current) == int:
