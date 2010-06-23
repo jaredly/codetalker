@@ -77,8 +77,8 @@ class Grammar:
         self.real_rules = []
         self.no_ignore = []
         self.load_func(self.start)
-        print>>logger, self.rule_names
-        print>>logger, self.rules
+        #print>>logger, self.rule_names
+        #print>>logger, self.rules
 
     def load_func(self, func):
         if func in self.rule_dict:
@@ -118,17 +118,17 @@ class Grammar:
     def parse_rule(self, rule, tokens, error):
         if rule < 0 or rule >= len(self.rules):
             raise ParseError('invalid rule: %d' % rule)
-        print>>logger, 'parsing for rule', self.rule_names[rule]
+        #print>>logger, 'parsing for rule', self.rule_names[rule]
         logger.indent += 1
         node = ParseTree(self.rule_names[rule])
         for option in self.rules[rule]:
             res = self.parse_children(rule, option, tokens, error)
             if res is not None:
-                print>>logger, 'yes!',self.rule_names[rule], res
+                #print>>logger, 'yes!',self.rule_names[rule], res
                 logger.indent -= 1
                 node.children = res
                 return node
-        print>>logger, 'failed', self.rule_names[rule]
+        #print>>logger, 'failed', self.rule_names[rule]
         logger.indent -= 1
         return None
     
@@ -141,7 +141,7 @@ class Grammar:
                     res.append(tokens.current())
                     tokens.advance()
             current = children[i]
-            print>>logger, 'parsing child',current,i
+            #print>>logger, 'parsing child',current,i
             if type(current) == int:
                 if current < 0:
                     ctoken = tokens.current()
@@ -151,7 +151,7 @@ class Grammar:
                         i += 1
                         continue
                     else:
-                        print>>logger, 'token mismatch', ctoken, self.tokens[-(current + 1)]
+                        #print>>logger, 'token mismatch', ctoken, self.tokens[-(current + 1)]
                         if tokens.at > error[0]:
                             error[0] = tokens.at
                             error[1] = 'Unexpected token %s; expected %s (while parsing %s)' % (ctoken, self.tokens[-(current + 1)], self.rule_names[rule])
@@ -179,21 +179,21 @@ class Grammar:
                 if tokens.at > error[0]:
                     error[0] = tokens.at
                     error[1] = 'Unexpected token %s; expected \'%s\' (while parsing %s)' % (ctoken, current.encode('string_escape'), self.rule_names[rule])
-                print>>logger, 'FAIL string compare:', [current, tokens.current().value]
+                #print>>logger, 'FAIL string compare:', [current, tokens.current().value]
                 return None
             elif type(current) == tuple:
                 st = current[0]
                 if st == '*':
-                    print>>logger, 'star repeat'
+                    #print>>logger, 'star repeat'
                     while 1:
-                        print>>logger, 'trying one'
+                        #print>>logger, 'trying one'
                         at = tokens.at
                         sres = self.parse_children(rule, current[1:], tokens, error)
                         if sres:
-                            print>>logger, 'yes! (star)'
+                            #print>>logger, 'yes! (star)'
                             res += sres
                         else:
-                            print>>logger, 'no (star)'
+                            #print>>logger, 'no (star)'
                             tokens.at = at
                             break
                     i += 1
