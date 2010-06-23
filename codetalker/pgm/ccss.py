@@ -28,24 +28,31 @@ def statement(rule):
 
 def assign(rule):
     rule | (ID, '=', plus(add_ex), _or(NEWLINE, EOF))
+    rule.astAttrs = {'left': 'ID', 'values': 'add_ex[]'}
 
 def attribute(rule):
     rule | (cssid, ':', plus(add_ex), _or(NEWLINE, EOF))
+    rule.astAttrs = {'attr': 'cssid', 'values': 'add_ex[]'}
 
 def cssid(rule):
     rule.no_ignore = True
     rule | (_or(('-', ID), (ID)), star('-', ID))
+    rule.astAttrs = {'parts': 'ID[], SYMBOL[]'}
 
 def declare(rule):
     rule | ('@', ID, '(', [commas(add_ex)], ')', _or(NEWLINE, EOF))
+    rule.astAttrs = {'name': 'ID', 'args': 'add_ex[]'}
 
 def rule_def(rule):
     rule | (CSSSELECTOR, plus(NEWLINE), INDENT, plus(_or(statement, attribute, NEWLINE)), _or(DEDENT, EOF))
+    rule.astAttrs = {'selector': 'CSSSELECTOR', 'body': 'statement,attribute'}
 
 def binop(name, ops, next):
     def meta(rule):
         rule | (next, star(_or(*ops), next))
-    meta.astName = name
+        next_name = getattr(next, 'astName', next.__name__)
+        rule.astAttrs = {'left': next_name, 'ops': 'SYMBOL[]', 'values': '%s[1:]' % next_name}
+    meta.astName = 'BinOp'
     return meta
 
 def atomic(rule):
@@ -63,6 +70,7 @@ def commas(item):
 
 mul_ex = binop('muldiv', '*/', atomic)
 add_ex = binop('expression', '+-', mul_ex)
+add_ex.astHelp = 'value (or expression)'
 
 grammar = Grammar(start=start, indent=True, tokens=[CSSSELECTOR, STRING, ID, CSSNUMBER, CSSCOLOR, CCOMMENT, SYMBOL, NEWLINE, WHITE], ignore=[WHITE, CCOMMENT])
 

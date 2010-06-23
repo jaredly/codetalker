@@ -1,7 +1,7 @@
 from tokenize import tokenize
 from text import Text, IndentText
 from rules import RuleLoader
-from tokens import EOF, INDENT, DEDENT
+from tokens import EOF, INDENT, DEDENT, Token
 from errors import *
 
 import sys
@@ -32,12 +32,44 @@ class TokenStream:
     def hasNext(self):
         return self.at < len(self.tokens) - 1
 
-class ParseTree(object):
+class AstNode(object):
     def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        text = '<%s' % self.name
+        for k,v in self.__dict__.iteritems():
+            if k == 'name':
+                continue
+            if isinstance(v, Token):
+                v = repr(v)
+            elif isinstance(v, AstNode):
+                v = repr(v)
+            #elif type(v) in (tuple, list):
+            #    v = '"..."'
+            else:
+                v = repr(v)#'"..."'
+            text += ' %s=%s' % (k, v)
+        return text + '>'
+
+class ParseTree(object):
+    def __init__(self, rule, name):
+        self.rule = rule
+        self.name = name
         self.children = []
 
     def add(self, child):
         self.children.append(child)
+
+    def __repr__(self):
+        text = '<%s>\n  ' % self.name
+        for child in self.children:
+            if isinstance(child, ParseTree):
+                text += repr(child).replace('\n', '\n  ')
+            else:
+                text += repr(child) + '\n  '
+        text = text.rstrip() + '\n' + '</%s>' % self.name
+        return text
 
 class Logger:
     def __init__(self, output=True):
@@ -114,13 +146,41 @@ class Grammar:
         if tokens.hasNext() or tree is None:
             raise ParseError(error[1])
         return tree
+    
+    def toAst(self, tree):
+        if isinstance(tree, Token):
+            return tree
+        rule = tree.rule
+        attrs = getattr(self.real_rules[rule], 'astAttrs', None)
+        if attrs is None:
+            return [self.toAst(child) for child in tree.children if isinstance(child, ParseTree)]
+        node = AstNode(self.rule_names[rule])
+        for key, value in attrs.iteritems():
+            parts = value.split(',')
+            if len(parts) == 1:
+                if value.endswith('[]'):
+                    item = [self.toAst(child) for child in tree.children if isinstance(child, ParseTree) and\
+                            child.name == value[:-2] or child.__class__.__name__ == value[:-2]]
+                else:
+                    for child in tree.children:
+                        if isinstance(child, ParseTree) and child.name == value\
+                                or child.__class__.__name__ == value:
+                            item = self.toAst(child)
+                            break
+                    else:
+                        raise ParseError('No child matching %s' % value)
+            else:
+                item = [self.toAst(child) for child in tree.children if isinstance(child, ParseTree) and\
+                        child.name in parts or child.__class__.__name__ in parts]
+            setattr(node, key, item)
+        return node
 
     def parse_rule(self, rule, tokens, error):
         if rule < 0 or rule >= len(self.rules):
             raise ParseError('invalid rule: %d' % rule)
         if logger.output:print>>logger, 'parsing for rule', self.rule_names[rule]
         logger.indent += 1
-        node = ParseTree(self.rule_names[rule])
+        node = ParseTree(rule, self.rule_names[rule])
         for option in self.rules[rule]:
             res = self.parse_children(rule, option, tokens, error)
             if res is not None:
