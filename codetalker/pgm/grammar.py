@@ -45,8 +45,8 @@ class AstNode(object):
                 v = repr(v)
             elif isinstance(v, AstNode):
                 v = repr(v)
-            #elif type(v) in (tuple, list):
-            #    v = '"..."'
+            elif type(v) in (tuple, list):
+                v = '"..."'
             else:
                 v = repr(v)#'"..."'
             text += ' %s=%s' % (k, v)
@@ -150,6 +150,9 @@ class Grammar:
     def toAst(self, tree):
         if isinstance(tree, Token):
             return tree
+            #token = AstNode(':token:')
+            #token.token = tree
+            #return token
         rule = tree.rule
         attrs = getattr(self.real_rules[rule], 'astAttrs', None)
         if attrs is None:
