@@ -8,9 +8,10 @@ class TokenError(CodeTalkerException):
 
 def tokenize(tokens, text):
     while text.hasMore():
-        if text.special:
-            yield text.special
-            text.special = None
+        if text.specials:
+            for special in text.specials:
+                yield special
+            text.specials = []
         for token in tokens:
             one = token.check(text)
             if one is not None:
