@@ -31,7 +31,13 @@ class CCSSTest(TestCase):
     def hyphen(self):
         text = '.a-b-c:\n and = other'
         tree = check_parse(text)
-        pass
+    def color(self):
+        check_parse('five = #555\n\na = #666666')
+        try:
+            check_parse('one = #1111')
+            raise Exception('supposed to fail on #1111')
+        except:
+            pass
 
 def make_pass(grammar, text):
     def meta(self):
