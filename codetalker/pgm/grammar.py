@@ -8,9 +8,6 @@ import sys
 
 DEBUG = False
 
-class ParseError(CodeTalkerException):
-    pass
-
 class TokenStream:
     def __init__(self, tokens):
         self.tokens = tuple(tokens)
@@ -157,6 +154,8 @@ class Grammar:
         attrs = getattr(self.real_rules[rule], 'astAttrs', None)
         if attrs is None:
             return [self.toAst(child) for child in tree.children if isinstance(child, ParseTree)]
+            #if len(res) == 1:
+            #    return res[0]
         node = AstNode(self.rule_names[rule])
         for key, value in attrs.iteritems():
             parts = value.split(',')

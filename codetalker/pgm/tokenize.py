@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 from tokens import Token, EOF
-from errors import CodeTalkerException
-
-class TokenError(CodeTalkerException):
-    pass
+from errors import TokenError
 
 def tokenize(tokens, text):
     while text.hasMore():
