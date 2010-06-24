@@ -184,7 +184,8 @@ class Grammar:
                     if end: end = int(end)
                     else: end = None
                     item = [child for child in tree.children if isinstance(child, ParseTree) and\
-                            child.name == value or child.__class__.__name__ == value]
+                            child.name == name or child.__class__.__name__ == name]
+                    #print 'splitting for', value, 
                     item = [self.toAst(child) for child in item[start:end]]
                 else:
                     for child in tree.children:
