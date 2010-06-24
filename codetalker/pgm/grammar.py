@@ -50,7 +50,7 @@ class AstNode(object):
         return text + '>'
 
     def __str__(self):
-        raise Exception
+        return repr(self)
 
 class ParseTree(object):
     def __init__(self, rule, name):
@@ -130,7 +130,7 @@ class Grammar:
     def get_tokens(self, text):
         return TokenStream(tokenize(self.tokens, text))
 
-    def process(self, text, debug = False):
+    def process(self, text, start=None, debug = False):
         logger.output = debug
         if self.indent:
             text = IndentText(text)
@@ -141,7 +141,11 @@ class Grammar:
         if logger.output:print 'tokenize', time.time()-t
         error = [0, None]
         t = time.time()
-        tree = self.parse_rule(0, tokens, error)
+        if start is not None:
+            start = self.rule_dict[start]
+        else:
+            start = 0
+        tree = self.parse_rule(start, tokens, error)
         if logger.output:print 'parse', time.time()-t
         if tokens.hasNext() or tree is None:
             raise ParseError(error[1])
@@ -264,7 +268,7 @@ class Grammar:
                     continue
                 if tokens.at > error[0]:
                     error[0] = tokens.at
-                    error[1] = 'Unexpected token %s; expected \'%s\' (while parsing %s)' % (ctoken, current.encode('string_escape'), self.rule_names[rule])
+                    error[1] = 'Unexpected token %s; expected \'%s\' (while parsing %s)' % (repr(ctoken), current.encode('string_escape'), self.rule_names[rule])
                 if logger.output:print>>logger, 'FAIL string compare:', [current, tokens.current().value]
                 return None
             elif type(current) == tuple:
