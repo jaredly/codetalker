@@ -57,27 +57,4 @@ def white(text, at=0):
         i += 1
     return i - at
 
-def chunk(text):
-    lines = text.splitlines(True)
-    wrx = re.compile(r'^[ \t]*')
-    chunks = [[]]
-    ident = 0
-    for line in lines:
-        if not line.strip():
-            chunks[-1].append(line)
-        white = wrx.match(line).group()
-        if len(white) > ident:
-            chunks[-1] = ''.join(chunks[-1])
-            chunks.append('indent')
-            chunks.append([])
-            ident = len(white)
-        elif len(white) < ident:
-            chunks[-1] = ''.join(chunks[-1])
-            chunks.append('dedent')
-            chunks.append([])
-            ident = len(white)
-        chunks[-1].append(line)
-    chunks[-1] = ''.join(chunks[-1])
-    return chunks
-
 # vim: et sw=4 sts=4
