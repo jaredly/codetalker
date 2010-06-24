@@ -171,7 +171,7 @@ class Grammar:
         node = AstNode(self.rule_names[rule])
         node._tree = tree
         for key, value in attrs.iteritems():
-            parts = value.split(',')
+            parts = tuple(part.strip() for part in value.split(','))
             if len(parts) == 1:
                 if value.endswith('[]'):
                     item = [self.toAst(child) for child in tree.children if isinstance(child, ParseTree) and\
@@ -239,7 +239,7 @@ class Grammar:
                         if logger.output:print>>logger, 'token mismatch', ctoken, self.tokens[-(current + 1)]
                         if tokens.at > error[0]:
                             error[0] = tokens.at
-                            error[1] = 'Unexpected token %s; expected %s (while parsing %s)' % (ctoken, self.tokens[-(current + 1)], self.rule_names[rule])
+                            error[1] = 'Unexpected token %s; expected %s (while parsing %s)' % (repr(ctoken), self.tokens[-(current + 1)], self.rule_names[rule])
                         return None
                 else:
                     ctoken = tokens.current()
@@ -249,7 +249,7 @@ class Grammar:
                         tokens.at = at
                         if tokens.at >= error[0]:
                             error[0] = tokens.at
-                            error[1] = 'Unexpected token %s; expected %s (while parsing %s)' % (ctoken, self.rule_names[current], self.rule_names[rule])
+                            error[1] = 'Unexpected token %s; expected %s (while parsing %s)' % (repr(ctoken), self.rule_names[current], self.rule_names[rule])
                         return None
                     res.append(sres)
                     i += 1
