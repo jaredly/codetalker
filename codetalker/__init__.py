@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import parser
 from node import Node
+import pgm
 
 def parse(text, lang, junk = ('whites','comment','pp-line'), debug=0):
     root, i, const = parser.parse(text, lang.tokens)
