@@ -19,6 +19,9 @@ class Token:
         return u'<%s token "%s" at (%d, %d)>' % (self.__class__.__name__,
                 self.value.encode('string_escape'), self.lineno, self.charno)
 
+    def __str__(self):
+        return self.value
+
     @classmethod
     def check(cls, text):
         '''test to see if a token matches the current text'''

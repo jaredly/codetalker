@@ -49,6 +49,9 @@ class AstNode(object):
             text += ' %s=%s' % (k, v)
         return text + '>'
 
+    def __str__(self):
+        raise Exception
+
 class ParseTree(object):
     def __init__(self, rule, name):
         self.rule = rule
@@ -153,16 +156,36 @@ class Grammar:
         rule = tree.rule
         attrs = getattr(self.real_rules[rule], 'astAttrs', None)
         if attrs is None:
-            return [self.toAst(child) for child in tree.children if isinstance(child, ParseTree)]
+            if getattr(self.real_rules[rule], 'astAll', None):
+                node = AstNode(self.rule_names[rule])
+                node._tree = tree
+                node.items = [self.toAst(child) for child in tree.children]
+                return node
+            children = [self.toAst(child) for child in tree.children if isinstance(child, ParseTree)]#\
+                            #or not isinstance(child, self.ignore)]
+            if not children:
+                raise ParseError('no ast children for node %s' % tree.name)
+            return children
             #if len(res) == 1:
             #    return res[0]
         node = AstNode(self.rule_names[rule])
+        node._tree = tree
         for key, value in attrs.iteritems():
             parts = value.split(',')
             if len(parts) == 1:
                 if value.endswith('[]'):
                     item = [self.toAst(child) for child in tree.children if isinstance(child, ParseTree) and\
                             child.name == value[:-2] or child.__class__.__name__ == value[:-2]]
+                elif '[' in value and value.endswith(']'):
+                    name, slice = value.split('[', 1)
+                    start, end = slice[:-1].split(':')
+                    if start: start = int(start)
+                    else: start = None
+                    if end: end = int(end)
+                    else: end = None
+                    item = [child for child in tree.children if isinstance(child, ParseTree) and\
+                            child.name == value or child.__class__.__name__ == value]
+                    item = [self.toAst(child) for child in item[start:end]]
                 else:
                     for child in tree.children:
                         if isinstance(child, ParseTree) and child.name == value\
