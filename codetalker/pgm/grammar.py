@@ -64,8 +64,8 @@ class Grammar:
             
             def start(rule):
                 rule | (ID, '=', plus(value))
-                rule.astAttrs = {'left':{'token':ID, 'single':True},
-                                 'right':{'rule':value}}
+                rule.astAttrs = {'left':{'which':ID, 'single':True},
+                                 'right':{'which':value}}
                 rule.astName = 'main'
         '''
         if builder in self.rule_dict:
@@ -95,16 +95,9 @@ class Grammar:
         attrs = []
         for attr, dct in rule.astAttrs.iteritems():
             error_suffix = ' for astAttr "%s" in rule "%s"' % (attr, name)
-            if 'rule' in dct:
-                if not dct['rule'] in self.rule_dict:
-                    raise RuleError('invalid rule specified' + error_suffix)
-                which = self.rule_dict[dct['rule']]
-            elif not 'token' in dct:
+            if not 'which' in dct:
                 raise RuleError('must specify either a rule or a token' + error_suffix)
-            elif not dct['token'] in self.tokens:
-                raise RuleError('invalid token' + error_suffix)
-            else:
-                which = -(self.tokens.index(dct['token']) + 1)
+            which = self.which(dct['which'])
             attrs.append((attr, which, dct.get('single', False), dct.get('start', 0), dct.get('end', None)))
         self.ast_attrs[num] = tuple(attrs)
         if attrs:
@@ -149,13 +142,17 @@ class Grammar:
     
     def which(self, obj):
         if isinstance(obj, Token):
+            if not obj.__class__ in self.tokens:
+                raise RuleError('invalid token specified: %r' % obj)
             return -(self.tokens.index(obj.__class__) + 1)
         elif inspect.isclass(obj) and issubclass(obj, Token):
+            if not obj in self.tokens:
+                raise RuleError('invalid token specified: %r' % obj)
             return -(self.tokens.index(obj) + 1)
         elif isinstance(obj, ParseTree):
             return obj.rule
         else:
-            return self.rules[obj]
+            return self.rule_dict[obj]
     def to_ast(self, tree):
         if isinstance(tree, Token):
             return tree

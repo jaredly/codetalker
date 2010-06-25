@@ -6,9 +6,6 @@ import types
 from special import Special
 import inspect
 
-class RuleError(CodeTalkerException):
-    pass
-
 class RuleLoader(object):
     __slots__ = ('grammar', 'options', 'dont_ignore', 'astAttrs', 'pass_single')
     def __init__(self, grammar):

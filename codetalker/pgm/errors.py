@@ -12,4 +12,7 @@ class TokenError(CodeTalkerException):
 class IndentError(CodeTalkerException):
     pass
 
+class RuleError(CodeTalkerException):
+    pass
+
 # vim: et sw=4 sts=4
