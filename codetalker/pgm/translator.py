@@ -20,24 +20,28 @@ class Translator:
     def translates(self, what):
         if inspect.isclass(what) and issubclass(what, Token) and what in self.grammar.tokens:
             what = -(self.grammar.tokens.index(what) + 1)
-        elif what in self.grammar.real_rules:
-            what = self.grammar.real_rules[what]
+        elif what in self.grammar.rule_dict:
+            what = self.grammar.rule_dict[what]
         else:
             raise TranslatorException('Unexpected translation target: %s' % what)
         def meta(func):
-            self.registers[what] = func
+            self.register[what] = func
         return meta
 
     def translate(self, tree, scope):
-        if tree._type not in self.register:
-            if tree._type >= 0:
-                raise TranslatorException('unknown rule to translate (%s)' % self.grammar.rule_names[tree._type])
+        if isinstance(tree, Token):
+            which = -(self.grammar.tokens.index(tree.__class__) + 1)
+        else:
+            which = tree._rule
+        if which not in self.register:
+            if which >= 0:
+                raise TranslatorException('unknown rule to translate (%s)' % self.grammar.rule_names[which])
             else:
-                raise TranslatorException('unknown token to translate (%s)' % self.grammar.tokens[-(tree._type + 1)])
-        return self.register[tree._type](tree, scope)
+                raise TranslatorException('unknown token to translate (%s)' % self.grammar.tokens[-(which + 1)])
+        return self.register[which](tree, scope)
 
-    def from_source(self, text, **args):
-        tree = self.grammar.process(text)
+    def from_string(self, text, **args):
+        tree = self.grammar.to_ast(self.grammar.process(text))
         return self.from_ast(tree, **args)
 
     def from_ast(self, tree, **args):

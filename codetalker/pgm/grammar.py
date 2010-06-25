@@ -6,6 +6,7 @@ from errors import *
 
 from nodes import AstNode, ParseTree, TokenStream
 from logger import logger
+import inspect
 
 import time
 
@@ -38,7 +39,7 @@ class Grammar:
         self.start = start
         self.tokens = tuple(tokens) + self.special_tokens
         self.ignore = tuple(ignore)
-        self.ast_tokens = ast_tokens
+        self.ast_tokens = tuple(ast_tokens)
         self.indent = indent
 
         self.rules      = []
@@ -97,7 +98,7 @@ class Grammar:
             if 'rule' in dct:
                 if not dct['rule'] in self.rule_dict:
                     raise RuleError('invalid rule specified' + error_suffix)
-                which = self.rule_dict[attr['rule']]
+                which = self.rule_dict[dct['rule']]
             elif not 'token' in dct:
                 raise RuleError('must specify either a rule or a token' + error_suffix)
             elif not dct['token'] in self.tokens:
@@ -108,7 +109,7 @@ class Grammar:
         self.ast_attrs[num] = tuple(attrs)
         if attrs:
             ## TODO: convert name to TitleCase for class name?
-            setattr(self.ast_classes, name, type(name, (AstNode), {'__slots__':tuple(rule.astAttrs.keys())}))
+            setattr(self.ast_classes, name, type(name, (AstNode,), {'__slots__':('_rule',) + tuple(rule.astAttrs.keys())}))
         return num
 
     def get_tokens(self, text):
@@ -146,6 +147,15 @@ class Grammar:
 
         return tree
     
+    def which(self, obj):
+        if isinstance(obj, Token):
+            return -(self.tokens.index(obj.__class__) + 1)
+        elif inspect.isclass(obj) and issubclass(obj, Token):
+            return -(self.tokens.index(obj) + 1)
+        elif isinstance(obj, ParseTree):
+            return obj.rule
+        else:
+            return self.rules[obj]
     def to_ast(self, tree):
         if isinstance(tree, Token):
             return tree
@@ -153,8 +163,9 @@ class Grammar:
         name = self.rule_names[rule]
         if self.ast_attrs[rule]:
             node = getattr(self.ast_classes, name)()
+            node._rule = rule
             for attr, which, single, start, end in self.ast_attrs[rule]:
-                children = [child for child in tree.children if child._which == which]
+                children = [child for child in tree.children if self.which(child) == which]
                 if single:
                     setattr(node, attr, self.to_ast(children[start]))
                 else:

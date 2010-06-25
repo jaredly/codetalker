@@ -19,13 +19,14 @@ for an ast definition... options:
 '''
 
 class SYMBOL(StringToken):
-    items = list('{},[]')
+    items = list('{},[]:')
 
 class TFN(StringToken):
     items = ['true', 'false', 'null']
 
 def value(rule):
     rule | dict_ | list_ | STRING | TFN | NUMBER
+    rule.pass_single = True
 
 def dict_(rule):
     rule | ('{', [commas((STRING, ':', value))], '}')

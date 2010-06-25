@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import re
 
-class Token:
+class Token(object):
     '''Base token class'''
     def __init__(self, value, *more):
         if len(more) == 1 and isinstance(more[0], Text):
