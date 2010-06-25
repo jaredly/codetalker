@@ -16,4 +16,7 @@ class qstart(Special):
 class qplus(Special):
     char = '+?'
 
+def commas(item):
+    return (item, star(',', item), [','])
+
 # vim: et sw=4 sts=4

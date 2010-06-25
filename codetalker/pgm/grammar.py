@@ -162,13 +162,10 @@ class Grammar:
                 node._tree = tree
                 node.items = [self.toAst(child) for child in tree.children]
                 return node
-            children = [self.toAst(child) for child in tree.children if isinstance(child, ParseTree)]#\
-                            #or not isinstance(child, self.ignore)]
+            children = [self.toAst(child) for child in tree.children if isinstance(child, ParseTree)]
             if not children:
                 raise ParseError('no ast children for node %s' % tree.name)
             return children
-            #if len(res) == 1:
-            #    return res[0]
         node = AstNode(self.rule_names[rule])
         node._tree = tree
         for key, value in attrs.iteritems():

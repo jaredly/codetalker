@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from grammar import Grammar
+from translator import Translator
 import tokens
 import special
 
