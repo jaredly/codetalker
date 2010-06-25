@@ -25,10 +25,10 @@ def make_trans(a, b):
         self.assertEqual(nw, b)
     return meta
 
-to_parse = ['[]','{}','[1,2,3]','{"hello":5, "man":[23,43,"yo"]}', "'he\\'llo'"]
+to_parse = ['[]','{}','[1,2,3]','{"hello":5, "man":[23,43,"yo"]}', "'he\\'llo'", '"double\\" \'escape"']
 for i, string in enumerate(to_parse):
     setattr(Basic, 'parse_%d' % i, make_func(grammar.process, string))
-parsed = [[], {}, [1,2,3], {'hello':5, 'man':[23, 43, 'yo']}, "he'llo"]
+parsed = [[], {}, [1,2,3], {'hello':5, 'man':[23, 43, 'yo']}, "he'llo", 'double" \'escape']
 for i, (string, py) in enumerate(zip(to_parse, parsed)):
     setattr(Basic, 'translate_%d' % i, make_trans(string, py))
 
