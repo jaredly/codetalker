@@ -25,7 +25,7 @@ class Grammar:
     "process" is the main entry point (currently) -- you feed it
     text, it gives you back a ParseTree (tokenizes and parses)'''
     special_tokens = (INDENT, DEDENT, EOF)
-    def __init__(self, start, tokens, ignore=(), indent=False):
+    def __init__(self, start, tokens, ignore=(), indent=False, ast_tokens=()):
         '''Grammar constructor
 
             start: the start rule [function]
@@ -38,33 +38,73 @@ class Grammar:
         self.start = start
         self.tokens = tuple(tokens) + self.special_tokens
         self.ignore = tuple(ignore)
+        self.ast_tokens = ast_tokens
         self.indent = indent
-        if TIME: timeit(self.load_grammar)
-        else: self.load_grammar()
 
-    def load_grammar(self):
         self.rules      = []
         self.rule_dict  = {}
         self.rule_names = []
         self.real_rules = []
-        self.no_ignore  = []
-        self.load_rule(self.start)
+        self.dont_ignore  = []
+        self.ast_attrs = []
+
+        if TIME: timeit(self.load_rule, self.start)
+        else: self.load_rule(self.start)
+
         if logger.output:print>>logger, self.rule_names
         if logger.output:print>>logger, self.rules
 
-    def load_rule(self, func):
-        if func in self.rule_dict:
-            return self.rule_dict[func]
+    def load_rule(self, builder):
+        '''Load a rule into the grammar and cache it for
+        future use
+        
+        example rule:
+            
+            def start(rule):
+                rule | (ID, '=', plus(value))
+                rule.astAttrs = {'left':{'token':ID, 'single':True},
+                                 'right':{'rule':value}}
+                rule.astName = 'main'
+        '''
+        if builder in self.rule_dict:
+            return self.rule_dict[builder]
         num = len(self.rules)
-        self.rule_dict[func] = num
+        name = getattr(builder, 'astName', builder.__name__)
         rule = RuleLoader(self)
+
+        self.rule_dict[builder] = num
         self.rules.append(rule.options)
-        name = getattr(func, 'astName', func.__name__)
         self.rule_names.append(name)
         self.real_rules.append(rule)
-        func(rule)
-        if getattr(rule, 'no_ignore', False):
-            self.no_ignore.append(num)
+        self.ast_attrs.append(())
+        builder(rule)
+        if rule.dont_ignore:
+            self.dont_ignore.append(num)
+        '''ast attribute specification format:
+
+        self.ast_attrs[num] = ((name, which, single, start, end), ...)
+
+            name: string
+            which: int; positive for rule_id, negative for token_id
+            single: boolean - restrict to one
+            start: int
+            end: int; for slicing
+        '''
+        attrs = []
+        for attr, dct in rule.astAttrs.iteritems():
+            error_suffix = ' for astAttr "%s" in rule "%s"' % (attr, name)
+            if 'rule' in dct:
+                if not dct['rule'] in self.rule_dict:
+                    raise RuleError('invalid rule specified' + error_suffix)
+                which = self.rule_dict[attr['rule']]
+            elif not 'token' in dct:
+                raise RuleError('must specify either a rule or a token' + error_suffix)
+            elif not dct['token'] in self.tokens:
+                raise RuleError('invalid token' + error_suffix)
+            else:
+                which = -(self.tokens.index(dct['token']) + 1)
+            attrs.append((attr, which, dct.get('single', False), dct.get('start', None), dct.get('end', None)))
+        self.ast_attrs[num] = tuple(attrs)
         return num
 
     def get_tokens(self, text):
@@ -171,7 +211,7 @@ class Grammar:
         i = 0
         res = []
         while i < len(children):
-            if rule not in self.no_ignore:
+            if rule not in self.dont_ignore:
                 while isinstance(tokens.current(), self.ignore):
                     res.append(tokens.current())
                     tokens.advance()

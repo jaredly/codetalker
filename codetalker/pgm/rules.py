@@ -9,10 +9,13 @@ import inspect
 class RuleError(CodeTalkerException):
     pass
 
-class RuleLoader:
+class RuleLoader(object):
+    __slots__ = ('grammar', 'options', 'dont_ignore', 'astAttrs')
     def __init__(self, grammar):
         self.grammar = grammar
         self.options = []
+        self.dont_ignore = False
+        self.astAttrs = {}
 
     def __or__(self, other):
         self.options.append(self.process(other))
