@@ -9,27 +9,50 @@ from logger import logger
 
 import time
 
+TIME = False
+
+def timeit(func, *args, **kwargs):
+    start = time.time()
+    res = func(*args, **kwargs)
+    total = time.time() - start
+    print >> logger, 'time to execute %s: %s' % (func, total)
+    return res
+
 class Grammar:
-    def __init__(self, start, tokens, indent=False, ignore=[]):
+    '''This is the main driving class -- it sets up the grammar,
+    tokenizes, parses, and translates into an AST.
+
+    "process" is the main entry point (currently) -- you feed it
+    text, it gives you back a ParseTree (tokenizes and parses)'''
+    special_tokens = (INDENT, DEDENT, EOF)
+    def __init__(self, start, tokens, ignore=(), indent=False):
+        '''Grammar constructor
+
+            start: the start rule [function]
+            tokens: an iterable of Token subclasses [used to tokenize text]
+            ignore: tokens to ignore while parsing [often WHITE and COMMENT]
+            indent: boolean (default false) indicating whether to output
+                    INDENT and DEDENT tokens while tokenizing (got use in indentation
+                    sensitive languages such as python) self.start = start
+        '''
         self.start = start
-        self.tokens = tuple(tokens) + (INDENT, DEDENT, EOF)
-        self.indent = indent
+        self.tokens = tuple(tokens) + self.special_tokens
         self.ignore = tuple(ignore)
-        t = time.time()
-        self.load_grammar()
-        if logger.output:print 'to load', time.time()-t
+        self.indent = indent
+        if TIME: timeit(self.load_grammar)
+        else: self.load_grammar()
 
     def load_grammar(self):
-        self.rules = []
-        self.rule_dict = {}
+        self.rules      = []
+        self.rule_dict  = {}
         self.rule_names = []
         self.real_rules = []
-        self.no_ignore = []
-        self.load_func(self.start)
+        self.no_ignore  = []
+        self.load_rule(self.start)
         if logger.output:print>>logger, self.rule_names
         if logger.output:print>>logger, self.rules
 
-    def load_func(self, func):
+    def load_rule(self, func):
         if func in self.rule_dict:
             return self.rule_dict[func]
         num = len(self.rules)
@@ -48,24 +71,35 @@ class Grammar:
         return TokenStream(tokenize(self.tokens, text))
 
     def process(self, text, start=None, debug = False):
+        '''main entry point for parsing text.
+
+            text: string - to parse
+            start: optional custom start function (for advanced parsing)
+            debug: boolean (default false) to output debug parse tracing
+        '''
         logger.output = debug
         if self.indent:
             text = IndentText(text)
         else:
             text = Text(text)
-        t = time.time()
-        tokens = self.get_tokens(text)
-        if logger.output:print 'tokenize', time.time()-t
-        error = [0, None]
-        t = time.time()
+        # get tokens
+        if TIME: tokens = timeit(self.get_tokens, text)
+        else: tokens = self.get_tokens(text)
+        # set starting rule
         if start is not None:
             start = self.rule_dict[start]
         else:
             start = 0
-        tree = self.parse_rule(start, tokens, error)
-        if logger.output:print 'parse', time.time()-t
+        error = [0, None]
+
+        # go for it
+        if TIME: tree = timeit(self.parse_rule, start, tokens, error)
+        else: tree = self.parse_rule(start, tokens, error)
+
+        # either not everything was parsed or nothing was returned
         if tokens.hasNext() or tree is None:
             raise ParseError(error[1])
+
         return tree
     
     def toAst(self, tree):

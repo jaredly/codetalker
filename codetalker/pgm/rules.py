@@ -48,7 +48,7 @@ class RuleLoader:
                     options += self.process(item)
             return [(what.char,) + tuple(options)]
         elif type(what) == types.FunctionType:
-            return [self.grammar.load_func(what)]
+            return [self.grammar.load_rule(what)]
         else:
             raise RuleError('invalid rule item found: %s' % what)
 
