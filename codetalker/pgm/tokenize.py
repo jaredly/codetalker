@@ -4,6 +4,7 @@ from tokens import Token, EOF
 from errors import TokenError
 
 def tokenize(tokens, text):
+    '''a generator to split some text into tokens'''
     while text.hasMore():
         if text.specials:
             for special in text.specials:

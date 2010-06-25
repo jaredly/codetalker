@@ -2,10 +2,10 @@
 from tokens import INDENT, DEDENT
 from errors import *
 
-class IndentError(CodeTalkerException):
-    pass
-
 class Text:
+    '''a small utility class in charge of serving up
+    a body of text and keeping track of the line + char
+    number.'''
     def __init__(self, text):
         self.charno = 1
         self.lineno = 1
@@ -29,6 +29,8 @@ class Text:
 import re
 
 class IndentText(Text):
+    '''a specialized Text class, which also keeps track
+    of indentation -- outputs INDENT and DEDENT tokens'''
     def __init__(self, text):
         Text.__init__(self, text)
         self.indents = [0]

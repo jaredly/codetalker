@@ -9,5 +9,7 @@ class ParseError(CodeTalkerException):
 class TokenError(CodeTalkerException):
     pass
 
+class IndentError(CodeTalkerException):
+    pass
 
 # vim: et sw=4 sts=4

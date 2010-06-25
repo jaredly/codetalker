@@ -3,7 +3,7 @@
 from magictest import MagicTest as TestCase, suite
 
 from codetalker import pgm
-from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, SYMBOL, CCOMMENT, NEWLINE, EOF, INDENT, DEDENT
+from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, CCOMMENT, NEWLINE, EOF, INDENT, DEDENT
 from codetalker.pgm.special import star, plus, _or
 from codetalker.pgm.grammar import ParseError
 from codetalker.pgm.text import IndentText

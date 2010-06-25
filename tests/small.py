@@ -3,9 +3,12 @@
 from magictest import MagicTest as TestCase, suite
 
 from codetalker import pgm
-from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, SYMBOL, CCOMMENT, NEWLINE, EOF
+from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, CCOMMENT, NEWLINE, EOF, StringToken
 from codetalker.pgm.special import star, plus, _or
 from codetalker.pgm.grammar import ParseError
+
+class SYMBOL(StringToken):
+    items = list('[]=-+/{}')
 
 def start_one(rule):
     rule | star(ID)
