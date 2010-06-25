@@ -4,52 +4,47 @@ from codetalker.pgm import Grammar, Translator
 from codetalker.pgm.special import star, plus, _or, commas
 from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE, ReToken, StringToken
 
-'''
-for an ast definition... options:
+'''Man this looks sweet. It really should be
+this easy to write a json parser.'''
 
-    required: token or rule
-
-    token: [a token]
-    rule: [a function]
-    single: bool (default 0)
-        ^ restricts the result to one -- as opposed to the default list
-    start: int
-    end: int
-        ^ used to slice the results
-'''
-
+# special tokens
 class SYMBOL(StringToken):
     items = list('{},[]:')
 
 class TFN(StringToken):
     items = ['true', 'false', 'null']
 
+# rules
 def value(rule):
     rule | dict_ | list_ | STRING | TFN | NUMBER
     rule.pass_single = True
 
 def dict_(rule):
     rule | ('{', [commas((STRING, ':', value))], '}')
-    rule.astAttrs = {'keys': {'token':STRING},
-            'values': {'rule': value}}
+    rule.astAttrs = {'keys': {'token':STRING}, 'values': {'rule': value}}
+dict_.astName = 'Dict'
 
 def list_(rule):
     rule | ('[', [commas(value)], ']')
     rule.astAttrs = {'values': {'rule': value}}
+list_.astName = 'List'
 
 grammar = Grammar(start=value,
                   tokens=[STRING, NUMBER, NEWLINE, WHITE, SYMBOL, TFN],
                   ignore=[WHITE],
                   ast_tokens=[STRING, TFN, NUMBER])
 
+# translator stuff
 JSON = Translator(grammar)
 
-@JSON.translates(dict_)
+ast = grammar.ast_classes
+
+@JSON.translates(ast.Dict)
 def t_dict(node, scope):
     return dict((JSON.translate(key, scope), JSON.translate(value, scope))\
                  for (key, value) in zip(node.keys, node.values))
 
-@JSON.translates(list_)
+@JSON.translates(ast.List)
 def t_list(node, scope):
     return list(JSON.translate(value, scope) for value in node.values)
 

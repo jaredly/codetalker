@@ -3,6 +3,7 @@
 from tokens import Token
 import types
 import inspect
+from nodes import AstNode
 
 from errors import CodeTalkerException
 
@@ -18,10 +19,13 @@ class Translator:
         self.register = {}
 
     def translates(self, what):
-        if inspect.isclass(what) and issubclass(what, Token) and what in self.grammar.tokens:
-            what = -(self.grammar.tokens.index(what) + 1)
-        elif what in self.grammar.rule_dict:
-            what = self.grammar.rule_dict[what]
+        if inspect.isclass(what):
+            if issubclass(what, Token) and what in self.grammar.tokens:
+                what = -(self.grammar.tokens.index(what) + 1)
+            elif issubclass(what, AstNode):
+                pass
+            else:
+                raise TranslatorException('Unexpected translation target: %s' % what)
         else:
             raise TranslatorException('Unexpected translation target: %s' % what)
         def meta(func):
@@ -32,7 +36,7 @@ class Translator:
         if isinstance(tree, Token):
             which = -(self.grammar.tokens.index(tree.__class__) + 1)
         else:
-            which = tree._rule
+            which = tree.__class__
         if which not in self.register:
             if which >= 0:
                 raise TranslatorException('unknown rule to translate (%s)' % self.grammar.rule_names[which])

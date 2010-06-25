@@ -64,7 +64,7 @@ class DEDENT(SpecialToken):
     '''used by the preprocessor to indicate the end of an indented block'''
 
 class STRING(ReToken):
-    rx = re.compile(r'"[^"]*"|' + r"'[^']*'")
+    rx = re.compile(r'"(?:\\"|[^"])*"|' + r"'(?:\\'|[^'])*'")
 
 class ID(ReToken):
     rx = re.compile(r'[a-zA-Z_][a-zA-Z0-9_]*')
