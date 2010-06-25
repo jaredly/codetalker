@@ -9,49 +9,25 @@ import sys
 DEBUG = False
 
 class TokenStream:
-    '''a utility class for serving up tokens (now moved
-    to be generator aware)'''
     def __init__(self, tokens):
-        self.gen = tokens
-        self.tokens = [tokens.next()]
-        self.done = False
+        self.tokens = tuple(tokens)
         self.at = 0
 
     def current(self):
-        while self.at >= len(self.tokens) and not self.done:
-            self.next()
-            self.at -= 1
-        if self.at < len(self.tokens):
-            return self.tokens[self.at]
-        elif self.done:
+        if self.at >= len(self.tokens):
             return EOF('')
+            raise ParseError('ran out of tokens')
+        return self.tokens[self.at]
     
     def next(self):
-        if self.done:
-            return
         self.at += 1
-        try:
-            if self.at >= len(self.tokens):
-                self.tokens.append(self.gen.next())
-        except StopIteration:
-            self.done = True
+        if self.at > len(self.tokens):
+            return EOF('')
+            raise ParseError('ran out of tokens')
     advance = next
 
-    def get_all(self):
-        at = self.at
-        while not self.done:
-            self.next()
-        self.at = at
-        return self.tokens
-
     def hasNext(self):
-        if self.at < len(self.tokens) - 1:
-            return True
-        elif self.done:
-            return False
-        self.next()
-        self.at -= 1
-        return not self.done
+        return self.at < len(self.tokens) - 1
 
 class AstNode(object):
     def __init__(self, name):
