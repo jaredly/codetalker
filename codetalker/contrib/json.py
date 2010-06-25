@@ -21,12 +21,12 @@ def value(rule):
 
 def dict_(rule):
     rule | ('{', [commas((STRING, ':', value))], '}')
-    rule.astAttrs = {'keys': {'which':STRING}, 'values': {'which': value}}
+    rule.astAttrs = {'keys': STRING, 'values': value}
 dict_.astName = 'Dict'
 
 def list_(rule):
-    rule | ('[', [commas(value)], ']')
-    rule.astAttrs = {'values': {'which': value}}
+    rule | ('[', [commas(_or(dict_, list_, STRING, TFN, NUMBER))], ']')
+    rule.astAttrs = {'values': [dict_, list_, STRING, TFN, NUMBER]}
 list_.astName = 'List'
 
 grammar = Grammar(start=value,

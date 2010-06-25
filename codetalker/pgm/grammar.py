@@ -64,8 +64,8 @@ class Grammar:
             
             def start(rule):
                 rule | (ID, '=', plus(value))
-                rule.astAttrs = {'left':{'which':ID, 'single':True},
-                                 'right':{'which':value}}
+                rule.astAttrs = {'left':{'type':ID, 'single':True},
+                                 'right':{'type':value}}
                 rule.astName = 'main'
         '''
         if builder in self.rule_dict:
@@ -95,10 +95,14 @@ class Grammar:
         attrs = []
         for attr, dct in rule.astAttrs.iteritems():
             error_suffix = ' for astAttr "%s" in rule "%s"' % (attr, name)
-            if not 'which' in dct:
-                raise RuleError('must specify either a rule or a token' + error_suffix)
-            which = self.which(dct['which'])
-            attrs.append((attr, which, dct.get('single', False), dct.get('start', 0), dct.get('end', None)))
+            if type(dct) != dict:
+                dct = {'type':dct}
+            if not 'type' in dct:
+                raise RuleError('must specify a type' + error_suffix)
+            if type(dct['type']) not in (tuple, list):
+                dct['type'] = (dct['type'],)
+            whiches = tuple(self.which(that) for that in dct['type'])
+            attrs.append((attr, whiches, dct.get('single', False), dct.get('start', 0), dct.get('end', None)))
         self.ast_attrs[num] = tuple(attrs)
         if attrs:
             ## TODO: convert name to TitleCase for class name?
@@ -161,8 +165,8 @@ class Grammar:
         if self.ast_attrs[rule]:
             node = getattr(self.ast_classes, name)()
             node._rule = rule
-            for attr, which, single, start, end in self.ast_attrs[rule]:
-                children = [child for child in tree.children if self.which(child) == which]
+            for attr, whiches, single, start, end in self.ast_attrs[rule]:
+                children = [child for child in tree.children if self.which(child) in whiches]
                 if single:
                     setattr(node, attr, self.to_ast(children[start]))
                 else:
