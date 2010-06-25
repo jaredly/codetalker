@@ -4,6 +4,20 @@ from codetalker.pgm import Grammar, Translator
 from codetalker.pgm.special import star, plus, _or, commas
 from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE, SYMBOL, ReToken, StringToken
 
+'''
+for an ast definition... options:
+
+    required: token or rule
+
+    token: [a token]
+    rule: [a function]
+    single: bool (default 0)
+        ^ restricts the result to one -- as opposed to the default list
+    start: int
+    end: int
+        ^ used to slice the results
+'''
+
 class TFN(StringToken):
     items = ['true', 'false', 'null']
 
