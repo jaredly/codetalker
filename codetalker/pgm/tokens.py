@@ -70,7 +70,7 @@ class ID(ReToken):
     rx = re.compile(r'[a-zA-Z_][a-zA-Z0-9_]*')
 
 class NUMBER(ReToken):
-    rx = re.compile(r'\d+(?:\.\d+)?|\.\d+')
+    rx = re.compile(r'-?(?:\d+(?:\.\d+)?|\.\d+)')
 
 class WHITE(ReToken):
     rx = re.compile(r'[ \t]+')
