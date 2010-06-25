@@ -47,6 +47,7 @@ class Grammar:
         self.real_rules = []
         self.dont_ignore  = []
         self.ast_attrs = []
+        self.ast_classes = type('ClassHolder', (), {})
 
         if TIME: timeit(self.load_rule, self.start)
         else: self.load_rule(self.start)
@@ -103,8 +104,11 @@ class Grammar:
                 raise RuleError('invalid token' + error_suffix)
             else:
                 which = -(self.tokens.index(dct['token']) + 1)
-            attrs.append((attr, which, dct.get('single', False), dct.get('start', None), dct.get('end', None)))
+            attrs.append((attr, which, dct.get('single', False), dct.get('start', 0), dct.get('end', None)))
         self.ast_attrs[num] = tuple(attrs)
+        if attrs:
+            ## TODO: convert name to TitleCase for class name?
+            setattr(self.ast_classes, name, type(name, (AstNode), {'__slots__':tuple(rule.astAttrs.keys())}))
         return num
 
     def get_tokens(self, text):
@@ -142,6 +146,41 @@ class Grammar:
 
         return tree
     
+    def to_ast(self, tree):
+        if isinstance(tree, Token):
+            return tree
+        rule = tree.rule
+        name = self.rule_names[rule]
+        if self.ast_attrs[rule]:
+            node = getattr(self.ast_classes, name)()
+            for attr, which, single, start, end in self.ast_attrs[rule]:
+                children = [child for child in tree.children if child._which == which]
+                if single:
+                    setattr(node, attr, self.to_ast(children[start]))
+                else:
+                    setattr(node, attr, tuple(self.to_ast(child) for child in children[start:end]))
+            return node
+        else:
+            rload = self.real_rules[rule]
+            if rload.pass_single:
+                for child in tree.children:
+                    if isinstance(child, Token):
+                        if isinstance(child, self.ast_tokens):
+                            return child
+                        continue
+                    else:
+                        return self.to_ast(child)
+            else:
+                items = []
+                for child in tree.children:
+                    if isinstance(child, Token):
+                        if isinstance(child, self.ast_tokens):
+                            items.append(child)
+                        continue
+                    else:
+                        items.append(self.to_ast(child))
+                return items
+
     def toAst(self, tree):
         if isinstance(tree, Token):
             return tree

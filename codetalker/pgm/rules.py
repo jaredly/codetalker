@@ -10,12 +10,13 @@ class RuleError(CodeTalkerException):
     pass
 
 class RuleLoader(object):
-    __slots__ = ('grammar', 'options', 'dont_ignore', 'astAttrs')
+    __slots__ = ('grammar', 'options', 'dont_ignore', 'astAttrs', 'pass_single')
     def __init__(self, grammar):
         self.grammar = grammar
         self.options = []
         self.dont_ignore = False
         self.astAttrs = {}
+        self.pass_single = False # single or multi
 
     def __or__(self, other):
         self.options.append(self.process(other))
