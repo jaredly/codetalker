@@ -2,7 +2,7 @@
 
 from codetalker.pgm import Grammar, Translator
 from codetalker.pgm.special import star, plus, _or, commas
-from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE, SYMBOL, ReToken, StringToken
+from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE, ReToken, StringToken
 
 '''
 for an ast definition... options:
@@ -17,6 +17,9 @@ for an ast definition... options:
     end: int
         ^ used to slice the results
 '''
+
+class SYMBOL(StringToken):
+    items = list('{},[]')
 
 class TFN(StringToken):
     items = ['true', 'false', 'null']

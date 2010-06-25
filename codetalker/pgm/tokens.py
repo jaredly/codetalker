@@ -2,6 +2,7 @@
 import re
 
 class Token:
+    '''Base token class'''
     def __init__(self, value, *more):
         if len(more) == 1 and isinstance(more[0], Text):
             self.lineno = more[0].lineno
@@ -57,10 +58,10 @@ class EOF(SpecialToken):
     '''singleton -- special token for signifying the end of file'''
 
 class INDENT(SpecialToken):
-    '''special token -- used by the preprocessor to indicate the start of an indented block'''
+    '''used by the preprocessor to indicate the start of an indented block'''
 
 class DEDENT(SpecialToken):
-    '''special token -- used by the preprocessor to indicate the end of an indented block'''
+    '''used by the preprocessor to indicate the end of an indented block'''
 
 class STRING(ReToken):
     rx = re.compile(r'"[^"]*"|' + r"'[^']*'")
@@ -71,11 +72,10 @@ class ID(ReToken):
 class NUMBER(ReToken):
     rx = re.compile(r'\d+(?:\.\d+)?|\.\d+')
 
-## WHITE = CharToken(' \t')
 class WHITE(ReToken):
     rx = re.compile(r'[ \t]+')
-class SYMBOL(StringToken):
-    items = list('~!@#$%^&*()_+-=[]{}|\\<>?,./;:')
+## class SYMBOL(StringToken):
+##     items = list('~!@#$%^&*()_+-=[]{}|\\<>?,./;:')
 class NEWLINE(StringToken):
     items = ['\n']
 class CCOMMENT(ReToken):
