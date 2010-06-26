@@ -74,10 +74,10 @@ class NUMBER(ReToken):
 
 class WHITE(ReToken):
     rx = re.compile(r'[ \t]+')
-## class SYMBOL(StringToken):
-##     items = list('~!@#$%^&*()_+-=[]{}|\\<>?,./;:')
+
 class NEWLINE(StringToken):
     items = ['\n']
+
 class CCOMMENT(ReToken):
     rx = re.compile(r'/\*.*?\*/|//[^\n]*', re.S)
 

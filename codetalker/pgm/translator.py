@@ -3,6 +3,7 @@
 from tokens import Token
 import types
 import inspect
+import copy
 from nodes import AstNode
 
 from errors import CodeTalkerException
@@ -14,9 +15,10 @@ class Scope:
     pass
 
 class Translator:
-    def __init__(self, grammar):
+    def __init__(self, grammar, **defaults):
         self.grammar = grammar
         self.register = {}
+        self.defaults = defaults
 
     def translates(self, what):
         if inspect.isclass(what):
@@ -39,9 +41,9 @@ class Translator:
             which = tree.__class__
         if which not in self.register:
             if which >= 0:
-                raise TranslatorException('unknown rule to translate (%s)' % self.grammar.rule_names[which])
+                raise TranslatorException('unknown rule to translate: %s' % which)
             else:
-                raise TranslatorException('unknown token to translate (%s)' % self.grammar.tokens[-(which + 1)])
+                raise TranslatorException('unknown token to translate: %s' % self.grammar.tokens[-(which + 1)])
         return self.register[which](tree, scope)
 
     def from_string(self, text, **args):
@@ -49,9 +51,11 @@ class Translator:
         return self.from_ast(tree, **args)
 
     def from_ast(self, tree, **args):
-        Scope = type('Scope', (), {'__slots__': tuple(args.keys())})
+        stuff = copy.deepcopy(self.defaults)
+        stuff.update(args)
+        Scope = type('Scope', (), {'__slots__': tuple(stuff.keys())})
         scope = Scope()
-        for k,v in args.iteritems():
+        for k,v in stuff.iteritems():
             setattr(scope, k, v)
         return self.translate(tree, scope)
 

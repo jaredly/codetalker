@@ -91,6 +91,7 @@ class Grammar:
             single: boolean - restrict to one
             start: int
             end: int; for slicing
+            optional: bool - default False
         '''
         attrs = []
         for attr, dct in rule.astAttrs.iteritems():
@@ -102,7 +103,7 @@ class Grammar:
             if type(dct['type']) not in (tuple, list):
                 dct['type'] = (dct['type'],)
             whiches = tuple(self.which(that) for that in dct['type'])
-            attrs.append((attr, whiches, dct.get('single', False), dct.get('start', 0), dct.get('end', None)))
+            attrs.append((attr, whiches, dct.get('single', False), dct.get('start', 0), dct.get('end', None), dct.get('optional', False)))
         self.ast_attrs[num] = tuple(attrs)
         if attrs:
             ## TODO: convert name to TitleCase for class name?
@@ -157,6 +158,7 @@ class Grammar:
             return obj.rule
         else:
             return self.rule_dict[obj]
+
     def to_ast(self, tree):
         if isinstance(tree, Token):
             return tree
@@ -165,8 +167,13 @@ class Grammar:
         if self.ast_attrs[rule]:
             node = getattr(self.ast_classes, name)()
             node._rule = rule
-            for attr, whiches, single, start, end in self.ast_attrs[rule]:
+            for attr, whiches, single, start, end, optional in self.ast_attrs[rule]:
                 children = [child for child in tree.children if self.which(child) in whiches]
+                if single and len(children) <= start:
+                    if optional:
+                        setattr(node, attr, None)
+                        continue
+                    raise RuleError('ast attribute not found: %s' % attr)
                 if single:
                     setattr(node, attr, self.to_ast(children[start]))
                 else:
@@ -182,6 +189,7 @@ class Grammar:
                         continue
                     else:
                         return self.to_ast(child)
+                raise RuleError('failure -- nothing to ast-tize %s %s' % (rload, tree))
             else:
                 items = []
                 for child in tree.children:
