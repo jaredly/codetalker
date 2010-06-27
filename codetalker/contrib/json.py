@@ -14,7 +14,7 @@ class SYMBOL(StringToken):
 class TFN(StringToken):
     items = ['true', 'false', 'null']
 
-# rules
+# rules (value is the start rule)
 def value(rule):
     rule | dict_ | list_ | STRING | TFN | NUMBER
     rule.pass_single = True

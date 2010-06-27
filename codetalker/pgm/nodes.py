@@ -24,29 +24,6 @@ class TokenStream:
     def hasNext(self):
         return self.at < len(self.tokens) - 1
 
-class _AstNode(object):
-    def __init__(self, name):
-        self.name = name
-
-    def __repr__(self):
-        text = '<%s' % self.name
-        for k,v in self.__dict__.iteritems():
-            if k == 'name':
-                continue
-            if isinstance(v, Token):
-                v = repr(v)
-            elif isinstance(v, AstNode):
-                v = repr(v)
-            elif type(v) in (tuple, list):
-                v = '"..."'
-            else:
-                v = repr(v)#'"..."'
-            text += ' %s=%s' % (k, v)
-        return text + '>'
-
-    def __str__(self):
-        return repr(self)
-
 class AstNode(object):
     pass
 
