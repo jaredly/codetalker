@@ -140,11 +140,12 @@ class Grammar:
         # go for it
         # if TIME: tree = timeit(self.parse_rule, start, tokens, error)
         # else: tree = self.parse_rule(start, tokens, error)
-        tree = _grammar.grammar_parse_rule(start, tokens.tokens, self.rules, self.tokens, error)
+        tree = _grammar.grammar_parse_rule(start, tokens.tokens, self.rules, self.tokens, self.rule_names, error)
 
         # either not everything was parsed or nothing was returned
-        if tokens.hasNext() or tree is None:
+        if tree is None:
             raise ParseError(error[1])
+        print tree
 
         return tree
     
