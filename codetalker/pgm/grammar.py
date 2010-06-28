@@ -44,19 +44,19 @@ class Grammar:
         self.ast_tokens = tuple(ast_tokens)
         self.indent = indent
 
+        self.token_rules = []
+        self.token_names = []
+        self.token_dict = {}
+
         self.rules      = []
         self.rule_dict  = {}
         self.rule_names = []
         self.real_rules = []
-        self.dont_ignore  = []
         self.ast_attrs = []
         self.ast_classes = type('ClassHolder', (), {})
 
-        if TIME: timeit(self.load_rule, self.start)
-        else: self.load_rule(self.start)
-
-        if logger.output:print>>logger, self.rule_names
-        if logger.output:print>>logger, self.rules
+        [self.load_token(token) for token in self.tokens]
+        self.load_rule(self.start)
 
     def load_rule(self, builder):
         '''Load a rule into the grammar and cache it for
@@ -112,6 +112,16 @@ class Grammar:
             setattr(self.ast_classes, name, type(name, (AstNode,), {'__slots__':('_rule',) + tuple(rule.astAttrs.keys())}))
         return num
 
+    def load_token(self, builder):
+        if builder in self.token_dict:
+            return self.token_dict[builder]
+        num = len(self.token_rules)
+        name = getattr(builder, 'tokenName', builder.__name__)
+        rule = RuleLoader(self, token=True)
+        self.token_dict[builder] = num
+        self.token_rules.append(rule)
+        builder(rule)
+
     def get_tokens(self, text):
         return TokenStream(tokenize(self.tokens, text))
 
@@ -122,6 +132,10 @@ class Grammar:
             start: optional custom start function (for advanced parsing)
             debug: boolean (default false) to output debug parse tracing
         '''
+        real_tokens = [self.token_dict[func] for func in self.tokens[:-3]]
+        tree = cgrammar.main.process(start, text, self.rules, self.token_rules, real_tokens, self.ignore, self.indent)
+        return
+    '''
         logger.output = debug
         if self.indent:
             text = IndentText(text)
@@ -147,6 +161,7 @@ class Grammar:
             raise ParseError(error[1])
 
         return tree
+    '''
     
     def which(self, obj):
         if isinstance(obj, Token):

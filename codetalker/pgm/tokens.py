@@ -81,5 +81,40 @@ class NEWLINE(StringToken):
 class CCOMMENT(ReToken):
     rx = re.compile(r'/\*.*?\*/|//[^\n]*', re.S)
 
+
+def STRING(token):
+    token | ('"', star(_or(('\\', _or('\n','"')), expand('^\n"'))), '"')
+
+def ID(token):
+    token | (expand('a-zA-Z_'), star(expand('a-zA-Z0-9_')))
+
+def NUMBER(token):
+    token | (['-'], _or((plus(expand('0-9')), ['.', expand('0-9')]), ('.', plus(expand('0-9')))))
+
+def WHITE(token):
+    token | plus(_or(*' \t'))
+
+def NEWLINE(token):
+    token | '\n'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from text import Text
 # vim: et sw=4 sts=4

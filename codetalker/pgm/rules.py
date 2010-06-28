@@ -7,10 +7,11 @@ from special import Special
 import inspect
 
 class RuleLoader(object):
-    __slots__ = ('grammar', 'options', 'dont_ignore', 'astAttrs', 'pass_single')
-    def __init__(self, grammar):
+    __slots__ = ('grammar', 'options', 'token', 'dont_ignore', 'astAttrs', 'pass_single')
+    def __init__(self, grammar, token=False):
         self.grammar = grammar
         self.options = []
+        self.token = token
         self.dont_ignore = False
         self.astAttrs = {}
         self.pass_single = False # single or multi
@@ -25,11 +26,8 @@ class RuleLoader(object):
     def process(self, what):
         if type(what) == str:
             return [what]
-        elif inspect.isclass(what) and issubclass(what, tokens.Token):
-            if what in self.grammar.tokens:
-                return [-(self.grammar.tokens.index(what) + 1)]
-            else:
-                raise RuleError('invalid token found: %s' % what)
+        elif not self.token and what in self.grammar.tokens:
+            return [-(self.grammar.tokens.index(what) + 1)]
         elif type(what) == tuple:
             options = []
             for item in what:
@@ -49,8 +47,20 @@ class RuleLoader(object):
                     options += self.process(item)
             return [(what.char,) + tuple(options)]
         elif type(what) == types.FunctionType:
-            return [self.grammar.load_rule(what)]
+            if self.token:
+                return [self.grammar.load_token(what)]
+            else:
+                return [self.grammar.load_rule(what)]
         else:
             raise RuleError('invalid rule item found: %s' % what)
+
+    def rule(self):
+        return Rule(options=self.options, dont_ignore=self.dont_ignore)
+
+class Rule(object):
+    __slots__ = ('options', 'dont_ignore')
+    def __init__(self, **args):
+        for arg in args:
+            setattr(self, arg, args[arg])
 
 # vim: et sw=4 sts=4
