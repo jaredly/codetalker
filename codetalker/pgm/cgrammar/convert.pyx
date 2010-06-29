@@ -1,4 +1,4 @@
-from stdlib cimport malloc, free
+from libc.stdlib cimport malloc, free
 from codetalker.pgm.cgrammar.structs cimport *
 
 cdef Rules convert_rules(object rules):
