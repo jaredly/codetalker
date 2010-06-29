@@ -21,10 +21,10 @@ class Translator:
         self.defaults = defaults
 
     def translates(self, what):
-        if inspect.isclass(what):
-            if issubclass(what, Token) and what in self.grammar.tokens:
-                what = -(self.grammar.tokens.index(what) + 1)
-            elif issubclass(what, AstNode):
+        if what in self.grammar.tokens:
+            what = -(self.grammar.tokens.index(what) + 1)
+        elif inspect.isclass(what):
+            if issubclass(what, AstNode):
                 pass
             else:
                 raise TranslatorException('Unexpected translation target: %s' % what)

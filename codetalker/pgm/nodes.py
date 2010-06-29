@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from tokens import EOF, Token
+# from tokens import EOF, Token
 from errors import ParseError
 
 class TokenStream:

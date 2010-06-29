@@ -3,4 +3,6 @@
 *.swp
 *.swo
 *.sess
+*.c
+*.so
 CodeTalker.egg-info

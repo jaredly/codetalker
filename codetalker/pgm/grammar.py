@@ -1,5 +1,5 @@
-from tokenize import tokenize
-from text import Text, IndentText
+# from tokenize import tokenize
+# from text import Text, IndentText
 from rules import RuleLoader
 from tokens import EOF, INDENT, DEDENT, Token
 from errors import *
@@ -8,7 +8,7 @@ from nodes import AstNode, ParseTree, TokenStream
 from logger import logger
 import inspect
 
-import _grammar
+from codetalker.pgm.cgrammar import process
 
 import time
 
@@ -55,7 +55,7 @@ class Grammar:
         self.ast_attrs = []
         self.ast_classes = type('ClassHolder', (), {})
 
-        [self.load_token(token) for token in self.tokens]
+        [self.load_token(token) for token in self.tokens[:-3]]
         self.load_rule(self.start)
 
     def load_rule(self, builder):
@@ -77,7 +77,7 @@ class Grammar:
         rule = RuleLoader(self)
 
         self.rule_dict[builder] = num
-        self.rules.append(rule.options)
+        self.rules.append(rule)
         self.rule_names.append(name)
         self.real_rules.append(rule)
         self.ast_attrs.append(())
@@ -133,7 +133,8 @@ class Grammar:
             debug: boolean (default false) to output debug parse tracing
         '''
         real_tokens = [self.token_dict[func] for func in self.tokens[:-3]]
-        tree = cgrammar.main.process(start, text, self.rules, self.token_rules, real_tokens, self.ignore, self.indent)
+        ignore = [self.tokens.index(tk) for tk in self.ignore]
+        tree = process.process(start, text, self.rules, self.token_rules, real_tokens, ignore, self.indent)
         return
     '''
         logger.output = debug
@@ -168,9 +169,12 @@ class Grammar:
             if not obj.__class__ in self.tokens:
                 raise RuleError('invalid token specified: %r' % obj)
             return -(self.tokens.index(obj.__class__) + 1)
+        # unused
         elif inspect.isclass(obj) and issubclass(obj, Token):
             if not obj in self.tokens:
                 raise RuleError('invalid token specified: %r' % obj)
+            return -(self.tokens.index(obj) + 1)
+        elif obj in self.tokens:
             return -(self.tokens.index(obj) + 1)
         elif isinstance(obj, ParseTree):
             return obj.rule

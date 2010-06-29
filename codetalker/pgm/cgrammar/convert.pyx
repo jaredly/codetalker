@@ -1,5 +1,5 @@
-from structs cimport *
 from stdlib cimport malloc, free
+from codetalker.pgm.cgrammar.structs cimport *
 
 cdef Rules convert_rules(object rules):
     cdef Rules crules
@@ -67,6 +67,6 @@ cdef IgnoreTokens convert_ignore(object ignore, object tokens):
     itokens.num = len(ignore)
     itokens.tokens = <unsigned int*>malloc(sizeof(unsigned int)*itokens.num)
     for i from 0<=i<itokens.num:
-        itokens.tokens[i] = tokens.index(ignore[i])
+        itokens.tokens[i] = ignore[i]
     return itokens
 

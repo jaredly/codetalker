@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 import re
+from special import star, plus, _or, expand
+
+EOF = object()
+INDENT = object()
+DEDENT = object()
 
 class Token(object):
     '''Base token class'''
@@ -37,7 +42,7 @@ class StringToken(Token):
         for item in cls.items:
             if text.text[text.at:text.at + len(item)] == item:
                 return cls(item, text)
-
+"""
 class ReToken(Token):
     '''a token that is based off of a regular expression'''
     rx = None
@@ -80,7 +85,7 @@ class NEWLINE(StringToken):
 
 class CCOMMENT(ReToken):
     rx = re.compile(r'/\*.*?\*/|//[^\n]*', re.S)
-
+"""
 
 def STRING(token):
     token | ('"', star(_or(('\\', _or('\n','"')), expand('^\n"'))), '"')
@@ -115,6 +120,4 @@ def NEWLINE(token):
 
 
 
-
-from text import Text
 # vim: et sw=4 sts=4

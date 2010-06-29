@@ -1,7 +1,7 @@
 from stdlib cimport *
-from cgrammar.structs cimport *
-from cgrammar.convert cimport convert_rules, convert_ignore
-from cgrammar.tokenize cimport tokenize
+from codetalker.pgm.cgrammar.structs cimport *
+from codetalker.pgm.cgrammar.convert cimport convert_rules, convert_ignore
+from codetalker.pgm.cgrammar.tokenize cimport tokenize
 
 def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
     cdef Rules crules = convert_rules(rules)
