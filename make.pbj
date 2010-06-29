@@ -14,6 +14,8 @@ def pyx(fname):
     for fname in pyx_files:
         compile_pyx(fname)
 
+build.clean('build', 'codetalker/pgm/cgrammar/*.c', 'codetalker/pgm/cgrammar/*.so')
+
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
