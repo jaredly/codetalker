@@ -2,6 +2,7 @@ from libc.stdlib cimport *
 from codetalker.pgm.cgrammar.structs cimport *
 from codetalker.pgm.cgrammar.convert cimport convert_rules, convert_ignore, convert_tokens_back
 from codetalker.pgm.cgrammar.tokenize cimport tokenize
+from codetalker.pgm.cgrammar.parser cimport parse_rule
 
 def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
     cdef Rules crules = convert_rules(rules)
@@ -14,11 +15,27 @@ def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
         creal_tokens[tk+1] = real_tokens[tk]
 
     error = [0, None]
-    cdef Token* tokenstream = tokenize(text, len(text), creal_tokens, ctokens, indent, error)
-    if tokenstream == NULL:
-        print 'tokenize failed'
+    cdef Token* first_token = tokenize(text, len(text), creal_tokens, ctokens, indent, error)
+    if first_token == NULL:
         raise Exception('tokenize failed', error, text[error[0]:error[0]+100])
-    return convert_tokens_back(tokenstream)
+    cdef unsigned int num_tokens = 1
+    cdef Token* tmp_token = first_token
+    while tmp_token.next != NULL:
+        num_tokens += 1
+        tmp_token = tmp_token.next
+    cdef TokenStream tokenstream
+    tokenstream.tokens = <Token*>malloc(sizeof(Token)*num_tokens)
+    tmp_token = first_token
+    for i from 0<=i<num_tokens:
+        tokenstream.tokens[i] = tmp_token[0]
+        tmp_token = tmp_token.next
+    error = [0, None]
+    cdef State state
+    state.rules = crules
+    state.tokens = tokenstream
+    state.ignore = cignore
+    cdef ParseNode* root = parse_rule(start, &state, error)
+    # return convert_tokens_back(tokenstream)
 
 def just_tokens(text, rules, tokens, real_tokens, ignore, indent=False):
     cdef Rules crules = convert_rules(rules)
@@ -32,8 +49,7 @@ def just_tokens(text, rules, tokens, real_tokens, ignore, indent=False):
     error = [0, None]
     cdef Token* tokenstream = tokenize(text, len(text), creal_tokens, ctokens, indent, error)
     if tokenstream == NULL:
-        print 'tokenize failed:', error, text[error[0]:error[0]+100]
-        return []
+        raise Exception('tokenize failed', error, text[error[0]:error[0]+100])
     return convert_tokens_back(tokenstream)
 
 cdef hello():

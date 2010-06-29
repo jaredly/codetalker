@@ -125,7 +125,10 @@ class Grammar:
     def get_tokens(self, text):
         real_tokens = [self.token_dict[func] for func in self.tokens[:-3]]
         ignore = [self.tokens.index(tk) for tk in self.ignore]
-        tokens = process.just_tokens(text, self.rules, self.token_rules, real_tokens, ignore, self.indent)
+        try:
+            tokens = process.just_tokens(text, self.rules, self.token_rules, real_tokens, ignore, self.indent)
+        except Exception, e:
+            raise TokenError(*e.args)
         for i, token in enumerate(tokens):
             num = token[0]
             tokens[i] = (self.tokens[num],) + token[1:]

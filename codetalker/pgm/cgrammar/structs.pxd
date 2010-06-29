@@ -59,7 +59,7 @@ cdef:
     struct ParseNode:
         unsigned int rule
         NodeType type
-        Token token # TODO make pointer
+        Token* token # TODO make pointer
         ParseNode* next
         ParseNode* prev
         ParseNode* child
