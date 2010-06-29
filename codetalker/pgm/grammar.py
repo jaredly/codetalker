@@ -123,7 +123,13 @@ class Grammar:
         builder(rule)
 
     def get_tokens(self, text):
-        return TokenStream(tokenize(self.tokens, text))
+        real_tokens = [self.token_dict[func] for func in self.tokens[:-3]]
+        ignore = [self.tokens.index(tk) for tk in self.ignore]
+        tokens = process.just_tokens(text, self.rules, self.token_rules, real_tokens, ignore, self.indent)
+        for i, token in enumerate(tokens):
+            num = token[0]
+            tokens[i] = (self.tokens[num],) + token[1:]
+        return tokens
 
     def process(self, text, start=None, debug = False):
         '''main entry point for parsing text.

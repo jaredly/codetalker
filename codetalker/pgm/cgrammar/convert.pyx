@@ -19,12 +19,12 @@ cdef Rule convert_rule(object rule, unsigned int i):
         crule.options[i] = convert_option(rule.options[i])
     return crule
 
-cdef RuleOption convert_option(object option):
+cdef RuleOption convert_option(object option, to_or=False):
     cdef RuleOption coption
     coption.num = len(option)
     coption.items = <RuleItem*>malloc(sizeof(RuleItem) * coption.num)
     for i from 0<=i<coption.num:
-        coption.items[i] = convert_item(option[i])
+        coption.items[i] = convert_item(option[i], to_or)
     return coption
 
 cdef RuleItem convert_item(object item, bint from_or=False):
@@ -59,7 +59,7 @@ cdef RuleItem convert_item(object item, bint from_or=False):
         elif item[0] == '?':
             citem.value.special.type = QUESTION
 
-        citem.value.special.option[0] = convert_option(item[1:])
+        citem.value.special.option[0] = convert_option(item[1:], to_or)
     return citem
 
 cdef IgnoreTokens convert_ignore(object ignore, object tokens):

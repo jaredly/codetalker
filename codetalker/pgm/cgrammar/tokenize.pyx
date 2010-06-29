@@ -17,8 +17,8 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
         Token* current = NULL
         Token* tmp = NULL
         char* result = NULL
-        unsigned int lineno = 0
-        unsigned int charno = 0
+        unsigned int lineno = 1
+        unsigned int charno = 1
         unsigned int at = 0
     indent = [0]
 
@@ -47,9 +47,9 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
                 small = text[at:at+len(result)]
                 if small == '\n':
                     lineno += 1
-                    charno = 0
+                    charno = 1
                     if check_indent:
-                        current = handle_indent(text, at, current, lineno, charno, indent, error)
+                        current = handle_indent(text, at, current, real_tokens[0], lineno, charno, indent, error)
                         if current == NULL:
                             return NULL
                 elif '\n' in small:
@@ -65,13 +65,14 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
             return NULL
     return start
 
-cdef Token* handle_indent(char* text, unsigned int at, Token* current, int lineno, int charno, object indent, object error):
+cdef Token* handle_indent(char* text, unsigned int at, Token* current, unsigned int num_tokens,
+        int lineno, int charno, object indent, object error):
     cdef Token* tmp = NULL
     white = get_white(text, at + len(current.value))
     if white != indent[-1]:
         if white > indent[-1]:
             tmp = <Token*>malloc(sizeof(Token))
-            tmp.which = 1
+            tmp.which = num_tokens - 1
             tmp.lineno = lineno
             tmp.charno = charno
             tmp.value = ''
@@ -81,7 +82,7 @@ cdef Token* handle_indent(char* text, unsigned int at, Token* current, int linen
         else:
             while white < indent[-1]:
                 tmp = <Token*>malloc(sizeof(Token))
-                tmp.which = 2
+                tmp.which = num_tokens
                 tmp.lineno = lineno
                 tmp.charno = charno
                 tmp.value = ''
@@ -92,6 +93,7 @@ cdef Token* handle_indent(char* text, unsigned int at, Token* current, int linen
                 error[0] = at
                 error[1] = 'invalid indent (%d, %d)' % (lineno, charno)
                 return NULL
+    return current
 
 cdef unsigned int get_white(char* text, unsigned int at):
     cdef unsigned int white = 0
@@ -103,28 +105,24 @@ cdef unsigned int get_white(char* text, unsigned int at):
 cdef char* token_text(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
     cdef char* res
     for i from 0<=i<token.num:
-        print 'TESTING A CHILD'
         res = token_children(token.options[i], text, length, at, tokens, error)
         if res != NULL:
-            print 'GOT CHILD', res
-            print 'GOT CHILD', res
             return res
     return NULL
 
 cdef char* test_literal(RuleItem item, char* text, unsigned int at):
     what = item.value.text
-    print ' LITERAL', [what, text[at:at+len(what)]]
+
     if what == text[at:at+len(what)]:
         return what
-    print ' bad literal'
+
     return NULL
 
 cdef char* test_special(RuleSpecial special, char* text, unsigned int length, unsigned int at,
         Rules* tokens, object error):
-    print ' special...'
+    res = ''
     cdef char* tmp
     if special.type == STAR:
-        print 'start'
         while 1:
             tmp = token_children(special.option[0], text, length, at, tokens, error)
             if tmp == NULL:
@@ -133,7 +131,6 @@ cdef char* test_special(RuleSpecial special, char* text, unsigned int length, un
             at += len(tmp)
         return res
     elif special.type == PLUS:
-        print 'plus'
         tmp = token_children(special.option[0], text, length, at, tokens, error)
         if tmp == NULL:
             return NULL
@@ -147,24 +144,22 @@ cdef char* test_special(RuleSpecial special, char* text, unsigned int length, un
             at += len(tmp)
         return res
     elif special.type == OR:
-        print 'or'
         for org from 0<=org<special.option.num:
             tmp = token_children(special.option.items[org].value.special.option[0], text, length, at, tokens, error)
             if tmp != NULL:
-                print 'good or', org, tmp
                 res = tmp
                 return res
         else:
             return NULL
     elif special.type == QUESTION:
-        print '?'
+
         tmp = token_children(special.option[0], text, length, at, tokens, error)
         if tmp != NULL:
             res = tmp
             return res
+        return ''
     elif special.type ==STRAIGHT:
-        print '--'
-        print 'this shouldnt happen...'
+        print 'failz'
         return NULL
     return NULL
 
@@ -172,11 +167,11 @@ cdef char* token_children(RuleOption option, char* text, unsigned int length, un
         Rules* tokens, object error):
     res = ''
     cdef char* tmp
-    print 'getting an option'
+
     for i from 0<=i<option.num:
-        print ' at',i,at
+
         if at >= length:
-            print ' ran out'
+
             return NULL
         if option.items[i].type == RULE:
             tmp = token_text(tokens.rules[option.items[i].value.which], text, length, at, tokens, error)
