@@ -21,75 +21,77 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
         unsigned int charno = 0
         unsigned int at = 0
     indent = [0]
-    print 'begin tokeinze'
 
     while at < length:
-        print 'token...'
         for i from 1<=i<real_tokens[0]:
-            print 'trying', real_tokens[i]
             result = token_text(tokens.rules[real_tokens[i]], text, length, at, &tokens, error)
             if result == NULL:
                 continue
             else:
                 thestuff = result
             result = thestuff
-            print 'TRIED'
             if result != NULL:
-                print 'res', result
                 tmp = <Token*>malloc(sizeof(Token))
                 tmp.which = real_tokens[i]
-                print 'yes!', real_tokens[i], [result]
                 tmp.lineno = lineno
                 tmp.charno = charno
-                tmp.value = result
+                tmp.value = <char*>malloc(sizeof(char) * len(thestuff) + 1)
+                strcpy(tmp.value, thestuff)
+                tmp.next = NULL
                 if start == NULL:
                     start = tmp
                     current = start
                 else:
                     current.next = tmp
                     current = tmp
-                small = text[at:at+len(current.value)]
+                small = text[at:at+len(result)]
                 if small == '\n':
                     lineno += 1
                     charno = 0
-                    white = get_white(text, at + len(current.value))
-                    if check_indent and white != indent[-1]:
-                        if white > indent[-1]:
-                            tmp = <Token*>malloc(sizeof(Token))
-                            tmp.which = 1
-                            tmp.lineno = lineno
-                            tmp.charno = charno
-                            tmp.value = ''
-                            current.next = tmp
-                            current = tmp
-                            indent.append(white)
-                        else:
-                            while white < indent[-1]:
-                                tmp = <Token*>malloc(sizeof(Token))
-                                tmp.which = 2
-                                tmp.lineno = lineno
-                                tmp.charno = charno
-                                tmp.value = ''
-                                current.next = tmp
-                                current = tmp
-                                indent.pop(-1)
-                            if white != indent[-1]:
-                                error[0] = at
-                                error[1] = 'invalid indent (%d, %d)' % (lineno, charno)
-                                return NULL
+                    if check_indent:
+                        current = handle_indent(text, at, current, lineno, charno, indent, error)
+                        if current == NULL:
+                            return NULL
                 elif '\n' in small:
                     lineno += small.count('\n')
                     charno += len(small[small.rfind('\n'):])
                 else:
                     charno += len(small)
                 at += len(small)
-                # print 'small:',small, at, len(small)
                 break
         else:
             error[0] = at
             error[1] = 'invalid token'
             return NULL
     return start
+
+cdef Token* handle_indent(char* text, unsigned int at, Token* current, int lineno, int charno, object indent, object error):
+    cdef Token* tmp = NULL
+    white = get_white(text, at + len(current.value))
+    if white != indent[-1]:
+        if white > indent[-1]:
+            tmp = <Token*>malloc(sizeof(Token))
+            tmp.which = 1
+            tmp.lineno = lineno
+            tmp.charno = charno
+            tmp.value = ''
+            current.next = tmp
+            current = tmp
+            indent.append(white)
+        else:
+            while white < indent[-1]:
+                tmp = <Token*>malloc(sizeof(Token))
+                tmp.which = 2
+                tmp.lineno = lineno
+                tmp.charno = charno
+                tmp.value = ''
+                current.next = tmp
+                current = tmp
+                indent.pop(-1)
+            if white != indent[-1]:
+                error[0] = at
+                error[1] = 'invalid indent (%d, %d)' % (lineno, charno)
+                return NULL
 
 cdef unsigned int get_white(char* text, unsigned int at):
     cdef unsigned int white = 0

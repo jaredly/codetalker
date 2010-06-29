@@ -135,7 +135,7 @@ class Grammar:
         real_tokens = [self.token_dict[func] for func in self.tokens[:-3]]
         ignore = [self.tokens.index(tk) for tk in self.ignore]
         tree = process.process(start, text, self.rules, self.token_rules, real_tokens, ignore, self.indent)
-        return
+        return tree
     '''
         logger.output = debug
         if self.indent:

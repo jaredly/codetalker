@@ -1,6 +1,6 @@
 from stdlib cimport *
 from codetalker.pgm.cgrammar.structs cimport *
-from codetalker.pgm.cgrammar.convert cimport convert_rules, convert_ignore
+from codetalker.pgm.cgrammar.convert cimport convert_rules, convert_ignore, convert_tokens_back
 from codetalker.pgm.cgrammar.tokenize cimport tokenize
 
 def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
@@ -16,6 +16,8 @@ def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
     cdef Token* tokenstream = tokenize(text, len(text), creal_tokens, ctokens, indent, error)
     if tokenstream == NULL:
         print 'tokenize failed:', error, text[error[0]:error[0]+100]
+        return []
+    return convert_tokens_back(tokenstream)
 
 cdef hello():
     print 'hi'

@@ -70,3 +70,12 @@ cdef IgnoreTokens convert_ignore(object ignore, object tokens):
         itokens.tokens[i] = ignore[i]
     return itokens
 
+cdef object convert_tokens_back(Token* start):
+    res = []
+    print 'converting',start.which
+    while start != NULL:
+        res.append((start.which, start.lineno, start.charno, start.value))
+        start = start.next
+    print  'done', res
+    return res
+

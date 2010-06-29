@@ -11,10 +11,27 @@ def start(rule):
     rule | 'what'
 
 def SMALL(token):
-    token | '33' | 'hello' | '3'
+    token | 'hello'
 
+print 'gram'
 grammar = pgm.Grammar(start=start, tokens=[SMALL,NEWLINE])
 
-grammar.process('33333\n\nhello\n')
+tokens = grammar.process('hello')
+print tokens
+tokens = grammar.process('hellohello')
+print tokens
+tokens = grammar.process('hellohellohellohello')
+print tokens
+'''
+def test_one():
+    print 'one'
+    tokens = grammar.process('hello')
+    assert len(tokens) == 1
+    assert tokens[0][-1] == 'hello'
+
+def test_two():
+    tokens = grammar.process('hellohello')
+    assert len(tokens) == 2
+'''
 
 # vim: et sw=4 sts=4
