@@ -22,7 +22,11 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
         unsigned int at = 0
     indent = [0]
     print 'begin tokeinze'
+    print 'doot / fab', token_text(tokens.rules[real_tokens[1]], text, length, at, &tokens, error)
+    print token_children(tokens.rules[real_tokens[1]].options[0], text, length, at, &tokens, error)
+    print 'party', party_it_up(tokens.rules[real_tokens[1]], text, length, at, &tokens, error)
 
+    '''
     while at < length:
         print 'token...'
         for i from 1<=i<real_tokens[0]:
@@ -42,7 +46,6 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
                 else:
                     current.next = tmp
                     current = tmp
-                '''
                 small = text[at:at+len(current.value)]
                 if small == '\n':
                     lineno += 1
@@ -77,7 +80,6 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
                     charno += len(small[small.rfind('\n'):])
                 else:
                     charno += len(small)
-                '''
                 at += len(result)
                 # print 'small:',small, at, len(small)
                 break
@@ -86,6 +88,7 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
             error[1] = 'invalid token'
             return NULL
     return start
+                '''
 
 cdef unsigned int get_white(char* text, unsigned int at):
     cdef unsigned int white = 0
@@ -95,13 +98,34 @@ cdef unsigned int get_white(char* text, unsigned int at):
     return white
 
 cdef char* do_token(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
-    cdef char* squid
+    cdef char* squid = NULL
     for i from 0<=i<token.num:
-        print 'TESTING A CHILD'
+        print 'TESTING A CHILD', i
         squid = token_children(token.options[i], text, length, at, tokens, error)
         if squid != NULL:
             print 'GOT CHILD', squid
             return squid
+    return NULL
+
+cdef char* fab(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
+    cdef char* squid = NULL
+    for i from 0<=i<token.num:
+        print 'TESTING A CHILD', i
+        squid = token_children(token.options[i], text, length, at, tokens, error)
+        if squid != NULL:
+            print 'GOT CHILD', squid
+            return squid
+    return NULL
+
+cdef char* party_it_up(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
+    cdef char* result = NULL
+    for index from 0<=index<token.num:
+        print 'TESTING A CHILD', index
+        result = token_children(token.options[index], text, length, at, tokens, error)
+        if result != NULL:
+            # print 'GOT CHILD', result ## if you uncomment, introcuces race
+            # condition...
+            return result
     return NULL
 
 cdef char* token_text(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
