@@ -18,4 +18,12 @@ def test_one():
     assert len(tokens) == 5
     assert tokens[2] == (SMALL, 2, 1, '456')
 
+def test_two():
+    try:
+        tokens = grammar.get_tokens('wont tokenize')
+    except:
+        print 'excepted'
+    assert tokens == 0
+
+
 # vim: et sw=4 sts=4

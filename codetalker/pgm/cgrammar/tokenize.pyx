@@ -1,5 +1,6 @@
 from codetalker.pgm.cgrammar.structs cimport *
-from stdlib cimport *
+from libc.stdlib cimport *
+from libc.string cimport strcpy
 
 '''
 cdef:
@@ -44,7 +45,7 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
                 else:
                     current.next = tmp
                     current = tmp
-                small = text[at:at+len(result)]
+                small = str(text[at:at+len(result)])
                 if small == '\n':
                     lineno += 1
                     charno = 1
