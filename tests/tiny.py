@@ -11,7 +11,7 @@ def start(rule):
     rule | 'what'
 
 def SMALL(token):
-    token | '33' | 'hello'
+    token | '33' | 'hello' | '3'
 
 grammar = pgm.Grammar(start=start, tokens=[SMALL,NEWLINE])
 

@@ -22,18 +22,20 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
         unsigned int at = 0
     indent = [0]
     print 'begin tokeinze'
-    print 'doot / fab', token_text(tokens.rules[real_tokens[1]], text, length, at, &tokens, error)
-    print token_children(tokens.rules[real_tokens[1]].options[0], text, length, at, &tokens, error)
-    print 'party', party_it_up(tokens.rules[real_tokens[1]], text, length, at, &tokens, error)
 
-    '''
     while at < length:
         print 'token...'
         for i from 1<=i<real_tokens[0]:
             print 'trying', real_tokens[i]
-            result = do_token(tokens.rules[real_tokens[i]], text, length, at, &tokens, error)
+            result = token_text(tokens.rules[real_tokens[i]], text, length, at, &tokens, error)
+            if result == NULL:
+                continue
+            else:
+                thestuff = result
+            result = thestuff
+            print 'TRIED'
             if result != NULL:
-                print 'res', &result[0]
+                print 'res', result
                 tmp = <Token*>malloc(sizeof(Token))
                 tmp.which = real_tokens[i]
                 print 'yes!', real_tokens[i], [result]
@@ -80,7 +82,7 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
                     charno += len(small[small.rfind('\n'):])
                 else:
                     charno += len(small)
-                at += len(result)
+                at += len(small)
                 # print 'small:',small, at, len(small)
                 break
         else:
@@ -88,7 +90,6 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
             error[1] = 'invalid token'
             return NULL
     return start
-                '''
 
 cdef unsigned int get_white(char* text, unsigned int at):
     cdef unsigned int white = 0
@@ -97,45 +98,72 @@ cdef unsigned int get_white(char* text, unsigned int at):
         at += 1
     return white
 
-cdef char* do_token(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
-    cdef char* squid = NULL
-    for i from 0<=i<token.num:
-        print 'TESTING A CHILD', i
-        squid = token_children(token.options[i], text, length, at, tokens, error)
-        if squid != NULL:
-            print 'GOT CHILD', squid
-            return squid
-    return NULL
-
-cdef char* fab(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
-    cdef char* squid = NULL
-    for i from 0<=i<token.num:
-        print 'TESTING A CHILD', i
-        squid = token_children(token.options[i], text, length, at, tokens, error)
-        if squid != NULL:
-            print 'GOT CHILD', squid
-            return squid
-    return NULL
-
-cdef char* party_it_up(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
-    cdef char* result = NULL
-    for index from 0<=index<token.num:
-        print 'TESTING A CHILD', index
-        result = token_children(token.options[index], text, length, at, tokens, error)
-        if result != NULL:
-            # print 'GOT CHILD', result ## if you uncomment, introcuces race
-            # condition...
-            return result
-    return NULL
-
 cdef char* token_text(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
-    cdef char* squid
+    cdef char* res
     for i from 0<=i<token.num:
         print 'TESTING A CHILD'
-        squid = token_children(token.options[i], text, length, at, tokens, error)
-        if squid != NULL:
-            print 'GOT CHILD', squid
-            return squid
+        res = token_children(token.options[i], text, length, at, tokens, error)
+        if res != NULL:
+            print 'GOT CHILD', res
+            print 'GOT CHILD', res
+            return res
+    return NULL
+
+cdef char* test_literal(RuleItem item, char* text, unsigned int at):
+    what = item.value.text
+    print ' LITERAL', [what, text[at:at+len(what)]]
+    if what == text[at:at+len(what)]:
+        return what
+    print ' bad literal'
+    return NULL
+
+cdef char* test_special(RuleSpecial special, char* text, unsigned int length, unsigned int at,
+        Rules* tokens, object error):
+    print ' special...'
+    cdef char* tmp
+    if special.type == STAR:
+        print 'start'
+        while 1:
+            tmp = token_children(special.option[0], text, length, at, tokens, error)
+            if tmp == NULL:
+                break
+            res += tmp
+            at += len(tmp)
+        return res
+    elif special.type == PLUS:
+        print 'plus'
+        tmp = token_children(special.option[0], text, length, at, tokens, error)
+        if tmp == NULL:
+            return NULL
+        res += tmp
+        at += len(tmp)
+        while 1:
+            tmp = token_children(special.option[0], text, length, at, tokens, error)
+            if tmp == NULL:
+                break
+            res += tmp
+            at += len(tmp)
+        return res
+    elif special.type == OR:
+        print 'or'
+        for org from 0<=org<special.option.num:
+            tmp = token_children(special.option.items[org].value.special.option[0], text, length, at, tokens, error)
+            if tmp != NULL:
+                print 'good or', org, tmp
+                res = tmp
+                return res
+        else:
+            return NULL
+    elif special.type == QUESTION:
+        print '?'
+        tmp = token_children(special.option[0], text, length, at, tokens, error)
+        if tmp != NULL:
+            res = tmp
+            return res
+    elif special.type ==STRAIGHT:
+        print '--'
+        print 'this shouldnt happen...'
+        return NULL
     return NULL
 
 cdef char* token_children(RuleOption option, char* text, unsigned int length, unsigned int at,
@@ -149,70 +177,24 @@ cdef char* token_children(RuleOption option, char* text, unsigned int length, un
             print ' ran out'
             return NULL
         if option.items[i].type == RULE:
-            print ' RULE', option.items[i].value.which
             tmp = token_text(tokens.rules[option.items[i].value.which], text, length, at, tokens, error)
             if tmp != NULL:
                 at += len(tmp)
                 res += tmp
-                print 'good rule',tmp
                 continue
-            print ' bad rule'
             return NULL
         elif option.items[i].type == LITERAL:
-            what = option.items[i].value.text
-            tmp = what
-            print ' LITERAL', [what, text[at:at+len(tmp)]]
-            if what == text[at:at+len(tmp)]:
-                res += tmp
-                at += len(tmp)
-                print 'good literal',tmp,at
-                continue
-            print ' bad literal'
-            return NULL
-        elif option.items[i].type == SPECIAL:
-            print ' special...'
-            if option.items[i].value.special.type == STAR:
-                print 'start'
-                while 1:
-                    tmp = token_children(option.items[i].value.special.option[0], text, length, at, tokens, error)
-                    if tmp == NULL:
-                        break
-                    res += tmp
-                    at += len(tmp)
-            elif option.items[i].value.special.type == PLUS:
-                print 'plus'
-                tmp = token_children(option.items[i].value.special.option[0], text, length, at, tokens, error)
-                if tmp == NULL:
-                    return NULL
-                res += tmp
-                at += len(tmp)
-                while 1:
-                    tmp = token_children(option.items[i].value.special.option[0], text, length, at, tokens, error)
-                    if tmp == NULL:
-                        break
-                    res += tmp
-                    at += len(tmp)
-            elif option.items[i].value.special.type == OR:
-                print 'or'
-                for org from 0<=org<option.items[i].value.special.option.num:
-                    tmp = token_children(option.items[i].value.special.option.items[org].value.special.option[0], text, length, at, tokens, error)
-                    if tmp != NULL:
-                        print 'good or', org, tmp
-                        res += tmp
-                        at += len(tmp)
-                        break
-                else:
-                    return NULL
-            elif option.items[i].value.special.type == QUESTION:
-                print '?'
-                tmp = token_children(option.items[i].value.special.option[0], text, length, at, tokens, error)
-                if tmp != NULL:
-                    res += tmp
-                    at += len(tmp)
-            elif option.items[i].value.special.type ==STRAIGHT:
-                print '--'
-                print 'this shouldnt happen...'
+            tmp = test_literal(option.items[i], text, at)
+            if tmp == NULL:
                 return NULL
+            res += tmp
+            at += len(tmp)
+        elif option.items[i].type == SPECIAL:
+            tmp = test_special(option.items[i].value.special, text, length, at, tokens, error)
+            if tmp == NULL:
+                return NULL
+            res += tmp
+            at += len(tmp)
         else:
             error[1] = 'unknown rule type'
             return NULL
