@@ -3,6 +3,7 @@ from codetalker.pgm.cgrammar.structs cimport *
 from codetalker.pgm.cgrammar.convert cimport convert_rules, convert_ignore, convert_tokens_back
 from codetalker.pgm.cgrammar.tokenize cimport tokenize
 from codetalker.pgm.cgrammar.parser cimport parse_rule
+from codetalker.pgm.cgrammar.kill cimport kill_rules, kill_ignore, kill_tokens
 
 def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
     cdef Rules crules = convert_rules(rules)
@@ -35,7 +36,6 @@ def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
     state.tokens = tokenstream
     state.ignore = cignore
     cdef ParseNode* root = parse_rule(start, &state, error)
-    # return convert_tokens_back(tokenstream)
 
 def just_tokens(text, rules, tokens, real_tokens, ignore, indent=False):
     cdef Rules crules = convert_rules(rules)
@@ -45,12 +45,16 @@ def just_tokens(text, rules, tokens, real_tokens, ignore, indent=False):
     creal_tokens[0] = len(real_tokens)+1
     for tk from 0<=tk<creal_tokens[0]-1:
         creal_tokens[tk+1] = real_tokens[tk]
-
     error = [0, None]
     cdef Token* tokenstream = tokenize(text, len(text), creal_tokens, ctokens, indent, error)
+    kill_ignore(cignore)
+    kill_rules(crules)
+    kill_rules(ctokens)
     if tokenstream == NULL:
         raise Exception('tokenize failed', error, text[error[0]:error[0]+100])
-    return convert_tokens_back(tokenstream)
+    py_tokens = convert_tokens_back(tokenstream)
+    kill_tokens(tokenstream)
+    return py_tokens
 
 cdef hello():
     print 'hi'

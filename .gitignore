@@ -5,4 +5,5 @@
 *.sess
 *.c
 *.so
+build/
 CodeTalker.egg-info
