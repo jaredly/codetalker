@@ -93,6 +93,12 @@ class pyParseNode(object):
         self.children.insert(0, child)
         child.parent = self
 
+    def __str__(self):
+        strs = []
+        for child in self.children:
+            strs.append(str(child))
+        return ''.join(strs)
+
 class pyToken(object):
     def __init__(self, type, value, lineno=-1, charno=-1):
         self.type = type
@@ -100,6 +106,9 @@ class pyToken(object):
         self.lineno = lineno
         self.charno = charno
         self.parent = None
+
+    def __str__(self):
+        return self.value
 
 cdef object convert_nodes_back(ParseNode* node):
     '''convert a ParseNode struct back to a python object (a tuple)'''

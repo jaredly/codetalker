@@ -134,7 +134,7 @@ class Grammar:
             tokens[i] = (self.tokens[num],) + token[1:]
         return tokens
 
-    def process(self, text, start=None, debug = False):
+    def process(self, text, start=0, debug = False):
         '''main entry point for parsing text.
 
             text: string - to parse

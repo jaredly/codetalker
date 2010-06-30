@@ -26,6 +26,7 @@ def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
         tmp_token = tmp_token.next
     cdef TokenStream tokenstream
     tokenstream.tokens = <Token*>malloc(sizeof(Token)*num_tokens)
+    tokenstream.num = num_tokens
     tmp_token = first_token
     for i from 0<=i<num_tokens:
         tokenstream.tokens[i] = tmp_token[0]
@@ -35,13 +36,21 @@ def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
     state.rules = crules
     state.tokens = tokenstream
     state.ignore = cignore
+    print 'parsing...'
     cdef ParseNode* root = parse_rule(start, &state, error)
+    print 'parsed'
     tree = convert_nodes_back(root)
+    print 'converted'
     kill_rules(crules)
+    print 'krules'
     kill_ignore(cignore)
+    print 'kignore'
     kill_tokens(first_token)
+    print 'ktokens'
     free(tokenstream.tokens)
-    kill_nodes(root)
+    print 'kstream'
+    # kill_nodes(root)
+    print 'knodes'
     return tree
 
 def just_tokens(text, rules, tokens, real_tokens, ignore, indent=False):
