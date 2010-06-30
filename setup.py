@@ -24,5 +24,4 @@ setup(
     test_suite = 'tests.all_tests',
 )
 
-
 # vim: et sw=4 sts=4

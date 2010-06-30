@@ -1,4 +1,4 @@
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport malloc
 from codetalker.pgm.cgrammar.structs cimport *
 
 cdef Rules convert_rules(object rules):
@@ -78,4 +78,37 @@ cdef object convert_tokens_back(Token* start):
         start = start.next
     print  'done', res
     return res
+
+class pyParseNode(object):
+    def __init__(self, rule):
+        self.rule = rule
+        self.children = []
+        self.parent = None
+    
+    def append(self, child):
+        self.children.append(child)
+        child.parent = self
+
+    def prepend(self, child):
+        self.children.insert(0, child)
+        child.parent = self
+
+class pyToken(object):
+    def __init__(self, type, value, lineno=-1, charno=-1):
+        self.type = type
+        self.value = value
+        self.lineno = lineno
+        self.charno = charno
+        self.parent = None
+
+cdef object convert_nodes_back(ParseNode* node):
+    '''convert a ParseNode struct back to a python object (a tuple)'''
+    if node.type == NTOKEN:
+        return pyToken(node.token.which, node.token.value, node.token.lineno, node.token.charno)
+    current = pyParseNode(node.rule)
+    cdef ParseNode* child = node.child
+    while child != NULL:
+        current.prepend(convert_nodes_back(child))
+        child = child.prev
+    return current
 

@@ -30,3 +30,13 @@ cdef void kill_tokens(Token* token):
         kill_tokens(token.next)
     free(token)
 
+cdef void kill_nodes(ParseNode* node):
+    if node.prev != NULL:
+        node.prev.next = NULL
+        kill_nodes(node.prev)
+    if node.child != NULL:
+        kill_nodes(node.child)
+    if node.token != NULL:
+        free(node.token)
+    free(node)
+
