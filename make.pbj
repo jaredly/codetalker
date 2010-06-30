@@ -15,6 +15,7 @@ def pyx(fname):
         compile_pyx(fname)
 
 build.clean('build', 'codetalker/pgm/cgrammar/*.c', 'codetalker/pgm/cgrammar/*.so')
+build.cmd('test', ['py.test'] + glob.glob('tests/tokenize/*.py'), depends='@pyx', always=True)
 
 from distutils.core import setup
 from distutils.extension import Extension
@@ -30,6 +31,7 @@ def compile_pyx(fname):
     sys.argv[1:] = ['build_ext','--inplace']
     setup(cmdclass = {'build_ext': build_ext},
           ext_modules = [Extension(fname.replace('/','.'), [fname + '.pyx'])])
+    sys.argv = old_argv
 
 if __name__ == '__main__':
     build.run()
