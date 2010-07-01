@@ -192,11 +192,11 @@ cdef char* token_children(RuleOption option, char* text, unsigned int length, un
     cdef char* tmp
     _indent.append(0)
     for i from 0<=i<option.num:
-        if at >= length:
-            log('RAN OUT')
-            _indent.pop(0)
-            return NULL
         if option.items[i].type == RULE:
+            if at >= length:
+                log('RAN OUT')
+                _indent.pop(0)
+                return NULL
             log('RULE')
             tmp = token_text(tokens.rules[option.items[i].value.which], text, length, at, tokens, error)
             if tmp != NULL:
@@ -207,6 +207,10 @@ cdef char* token_children(RuleOption option, char* text, unsigned int length, un
             _indent.pop(0)
             return NULL
         elif option.items[i].type == LITERAL:
+            if at >= length:
+                log('RAN OUT')
+                _indent.pop(0)
+                return NULL
             tmp = test_literal(option.items[i], text, at)
             if tmp == NULL:
                 _indent.pop(0)
