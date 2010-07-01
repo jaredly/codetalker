@@ -11,11 +11,12 @@ cdef:
 
 _indent = []
 
+def log_(*a):pass
 def log(*a):
-    pass
-    # strs = []
-    # for e in a:strs.append(str(e))
-    # print '  |'*len(_indent), ' '.join(strs)
+    strs = []
+    for e in a:strs.append(str(e))
+    print '  |'*len(_indent), ' '.join(strs)
+
 
 ## SPECIAL TOKENS: EOF=0, INDENT=1, DEDENT=2
 
@@ -35,6 +36,7 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
 
     while at < length:
         for i from 1<=i<real_tokens[0]:
+            log('looking for token at', at)
             result = token_text(tokens.rules[real_tokens[i]], text, length, at, &tokens, error)
             if result == NULL:
                 log('didnt work')
@@ -70,11 +72,13 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
                     charno += len(small[small.rfind('\n'):])
                 else:
                     charno += len(small)
+                log('INC AT:', [at, small], at+len(small))
                 at += len(small)
                 break
         else:
-            error[0] = at
-            error[1] = 'invalid token'
+            if at > error[0]:
+                error[0] = at
+                error[1] = 'no token matches'
             _indent.pop(0)
             return NULL
     _indent.pop(0)
@@ -112,7 +116,7 @@ cdef Token* handle_indent(char* text, unsigned int at, Token* current, unsigned 
 
 cdef unsigned int get_white(char* text, unsigned int at):
     cdef unsigned int white = 0
-    while text[at] == ' ':
+    while str(text[at]) == ' ':
         white += 1
         at += 1
     return white
@@ -129,11 +133,11 @@ cdef char* token_text(Rule token, char* text, unsigned int length, unsigned int 
 
 cdef char* test_literal(RuleItem item, char* text, unsigned int at):
     what = item.value.text
-    log('literal >>', what, '<<')
-    if what == text[at:at+len(what)]:
-        log('success')
+    # log('literal >>', what, '<<', at)
+    if str(what) == str(text[at:at+len(what)]):
+        log('success', what, '::', at)
         return what
-    log('fail:', text[at:at+len(what)])
+    log('fail:', [what, text[at:at+len(what)]], at)
 
     return NULL
 
@@ -149,7 +153,9 @@ cdef char* test_special(RuleSpecial special, char* text, unsigned int length, un
             if tmp == NULL:
                 break
             res += tmp
+            log('INC AT (special*)', (at, tmp), at + len(tmp))
             at += len(tmp)
+        log('from special', res)
         return res
     elif special.type == PLUS:
         log('plus')
@@ -157,13 +163,16 @@ cdef char* test_special(RuleSpecial special, char* text, unsigned int length, un
         if tmp == NULL:
             return NULL
         res += tmp
+        log('INC AT (special+)', (at, tmp), at + len(tmp))
         at += len(tmp)
         while 1:
             tmp = token_children(special.option[0], text, length, at, tokens, error)
             if tmp == NULL:
                 break
             res += tmp
+            log('INC AT (special++)', (at, tmp), at + len(tmp))
             at += len(tmp)
+        log('from special', res)
         return res
     elif special.type == OR:
         log('or')
@@ -171,6 +180,7 @@ cdef char* test_special(RuleSpecial special, char* text, unsigned int length, un
             tmp = token_children(special.option.items[org].value.special.option[0], text, length, at, tokens, error)
             if tmp != NULL:
                 res = tmp
+                log('from special', res)
                 return res
         else:
             return NULL
@@ -179,9 +189,10 @@ cdef char* test_special(RuleSpecial special, char* text, unsigned int length, un
         tmp = token_children(special.option[0], text, length, at, tokens, error)
         if tmp != NULL:
             res = tmp
+            log('from special', res)
             return res
         return ''
-    elif special.type ==STRAIGHT:
+    elif special.type == STRAIGHT:
         print 'failz'
         return NULL
     return NULL
@@ -196,26 +207,39 @@ cdef char* token_children(RuleOption option, char* text, unsigned int length, un
             if at >= length:
                 log('RAN OUT')
                 _indent.pop(0)
+                error[0] = at
+                error[1] = 'ran out of tokens'
                 return NULL
             log('RULE')
             tmp = token_text(tokens.rules[option.items[i].value.which], text, length, at, tokens, error)
             if tmp != NULL:
                 _indent.pop(0)
+                log('INC AT (RULE)', (at, tmp), at + len(tmp))
                 at += len(tmp)
                 res += tmp
                 continue
             _indent.pop(0)
+            if at > error[0]:
+                error[0] = at
+                error[1] = 'failed rule', option.items[i].value.which
             return NULL
         elif option.items[i].type == LITERAL:
             if at >= length:
                 log('RAN OUT')
+                error[0] = at
+                error[1] = 'ran out of tokens'
                 _indent.pop(0)
                 return NULL
             tmp = test_literal(option.items[i], text, at)
             if tmp == NULL:
                 _indent.pop(0)
+                if at > error[0]:
+                    error[0] = at
+                    error[1] = 'Invalid tokenzing; got %s (at %d), expected %s' %\
+                            (text[at:at+len(option.items[i].value.text)], at, option.items[i].value.text)
                 return NULL
             res += tmp
+            log('INC AT (literal)', (at, tmp), at + len(tmp))
             at += len(tmp)
         elif option.items[i].type == SPECIAL:
             tmp = test_special(option.items[i].value.special, text, length, at, tokens, error)
@@ -223,6 +247,7 @@ cdef char* token_children(RuleOption option, char* text, unsigned int length, un
                 _indent.pop(0)
                 return NULL
             res += tmp
+            log('INC AT (special)', (at, tmp), at + len(tmp), option.items[i].value.special.type)
             at += len(tmp)
         else:
             error[1] = 'unknown rule type'

@@ -2,17 +2,18 @@
 
 from codetalker.pgm import Grammar, Translator
 from codetalker.pgm.special import star, plus, _or, commas
-from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE, ReToken, StringToken
+from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE
 
 '''Man this looks sweet. It really should be
 this easy to write a json parser.'''
 
 # special tokens
-class SYMBOL(StringToken):
-    items = list('{},[]:')
 
-class TFN(StringToken):
-    items = ['true', 'false', 'null']
+def SYMBOL(token):
+    token | _or(*'{},[]:')
+
+def TFN(token):
+    token | 'true' | 'false' | 'null'
 
 # rules (value is the start rule)
 def value(rule):
@@ -31,7 +32,7 @@ list_.astName = 'List'
 
 grammar = Grammar(start=value,
                   tokens=[STRING, NUMBER, NEWLINE, WHITE, SYMBOL, TFN],
-                  ignore=[WHITE],
+                  ignore=[WHITE, NEWLINE],
                   ast_tokens=[STRING, TFN, NUMBER])
 
 # translator stuff
