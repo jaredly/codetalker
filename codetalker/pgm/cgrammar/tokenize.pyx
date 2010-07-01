@@ -1,6 +1,6 @@
 from codetalker.pgm.cgrammar.structs cimport *
 from libc.stdlib cimport *
-from libc.string cimport strcpy
+from libc.string cimport strncpy
 
 '''
 cdef:
@@ -11,8 +11,8 @@ cdef:
 
 _indent = []
 
-def log_(*a):pass
-def log(*a):
+def log(*a):pass
+def log_(*a):
     strs = []
     for e in a:strs.append(str(e))
     print '  |'*len(_indent), ' '.join(strs)
@@ -26,7 +26,8 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
         Token* start = NULL
         Token* current = NULL
         Token* tmp = NULL
-        char* result = NULL
+        char* txt = NULL
+        int result = -1
         unsigned int lineno = 1
         unsigned int charno = 1
         unsigned int at = 0
@@ -38,19 +39,19 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
         for i from 1<=i<real_tokens[0]:
             log('looking for token at', at)
             result = token_text(tokens.rules[real_tokens[i]], text, length, at, &tokens, error)
-            if result == NULL:
+            if result == -1:
                 log('didnt work')
                 continue
             else:
-                thestuff = result
-            result = thestuff
-            if result != NULL:
+                log('got a token!', result, [text[at:at+result]])
                 tmp = <Token*>malloc(sizeof(Token))
                 tmp.which = real_tokens[i]
                 tmp.lineno = lineno
                 tmp.charno = charno
-                tmp.value = <char*>malloc(sizeof(char) * len(thestuff) + 1)
-                strcpy(tmp.value, thestuff)
+                tmp.value = <char*>malloc(sizeof(char) * result + 1)
+                strncpy(tmp.value, text+at, result)
+                tmp.value[result] = '\0'
+                log('and the real value:', [tmp.value], text+at, result)
                 tmp.next = NULL
                 if start == NULL:
                     start = tmp
@@ -58,8 +59,9 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
                 else:
                     current.next = tmp
                     current = tmp
-                small = str(text[at:at+len(result)])
+                small = str(tmp.value)
                 if small == '\n':
+                    log('CHECKING INDENT')
                     lineno += 1
                     charno = 1
                     if check_indent:
@@ -73,7 +75,7 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
                 else:
                     charno += len(small)
                 log('INC AT:', [at, small], at+len(small))
-                at += len(small)
+                at += result
                 break
         else:
             if at > error[0]:
@@ -88,6 +90,8 @@ cdef Token* handle_indent(char* text, unsigned int at, Token* current, unsigned 
         int lineno, int charno, object indent, object error):
     cdef Token* tmp = NULL
     white = get_white(text, at + len(current.value))
+    log('WHITE:', white)
+    log('[last indent: %d]' % indent[-1])
     if white != indent[-1]:
         if white > indent[-1]:
             tmp = <Token*>malloc(sizeof(Token))
@@ -116,91 +120,90 @@ cdef Token* handle_indent(char* text, unsigned int at, Token* current, unsigned 
 
 cdef unsigned int get_white(char* text, unsigned int at):
     cdef unsigned int white = 0
-    while str(text[at]) == ' ':
+    while text[at] == 32:
         white += 1
         at += 1
     return white
 
-cdef char* token_text(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
-    cdef char* res
+cdef int token_text(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
+    cdef int res
     for i from 0<=i<token.num:
         _indent.append(0)
         res = token_children(token.options[i], text, length, at, tokens, error)
         _indent.pop(0)
-        if res != NULL:
+        if res != -1:
             return res
-    return NULL
+    return -1
 
-cdef char* test_literal(RuleItem item, char* text, unsigned int at):
+cdef int test_literal(RuleItem item, char* text, unsigned int at):
     what = item.value.text
     # log('literal >>', what, '<<', at)
     if str(what) == str(text[at:at+len(what)]):
         log('success', what, '::', at)
-        return what
+        return len(what)
     log('fail:', [what, text[at:at+len(what)]], at)
 
-    return NULL
+    return -1
 
-cdef char* test_special(RuleSpecial special, char* text, unsigned int length, unsigned int at,
+cdef int test_special(RuleSpecial special, char* text, unsigned int length, unsigned int at,
         Rules* tokens, object error):
-    res = ''
-    cdef char* tmp
+    cdef int res = 0
+    cdef int tmp = 0
     log('special')
     if special.type == STAR:
         log('star')
         while 1:
             tmp = token_children(special.option[0], text, length, at, tokens, error)
-            if tmp == NULL:
+            if tmp == -1:
                 break
             res += tmp
-            log('INC AT (special*)', (at, tmp), at + len(tmp))
-            at += len(tmp)
+            # log('INC AT (special*)', (at, tmp), at + len(tmp))
+            at += tmp
         log('from special', res)
         return res
     elif special.type == PLUS:
         log('plus')
         tmp = token_children(special.option[0], text, length, at, tokens, error)
-        if tmp == NULL:
-            return NULL
+        if tmp == -1:
+            return -1
         res += tmp
-        log('INC AT (special+)', (at, tmp), at + len(tmp))
-        at += len(tmp)
+        # log('INC AT (special+)', (at, tmp), at + len(tmp))
+        at += tmp
         while 1:
             tmp = token_children(special.option[0], text, length, at, tokens, error)
-            if tmp == NULL:
+            if tmp == -1:
                 break
             res += tmp
-            log('INC AT (special++)', (at, tmp), at + len(tmp))
-            at += len(tmp)
+            # log('INC AT (special++)', (at, tmp), at + len(tmp))
+            at += tmp
         log('from special', res)
         return res
     elif special.type == OR:
         log('or')
         for org from 0<=org<special.option.num:
             tmp = token_children(special.option.items[org].value.special.option[0], text, length, at, tokens, error)
-            if tmp != NULL:
+            if tmp != -1:
                 res = tmp
                 log('from special', res)
                 return res
         else:
-            return NULL
+            return -1
     elif special.type == QUESTION:
-
         tmp = token_children(special.option[0], text, length, at, tokens, error)
-        if tmp != NULL:
+        if tmp != -1:
             res = tmp
             log('from special', res)
             return res
-        return ''
+        return 0
     elif special.type == STRAIGHT:
         print 'failz'
-        return NULL
-    return NULL
+        return -1
+    return -1
 
-cdef char* token_children(RuleOption option, char* text, unsigned int length, unsigned int at,
+cdef int token_children(RuleOption option, char* text, unsigned int length, unsigned int at,
         Rules* tokens, object error):
-    res = ''
-    cdef char* tmp
+    cdef int res = 0
+    cdef int tmp = 0
     _indent.append(0)
     for i from 0<=i<option.num:
         if option.items[i].type == RULE:
@@ -209,50 +212,50 @@ cdef char* token_children(RuleOption option, char* text, unsigned int length, un
                 _indent.pop(0)
                 error[0] = at
                 error[1] = 'ran out of tokens'
-                return NULL
+                return -1
             log('RULE')
             tmp = token_text(tokens.rules[option.items[i].value.which], text, length, at, tokens, error)
-            if tmp != NULL:
+            if tmp != -1:
                 _indent.pop(0)
-                log('INC AT (RULE)', (at, tmp), at + len(tmp))
-                at += len(tmp)
+                # log('IN#C AT (RULE)', (at, tmp), at + len(tmp))
+                at += tmp
                 res += tmp
                 continue
             _indent.pop(0)
             if at > error[0]:
                 error[0] = at
                 error[1] = 'failed rule', option.items[i].value.which
-            return NULL
+            return -1
         elif option.items[i].type == LITERAL:
             if at >= length:
                 log('RAN OUT')
                 error[0] = at
                 error[1] = 'ran out of tokens'
                 _indent.pop(0)
-                return NULL
+                return -1
             tmp = test_literal(option.items[i], text, at)
-            if tmp == NULL:
+            if tmp == -1:
                 _indent.pop(0)
                 if at > error[0]:
                     error[0] = at
                     error[1] = 'Invalid tokenzing; got %s (at %d), expected %s' %\
                             (text[at:at+len(option.items[i].value.text)], at, option.items[i].value.text)
-                return NULL
+                return -1
             res += tmp
-            log('INC AT (literal)', (at, tmp), at + len(tmp))
-            at += len(tmp)
+            # log('INC AT (literal)', (at, tmp), at + len(tmp))
+            at += tmp
         elif option.items[i].type == SPECIAL:
             tmp = test_special(option.items[i].value.special, text, length, at, tokens, error)
-            if tmp == NULL:
+            if tmp == -1:
                 _indent.pop(0)
-                return NULL
+                return -1
             res += tmp
-            log('INC AT (special)', (at, tmp), at + len(tmp), option.items[i].value.special.type)
-            at += len(tmp)
+            # log('INC AT (special)', (at, tmp), at + len(tmp), option.items[i].value.special.type)
+            at += tmp
         else:
             error[1] = 'unknown rule type'
             _indent.pop(0)
-            return NULL
+            return -1
     _indent.pop(0)
     return res
 
