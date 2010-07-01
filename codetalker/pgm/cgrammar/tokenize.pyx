@@ -12,9 +12,10 @@ cdef:
 _indent = []
 
 def log(*a):
-    strs = []
-    for e in a:strs.append(str(e))
-    print '  |'*len(_indent), ' '.join(strs)
+    pass
+    # strs = []
+    # for e in a:strs.append(str(e))
+    # print '  |'*len(_indent), ' '.join(strs)
 
 ## SPECIAL TOKENS: EOF=0, INDENT=1, DEDENT=2
 
@@ -34,13 +35,12 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
 
     while at < length:
         for i from 1<=i<real_tokens[0]:
-            log('checking', real_tokens[i])
             result = token_text(tokens.rules[real_tokens[i]], text, length, at, &tokens, error)
             if result == NULL:
                 log('didnt work')
                 continue
-            log('got token!', real_tokens[i])
-            thestuff = result
+            else:
+                thestuff = result
             result = thestuff
             if result != NULL:
                 tmp = <Token*>malloc(sizeof(Token))
