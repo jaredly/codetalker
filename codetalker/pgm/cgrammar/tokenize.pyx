@@ -9,6 +9,13 @@ cdef:
         unsigned int at
 '''
 
+_indent = []
+
+def log(*a):
+    strs = []
+    for e in a:strs.append(str(e))
+    print '  |'*len(_indent), ' '.join(strs)
+
 ## SPECIAL TOKENS: EOF=0, INDENT=1, DEDENT=2
 
 cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
@@ -22,14 +29,18 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
         unsigned int charno = 1
         unsigned int at = 0
     indent = [0]
+    log('tokenizing')
+    _indent.append(0)
 
     while at < length:
         for i from 1<=i<real_tokens[0]:
+            log('checking', real_tokens[i])
             result = token_text(tokens.rules[real_tokens[i]], text, length, at, &tokens, error)
             if result == NULL:
+                log('didnt work')
                 continue
-            else:
-                thestuff = result
+            log('got token!', real_tokens[i])
+            thestuff = result
             result = thestuff
             if result != NULL:
                 tmp = <Token*>malloc(sizeof(Token))
@@ -52,6 +63,7 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
                     if check_indent:
                         current = handle_indent(text, at, current, real_tokens[0], lineno, charno, indent, error)
                         if current == NULL:
+                            _indent.pop(0)
                             return NULL
                 elif '\n' in small:
                     lineno += small.count('\n')
@@ -63,7 +75,9 @@ cdef Token* tokenize(char* text, unsigned int length, unsigned int* real_tokens,
         else:
             error[0] = at
             error[1] = 'invalid token'
+            _indent.pop(0)
             return NULL
+    _indent.pop(0)
     return start
 
 cdef Token* handle_indent(char* text, unsigned int at, Token* current, unsigned int num_tokens,
@@ -106,16 +120,20 @@ cdef unsigned int get_white(char* text, unsigned int at):
 cdef char* token_text(Rule token, char* text, unsigned int length, unsigned int at, Rules* tokens, object error):
     cdef char* res
     for i from 0<=i<token.num:
+        _indent.append(0)
         res = token_children(token.options[i], text, length, at, tokens, error)
+        _indent.pop(0)
         if res != NULL:
             return res
     return NULL
 
 cdef char* test_literal(RuleItem item, char* text, unsigned int at):
     what = item.value.text
-
+    log('literal >>', what, '<<')
     if what == text[at:at+len(what)]:
+        log('success')
         return what
+    log('fail:', text[at:at+len(what)])
 
     return NULL
 
@@ -123,7 +141,9 @@ cdef char* test_special(RuleSpecial special, char* text, unsigned int length, un
         Rules* tokens, object error):
     res = ''
     cdef char* tmp
+    log('special')
     if special.type == STAR:
+        log('star')
         while 1:
             tmp = token_children(special.option[0], text, length, at, tokens, error)
             if tmp == NULL:
@@ -132,6 +152,7 @@ cdef char* test_special(RuleSpecial special, char* text, unsigned int length, un
             at += len(tmp)
         return res
     elif special.type == PLUS:
+        log('plus')
         tmp = token_children(special.option[0], text, length, at, tokens, error)
         if tmp == NULL:
             return NULL
@@ -145,6 +166,7 @@ cdef char* test_special(RuleSpecial special, char* text, unsigned int length, un
             at += len(tmp)
         return res
     elif special.type == OR:
+        log('or')
         for org from 0<=org<special.option.num:
             tmp = token_children(special.option.items[org].value.special.option[0], text, length, at, tokens, error)
             if tmp != NULL:
@@ -168,33 +190,40 @@ cdef char* token_children(RuleOption option, char* text, unsigned int length, un
         Rules* tokens, object error):
     res = ''
     cdef char* tmp
-
+    _indent.append(0)
     for i from 0<=i<option.num:
-
         if at >= length:
-
+            log('RAN OUT')
+            _indent.pop(0)
             return NULL
         if option.items[i].type == RULE:
+            log('RULE')
             tmp = token_text(tokens.rules[option.items[i].value.which], text, length, at, tokens, error)
             if tmp != NULL:
+                _indent.pop(0)
                 at += len(tmp)
                 res += tmp
                 continue
+            _indent.pop(0)
             return NULL
         elif option.items[i].type == LITERAL:
             tmp = test_literal(option.items[i], text, at)
             if tmp == NULL:
+                _indent.pop(0)
                 return NULL
             res += tmp
             at += len(tmp)
         elif option.items[i].type == SPECIAL:
             tmp = test_special(option.items[i].value.special, text, length, at, tokens, error)
             if tmp == NULL:
+                _indent.pop(0)
                 return NULL
             res += tmp
             at += len(tmp)
         else:
             error[1] = 'unknown rule type'
+            _indent.pop(0)
             return NULL
+    _indent.pop(0)
     return res
 
