@@ -80,6 +80,30 @@ def expand(crange):
         return _or(*(a for a in string.printable if a not in items))
     return _or(*items)
 
+def binop(*items, **args):
+    '''binop(ops1, ops2, ops3, ..., name='BinOp', paren = False, value = [rule or token]) -> rule
+
+    example:
+        expression = binop(list('+-'), list('*/%'), paren=True, value=NUMBER)
+    '''
+    last = args['value']
+    def paren(rule):
+        rule | ('(', args['value'], ')') | args['value']
+        rule.pass_single = True
+    if args.get('paren', False):
+        last = paren
+    tmp = make_bop(items[-1], args['value'], args.get('name', 'BinOp'), args['ops_token'])
+    for ops in reversed(items[:-1]):
+        tmp = make_bop(ops, tmp, args.get('name', 'BinOp'), args['ops_token'])
+    return tmp
+
+def make_bop(ops, value, name, ops_token):
+    def meta(rule):
+        rule | (value, star(_or(*ops), value))
+        rule.astAttrs = {'left': {'type':value, 'single':True}, 'ops': ops_token, 'values': {'type':value, 'start':1}}
+    meta.astName = name
+    return meta
+
 def commas(item):
     return (item, star(',', item), [','])
 
