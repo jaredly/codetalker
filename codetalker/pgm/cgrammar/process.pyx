@@ -4,6 +4,7 @@ from codetalker.pgm.cgrammar.convert cimport convert_rules, convert_ignore, conv
 from codetalker.pgm.cgrammar.tokenize cimport tokenize
 from codetalker.pgm.cgrammar.parser cimport parse_rule
 from codetalker.pgm.cgrammar.kill cimport kill_rules, kill_ignore, kill_tokens, kill_nodes
+from codetalker.pgm.cgrammar.convert import pyParseNode, pyToken
 
 def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
     cdef Rules crules = convert_rules(rules)

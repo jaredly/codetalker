@@ -41,11 +41,11 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
         ParseNode* tmp = NULL
         RuleItem* item = NULL
         bint ignore
-    log('children of', rule)
+    # log('children of', rule)
     indent.append(0)
     for i from 0<=i<option.num:
         item = &option.items[i]
-        log('item', i)
+        # log('item', i)
         while state.tokens.at < state.tokens.num:
             ignore = False
             for m from 0<=m<state.ignore.num:
@@ -60,13 +60,13 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
             tmp.type = NTOKEN
             current = append_nodes(current, tmp)
             state.tokens.at += 1
-        if state.tokens.at >= state.tokens.num:
-            error[0] = state.tokens.at
-            error[1] = ['Not enough tokens -- expecting', rule, i, item.value.which]
-            log('not enough tokens')
-            indent.pop(0)
-            return NULL
         if item.type == RULE:
+            if state.tokens.at >= state.tokens.num:
+                error[0] = state.tokens.at
+                error[1] = ['Not enough tokens -- expecting', rule, i, item.value.which]
+                log('not enough tokens')
+                indent.pop(0)
+                return NULL
             at = state.tokens.at
             tmp = parse_rule(item.value.which, state, error)
             if tmp == NULL:
@@ -79,6 +79,12 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
             current = append_nodes(current, tmp)
             continue
         elif item.type == TOKEN:
+            if state.tokens.at >= state.tokens.num:
+                error[0] = state.tokens.at
+                error[1] = ['Not enough tokens -- expecting', rule, i, item.value.which]
+                log('not enough tokens')
+                indent.pop(0)
+                return NULL
             log('token... [looking for', item.value.which, '] got', state.tokens.tokens[state.tokens.at].which)
             if state.tokens.tokens[state.tokens.at].which == item.value.which:
                 tmp = _new_parsenode(rule)
@@ -94,8 +100,14 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
                 indent.pop(0)
                 return NULL
         elif item.type == LITERAL:
+            if state.tokens.at >= state.tokens.num:
+                error[0] = state.tokens.at
+                error[1] = ['Not enough tokens -- expecting', rule, i, item.value.which]
+                log('not enough tokens')
+                indent.pop(0)
+                return NULL
             log('looking for literal', item.value.text)
-            if item.value.text == state.tokens.tokens[state.tokens.at].value:
+            if str(item.value.text) == str(state.tokens.tokens[state.tokens.at].value):
                 tmp = _new_parsenode(rule)
                 tmp.token = &state.tokens.tokens[state.tokens.at]
                 tmp.type = NTOKEN
@@ -106,7 +118,7 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
                 if state.tokens.at > error[0]:
                     error[0] = state.tokens.at
                     error[1] = [rule, i, option.items[i].value.which]
-                log('failed...literally')
+                log('failed...literally', state.tokens.tokens[state.tokens.at].value)
                 indent.pop(0)
                 return NULL
         elif item.type == SPECIAL:

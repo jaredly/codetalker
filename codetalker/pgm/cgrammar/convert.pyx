@@ -110,14 +110,20 @@ class pyToken(object):
     def __str__(self):
         return self.value
 
+ind = []
 cdef object convert_nodes_back(ParseNode* node):
     '''convert a ParseNode struct back to a python object (a tuple)'''
     if node.type == NTOKEN:
+        print ' |'*len(ind), 'token', node.token.value
         return pyToken(node.token.which, node.token.value, node.token.lineno, node.token.charno)
     current = pyParseNode(node.rule)
     cdef ParseNode* child = node.child
+    print ' |'*len(ind), 'converting node'
+    ind.append(0)
     while child != NULL:
         current.prepend(convert_nodes_back(child))
         child = child.prev
+    ind.pop(0)
+    print ' |'*len(ind), 'converted node'
     return current
 
