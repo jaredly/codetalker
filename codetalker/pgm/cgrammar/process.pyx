@@ -38,6 +38,10 @@ def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
     state.tokens = tokenstream
     state.ignore = cignore
     cdef ParseNode* root = parse_rule(start, &state, error)
+    if root == NULL:
+        raise Exception('parse failed:', error)
+    if state.tokens.at < state.tokens.num:
+        raise Exception('parse failed: not everything parsed')
     tree = convert_nodes_back(root)
     kill_rules(crules)
     kill_ignore(cignore)

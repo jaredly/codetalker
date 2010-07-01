@@ -198,9 +198,9 @@ class Grammar:
             rload = self.real_rules[rule]
             if rload.pass_single:
                 for child in tree.children:
-                    if type(child) == tuple:
-                        if child.rule in (self.tokens.index(t) for t in self.ast_tokens):
-                            return self.tokens[child.rule](*child.children)
+                    if isinstance(child, process.pyToken):
+                        if self.tokens[child.type] in self.ast_tokens:
+                            return Token(self.tokens[child.type], child.value, child.lineno, child.charno)
                     else:
                         return self.to_ast(child)
                 raise RuleError('failure -- nothing to ast-tize %s %s' % (rload, tree))

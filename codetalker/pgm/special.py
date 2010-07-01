@@ -88,11 +88,11 @@ def binop(*items, **args):
     '''
     last = args['value']
     def paren(rule):
-        rule | ('(', args['value'], ')') | args['value']
+        rule | ('(', tmp, ')') | args['value']
         rule.pass_single = True
     if args.get('paren', False):
         last = paren
-    tmp = make_bop(items[-1], args['value'], args.get('name', 'BinOp'), args['ops_token'])
+    tmp = make_bop(items[-1], last, args.get('name', 'BinOp'), args['ops_token'])
     for ops in reversed(items[:-1]):
         tmp = make_bop(ops, tmp, args.get('name', 'BinOp'), args['ops_token'])
     return tmp
