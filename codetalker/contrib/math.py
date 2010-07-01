@@ -24,9 +24,9 @@ def SYMBOL(token):
     ()
 '''
 
-expression = binop(list('+-'), list('*/%'), ['**'], value=NUMBER, ops_token=OP, name='BinOp', paren=True)
+expression = binop(list('-+'), list('*/%'), ['**'], value=NUMBER, ops_token=OP, name='BinOp', paren=True)
 
-grammar = pgm.Grammar(start=expression, tokens = [NUMBER, OP, SYMBOL, WHITE, NEWLINE], ignore = [WHITE, NEWLINE], ast_tokens=[NUMBER])
+grammar = pgm.Grammar(start=expression, tokens = [OP, NUMBER, SYMBOL, WHITE, NEWLINE], ignore = [WHITE, NEWLINE], ast_tokens=[NUMBER])
 
 m = pgm.Translator(grammar)
 

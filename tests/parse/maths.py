@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from codetalker.contrib.math import m, grammar
+from codetalker.contrib.math import m, grammar, evaluate
 from codetalker.pgm.grammar import TokenError
 
 import py.test
@@ -30,5 +30,14 @@ def test_4():
 
 def test_5():
     assert m.from_string('2**3 - 1') == 7
+
+def test_6():
+    assert evaluate('4+2-3*2 - 8 * (3/4 + 0)') == -6
+
+def test_7():
+    assert evaluate('3-1') == 2
+
+def test_8():
+    assert evaluate('4%3') == 1
 
 # vim: et sw=4 sts=4
