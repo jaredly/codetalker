@@ -145,33 +145,6 @@ class Grammar:
         ignore = [self.tokens.index(tk) for tk in self.ignore]
         tree = process.process(start, text, self.rules, self.token_rules, real_tokens, ignore, self.indent)
         return tree
-    '''
-        logger.output = debug
-        if self.indent:
-            text = IndentText(text)
-        else:
-            text = Text(text)
-        # get tokens
-        if TIME: tokens = timeit(self.get_tokens, text)
-        else: tokens = self.get_tokens(text)
-        # set starting rule
-        if start is not None:
-            start = self.rule_dict[start]
-        else:
-            start = 0
-        error = [0, None]
-
-        # go for it
-        # if TIME: tree = timeit(self.parse_rule, start, tokens, error)
-        # else: tree = self.parse_rule(start, tokens, error)
-        tree = _grammar.grammar_parse_rule(start, tokens.tokens, self.rules, self.tokens, self.ignore, self.rule_names, error)
-
-        # either not everything was parsed or nothing was returned
-        if tree is None:
-            raise ParseError(error[1])
-
-        return tree
-    '''
     
     def which(self, obj):
         if isinstance(obj, Token):
@@ -191,20 +164,28 @@ class Grammar:
             return self.rule_dict[obj]
 
     def which_(self, child):
+        if isinstance(child, process.pyToken):
+            return -(child.type + 1)
+        elif isinstance(child, process.pyParseNode):
+            return child.rule
         if type(child) == tuple:
             return -(child[0]+1)
         return child[0]
 
     def to_ast(self, tree):
-        if type(tree) == tuple:
-            return self.tokens[tree[0]](*tree[1:])
-        rule = tree[0]
+        if isinstance(tree, process.pyToken):
+            return Token(self.tokens[tree.type], tree.value, tree.lineno, tree.charno)
+            # tree.type = self.tokens[tree.type]
+            # return tree
+        rule = tree.rule
         name = self.rule_names[rule]
         if self.ast_attrs[rule]:
             node = getattr(self.ast_classes, name)()
+            node.name = name
             node._rule = rule
+            node._tree = tree
             for attr, whiches, single, start, end, optional in self.ast_attrs[rule]:
-                children = [child for child in tree[1:] if self.which_(child) in whiches]
+                children = [child for child in tree.children if self.which_(child) in whiches]
                 if single and len(children) <= start:
                     if optional:
                         setattr(node, attr, None)
@@ -218,19 +199,21 @@ class Grammar:
         else:
             rload = self.real_rules[rule]
             if rload.pass_single:
-                for child in tree[1:]:
+                for child in tree.children:
                     if type(child) == tuple:
-                        if child[0] in (self.tokens.index(t) for t in self.ast_tokens):
-                            return self.tokens[child[0]](*child[1:])
+                        if child.rule in (self.tokens.index(t) for t in self.ast_tokens):
+                            return self.tokens[child.rule](*child.children)
                     else:
                         return self.to_ast(child)
                 raise RuleError('failure -- nothing to ast-tize %s %s' % (rload, tree))
             else:
                 items = []
-                for child in tree[1:]:
-                    if type(child) == tuple:
-                        if child[0] in (self.tokens.index(t) for t in self.ast_tokens):
-                            items.append(self.tokens[child[0]](*child[1:]))
+                for child in tree.children:
+                    if isinstance(child, process.pyToken):
+                        child = Token(self.tokens[child.type], child.value, child.lineno, child.charno)
+                        # child.type = self.tokens[child.type]
+                        if child.rule in self.ast_tokens:
+                            items.append(child)
                     else:
                         items.append(self.to_ast(child))
                 return items
