@@ -37,21 +37,13 @@ def process(start, text, rules, tokens, real_tokens, ignore, indent=False):
     state.rules = crules
     state.tokens = tokenstream
     state.ignore = cignore
-    print 'parsing...'
     cdef ParseNode* root = parse_rule(start, &state, error)
-    print 'parsed'
     tree = convert_nodes_back(root)
-    print 'converted'
     kill_rules(crules)
-    print 'krules'
     kill_ignore(cignore)
-    print 'kignore'
     kill_tokens(first_token)
-    print 'ktokens'
     free(tokenstream.tokens)
-    print 'kstream'
     # kill_nodes(root)
-    print 'knodes'
     return tree
 
 def just_tokens(text, rules, tokens, real_tokens, ignore, indent=False):

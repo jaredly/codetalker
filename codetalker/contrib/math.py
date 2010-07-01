@@ -24,7 +24,7 @@ def SYMBOL(token):
     ()
 '''
 
-expression = binop(list('+-'), list('*/%'), ['**'], value=NUMBER, ops_token=SYMBOL, name='BinOp')
+expression = binop(list('+-'), list('*/%'), ['**'], value=NUMBER, ops_token=OP, name='BinOp')
 
 grammar = pgm.Grammar(start=expression, tokens = [NUMBER, OP, SYMBOL, WHITE, NEWLINE], ignore = [WHITE, NEWLINE])
 
@@ -37,7 +37,6 @@ ops = {'**':operator.pow, '*':operator.mul, '/':operator.div, '%':operator.mod, 
 
 @m.translates(ast.BinOp)
 def binop(node, scope):
-    print 'binop!', node.left, node.ops, node.values, node._tree
     value = m.translate(node.left, scope)
     for op, right in zip(node.ops, node.values):
         value = ops[op.value](value, m.translate(right, scope))

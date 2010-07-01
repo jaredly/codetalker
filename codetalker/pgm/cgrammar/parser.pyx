@@ -14,9 +14,10 @@ cdef ParseNode* _new_parsenode(unsigned int rule):
 indent = []
 
 def log(*a):
-    strs = []
-    for e in a:strs.append(str(e))
-    print '  |'*len(indent), ' '.join(strs)
+    pass
+    # strs = []
+    # for e in a:strs.append(str(e))
+    # print '  |'*len(indent), ' '.join(strs)
 
 cdef ParseNode* parse_rule(unsigned int rule, State* state, object error):
     cdef ParseNode* node = _new_parsenode(rule)
@@ -203,8 +204,4 @@ cdef ParseNode* append_nodes(ParseNode* one, ParseNode* two):
     one.next = tmp
     tmp.prev = one
     return two
-
-
-
-
 

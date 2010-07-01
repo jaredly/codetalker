@@ -175,8 +175,6 @@ class Grammar:
     def to_ast(self, tree):
         if isinstance(tree, process.pyToken):
             return Token(self.tokens[tree.type], tree.value, tree.lineno, tree.charno)
-            # tree.type = self.tokens[tree.type]
-            # return tree
         rule = tree.rule
         name = self.rule_names[rule]
         if self.ast_attrs[rule]:
