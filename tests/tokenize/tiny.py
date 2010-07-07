@@ -1,29 +1,26 @@
 #!/usr/bin/env python
 
 from codetalker import pgm
-from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE
+from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE, ReToken, re
 from codetalker.pgm.special import star, plus, _or
 from codetalker.pgm.grammar import ParseError
 
 def start(rule):
     rule | 'what'
 
-def SMALL(token):
-    token | 'hello'
+class SMALL(ReToken):
+    rx = re.compile('hello')
 
 grammar = pgm.Grammar(start=start, tokens=[SMALL,NEWLINE])
 
 def test_one():
     tokens = grammar.get_tokens('hello')
     assert len(tokens) == 1
-    assert tokens == [(SMALL, 1, 1, 'hello')]
+    assert tokens == ((SMALL, 1, 1, 'hello'),)
 
 def test_two():
     tokens = grammar.get_tokens('hello\nhello')
     assert len(tokens) == 3
-    assert tokens[1][-1] == '\n'
-    assert tokens[0][-1] == 'hello'
-    assert tokens[1][2] == 6
     assert tokens[2] == (SMALL, 2, 1, 'hello')
 
 def test_three():

@@ -8,14 +8,11 @@ from codetalker.pgm.grammar import ParseError
 def start(rule):
     rule | 'what'
 
-def SMALL(token):
-    token | ('"', star(_or('\\"', '\\\n', expand('^\n"'))), '"')
-
-grammar = pgm.Grammar(start=start, tokens=[SMALL,NEWLINE])
+grammar = pgm.Grammar(start=start, tokens=[STRING,NEWLINE])
 
 def test_one():
     tokens = grammar.get_tokens('"one"')
-    assert tokens == [(SMALL, 1, 1, '"one"')]
+    assert tokens == ((STRING, 1, 1, '"one"'),)
 
 def test_two():
     tokens = grammar.get_tokens('"esca\\"pe"')
@@ -24,6 +21,6 @@ def test_two():
 def test_three():
     tokens = grammar.get_tokens('"and"\n"more\\\nescape"\n')
     assert len(tokens) == 4
-    assert tokens[-2] == (SMALL, 2, 1, '"more\\\nescape"')
+    assert tokens[-2] == (STRING, 2, 1, '"more\\\nescape"')
 
 # vim: et sw=4 sts=4

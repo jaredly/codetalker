@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 from codetalker import pgm
-from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE
+from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE, ReToken, re
 from codetalker.pgm.special import star, plus, _or
 from codetalker.pgm.grammar import ParseError
 
 def start(rule):
     rule | 'what'
 
-def SMALL(token):
-    token | ("'", star('hello'))
+class SMALL(ReToken):
+    rx = re.compile("'(hello)*")
 
 grammar = pgm.Grammar(start=start, tokens=[SMALL,NEWLINE])
 
