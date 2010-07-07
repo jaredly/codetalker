@@ -1,7 +1,18 @@
 from libc.stdlib cimport malloc
 from codetalker.pgm.cgrammar.structs cimport *
 
-cdef Rules convert_rules(object rules):
+cdef TokenStream tokens(tstream):
+    cdef TokenStream ctokens
+    ctokens.num = len(tstream)
+    ctokens.tokens = <Token*>malloc(sizeof(Token) * ctokens.num)
+    for i in range(ctokens.num):
+        ctokens.tokens[i].which = tstream[i].which
+        ctokens.tokens[i].lineno = tstream[i].lineno
+        ctokens.tokens[i].charno = tstream[i].charno
+        ctokens.tokens[i].value = tstream[i].value
+    return ctokens
+
+cdef Rules rules(object rules):
     cdef Rules crules
     crules.num = len(rules)
     crules.rules = <Rule*>malloc(sizeof(Rule)*crules.num)
@@ -62,7 +73,7 @@ cdef RuleItem convert_item(object item, bint from_or=False):
         citem.value.special.option[0] = convert_option(item[1:], to_or)
     return citem
 
-cdef IgnoreTokens convert_ignore(object ignore, object tokens):
+cdef IgnoreTokens ignore(object ignore):
     cdef IgnoreTokens itokens
     itokens.num = len(ignore)
     itokens.tokens = <unsigned int*>malloc(sizeof(unsigned int)*itokens.num)
@@ -70,7 +81,7 @@ cdef IgnoreTokens convert_ignore(object ignore, object tokens):
         itokens.tokens[i] = ignore[i]
     return itokens
 
-cdef object convert_tokens_back(Token* start):
+cdef object tokens_back(Token* start):
     res = []
     # print 'converting',start.which
     while start != NULL:
@@ -111,19 +122,16 @@ class pyToken(object):
         return self.value
 
 ind = []
-cdef object convert_nodes_back(ParseNode* node):
+cdef object nodes_back(ParseNode* node):
     '''convert a ParseNode struct back to a python object (a tuple)'''
     if node.type == NTOKEN:
-        # print ' |'*len(ind), 'token', node.token.value
         return pyToken(node.token.which, node.token.value, node.token.lineno, node.token.charno)
     current = pyParseNode(node.rule)
     cdef ParseNode* child = node.child
-    # print ' |'*len(ind), 'converting node'
     ind.append(0)
     while child != NULL:
-        current.prepend(convert_nodes_back(child))
+        current.prepend(nodes_back(child))
         child = child.prev
     ind.pop(0)
-    # print ' |'*len(ind), 'converted node'
     return current
 

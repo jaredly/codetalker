@@ -1,9 +1,9 @@
 from libc.stdlib cimport free
 
-cdef void kill_ignore(IgnoreTokens ignore):
+cdef void ignore(IgnoreTokens ignore):
     free(ignore.tokens)
 
-cdef void kill_rules(Rules rules):
+cdef void rules(Rules rules):
     for i from 0<=i<rules.num:
         kill_rule(rules.rules[i])
     free(rules.rules)
@@ -23,20 +23,20 @@ cdef void kill_item(RuleItem item):
         kill_option(item.value.special.option[0])
         free(item.value.special.option)
 
-cdef void kill_tokens(Token* token):
+cdef void tokens(Token* token):
     if token.value != NULL and len(token.value):
         free(token.value)
     if token.next != NULL:
-        kill_tokens(token.next)
+        tokens(token.next)
     free(token)
 
-cdef void kill_nodes(ParseNode* node):
+cdef void nodes(ParseNode* node):
     if node == NULL:
         return
     if node.prev != NULL:
-        kill_nodes(node.prev)
+        nodes(node.prev)
     if node.child != NULL:
-        kill_nodes(node.child)
+        nodes(node.child)
     if node.token != NULL:
         free(node.token)
     free(node)

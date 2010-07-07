@@ -1,7 +1,8 @@
 from structs cimport *
 
-cdef Rules convert_rules(object rules)
-cdef IgnoreTokens convert_ignore(object ignore, object tokens)
-cdef object convert_tokens_back(Token* first)
-cdef object convert_nodes_back(ParseNode* root)
+cdef TokenStream tokens(object tokens)
+cdef Rules rules(object rules)
+cdef IgnoreTokens ignore(object ignore)
+cdef object tokens_back(Token* first)
+cdef object nodes_back(ParseNode* root)
 
