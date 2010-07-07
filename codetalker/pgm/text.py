@@ -11,6 +11,7 @@ class Text:
         self.lineno = 1
         self.at = 0
         self.text = text
+        self.current = self.text
         self.ln = len(text)
         self.specials = []
 
@@ -22,6 +23,7 @@ class Text:
         else:
             self.charno += num
         self.at += num
+        self.current = self.text[self.at:]
 
     def hasMore(self):
         return self.at < self.ln

@@ -8,6 +8,7 @@ DEDENT = object()
 
 class Token(object):
     '''Base token class'''
+    __slots__ = ('lineno', 'charno', 'value', 'special')
     def __init__(self, value, *more):
         if len(more) == 1 and isinstance(more[0], Text):
             self.lineno = more[0].lineno
@@ -44,7 +45,7 @@ class StringToken(Token):
     @classmethod
     def check(cls, text):
         for item in cls.items:
-            if text.text[text.at:text.at + len(item)] == item:
+            if text.current[:len(item)] == item:
                 return cls(item, text)
 
 class ReToken(Token):
@@ -53,7 +54,7 @@ class ReToken(Token):
 
     @classmethod
     def check(cls, text):
-        m = cls.rx.match(text.text[text.at:])
+        m = cls.rx.match(text.current)
         if m:
             return cls(m.group(), text)
 
@@ -85,6 +86,7 @@ class WHITE(ReToken):
     rx = re.compile(r'[ \t]+')
 
 class NEWLINE(StringToken):
+    # rx = re.compile(r'\n')
     items = ['\n']
 
 class CCOMMENT(ReToken):
