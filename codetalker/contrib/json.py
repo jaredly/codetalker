@@ -2,18 +2,18 @@
 
 from codetalker.pgm import Grammar, Translator
 from codetalker.pgm.special import star, plus, _or, commas
-from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE
+from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE, ReToken, re
 
 '''Man this looks sweet. It really should be
 this easy to write a json parser.'''
 
 # special tokens
 
-def SYMBOL(token):
-    token | _or(*'{},[]:')
+class SYMBOL(ReToken):
+    rx = re.compile('[{},[\\]:]')
 
-def TFN(token):
-    token | 'true' | 'false' | 'null'
+class TFN(ReToken):
+    rx = re.compile('true|false|null')
 
 # rules (value is the start rule)
 def value(rule):
