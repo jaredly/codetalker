@@ -2,7 +2,7 @@ from libc.stdlib cimport malloc, free
 from codetalker.pgm.cgrammar.structs cimport *
 from codetalker.pgm.cgrammar cimport convert, parser, kill
 
-from codetaler.pgm.errors import ParseError
+from codetalker.pgm.errors import ParseError
 
 def process(start, tokens, rules, ignore):
     tree = c_process(start, convert.tokens(tokens), convert.rules(rules), convert.ignore(ignore))

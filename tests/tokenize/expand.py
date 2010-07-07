@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from codetalker import pgm
-from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE
+from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE, ReToken
 from codetalker.pgm.special import star, plus, _or, expand
 from codetalker.pgm.grammar import ParseError, TokenError
 import py.test
@@ -9,8 +9,10 @@ import py.test
 def start(rule):
     rule | 'what'
 
-def SMALL(token):
-    token | plus(expand('0-9'))
+import re
+
+class SMALL(ReToken):
+    rx = re.compile('\d+')
 
 grammar = pgm.Grammar(start=start, tokens=[SMALL,NEWLINE])
 

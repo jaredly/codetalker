@@ -10,9 +10,10 @@ def tokenize(tokens, text):
             for special in text.specials:
                 yield special
             text.specials = []
-        for token in tokens:
+        for i, token in enumerate(tokens):
             one = token.check(text)
             if one is not None:
+                one.which = i
                 yield one
                 break
         else:

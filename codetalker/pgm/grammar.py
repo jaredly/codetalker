@@ -8,7 +8,9 @@ from nodes import AstNode, ParseTree, TokenStream
 from logger import logger
 import inspect
 
-from codetalker.pgm.cgrammar import process
+from tokenize import tokenize
+from codetalker.pgm.cgrammar import main
+from text import Text, IndentText
 
 import time
 
@@ -46,13 +48,13 @@ class Grammar:
 
         self.token_rules = []
         self.token_names = []
-        self.token_dict = {}
+        self.token_dict  = {}
 
         self.rules      = []
         self.rule_dict  = {}
         self.rule_names = []
         self.real_rules = []
-        self.ast_attrs = []
+        self.ast_attrs  = []
         self.ast_classes = type('ClassHolder', (), {})
 
         [self.load_token(token) for token in self.tokens[:-3]]
@@ -123,6 +125,14 @@ class Grammar:
         builder(rule)
 
     def get_tokens(self, text):
+        if type(text) == str:
+            if self.indent:
+                text = IndentText(text)
+            else:
+                text = Text(text)
+        return tuple(tokenize(self.tokens, text))
+
+    def get_tokens_(self, text):
         real_tokens = [self.token_dict[func] for func in self.tokens[:-3]]
         ignore = [self.tokens.index(tk) for tk in self.ignore]
         try:
@@ -134,7 +144,29 @@ class Grammar:
             tokens[i] = (self.tokens[num],) + token[1:]
         return tokens
 
-    def process(self, text, start=0, debug = False):
+    def process(self, text, start=None, debug = False):
+        '''main entry point for parsing text.
+
+            text: string - to parse
+            start: optional custom start function (for advanced parsing)
+            debug: boolean (default false) to output debug parse tracing
+        '''
+        if self.indent:
+            text = IndentText(text)
+        else:
+            text = Text(text)
+        # get tokens
+        tokens = self.get_tokens(text)
+        # set starting rule
+        if start is not None:
+            start = self.rule_dict[start]
+        else:
+            start = 0
+        error = [0, None]
+        ignore = [self.tokens.index(tk) for tk in self.ignore]
+        return main.process(start, tokens, self.rules, ignore)
+    
+    def process_(self, text, start=0, debug = False):
         '''main entry point for parsing text.
 
             text: string - to parse
