@@ -15,7 +15,9 @@ def pyx(fname):
         compile_pyx(fname)
 
 build.clean('build', 'codetalker/pgm/cgrammar/*.c', 'codetalker/pgm/cgrammar/*.so')
-build.cmd('test', ['py.test'] + glob.glob('tests/tokenize/*.py'), depends='@pyx', always=True)
+build.cmd('test_tokenize', ['py.test'] + glob.glob('tests/tokenize/*.py'), depends='@pyx', always=True)
+build.cmd('test_parse', ['py.test'] + glob.glob('tests/parse/*.py'), depends='@pyx', always=True)
+build.cmd('test', ['py.test'] + glob.glob('tests/tokeinze/*.py') + glob.glob('tests/parse/*.py'), depends='@pyx', always=True)
 
 from distutils.core import setup
 from distutils.extension import Extension
