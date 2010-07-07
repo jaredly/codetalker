@@ -14,6 +14,6 @@ def test_one():
     text = '"a string" an_id 12 14.3\n"and\\"12" .3'
     tokens = grammar.get_tokens(text)
     assert len(tokens) == 11
-    assert ''.join(a[-1] for a in tokens) == text
+    assert ''.join(a.value for a in tokens) == text
 
 # vim: et sw=4 sts=4

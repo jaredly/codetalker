@@ -16,12 +16,12 @@ grammar = pgm.Grammar(start=start, tokens=[SMALL, WHITE, NEWLINE], indent=True)
 def test_indent():
     tokens = grammar.get_tokens('hello\n  hello')
     assert len(tokens) == 5
-    assert tokens[2][0] == INDENT
+    assert isinstance(tokens[2], INDENT) # tokens[2][0] == INDENT
 
 def test_dedent():
     tokens = grammar.get_tokens('hello\n hello\nhello')
     assert len(tokens) == 8
-    assert tokens[6][0] == DEDENT
+    assert isinstance(tokens[2], INDENT) # tokens[6][0] == DEDENT
 
 
 # vim: et sw=4 sts=4

@@ -7,11 +7,8 @@ import py.test
 
 def _ttoken(text):
     tk = grammar.get_tokens(text)
-    assert ''.join(token[-1] for token in tk) == text
+    assert ''.join(token.value for token in tk) == text
     return tk
-
-def test_one():
-    py.test.raises(TokenError, grammar.get_tokens, '')
 
 def test_two():
     tk = _ttoken('3')
