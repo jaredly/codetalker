@@ -27,6 +27,10 @@ class Token(object):
 
     def __str__(self):
         return self.value
+    
+    def __eq__(self, other):
+        if type(other) in (tuple, list):
+            return tuple(other) == (self.__class__, self.lineno, self.charno, self.value)
 
     @classmethod
     def check(cls, text):

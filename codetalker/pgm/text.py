@@ -17,7 +17,7 @@ class Text:
     def advance(self, num):
         lines = self.text[self.at:self.at+num].count('\n')
         if lines:
-            self.charno = len(self.text[self.at:self.at+num].split('\n')[-1])
+            self.charno = len(self.text[self.at:self.at+num].split('\n')[-1]) + 1
             self.lineno += lines
         else:
             self.charno += num
