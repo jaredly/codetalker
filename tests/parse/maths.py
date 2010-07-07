@@ -20,11 +20,6 @@ def test_2():
 def test_3():
     assert 4 == m.from_string('2*2')
 
-def test_41():
-    txt = '1+(4/2)'
-    tk = grammar.get_tokens(txt)
-    assert ''.join(a[-1] for a in tk) == txt
-
 def test_4():
     assert m.from_string('1+(4/2)') == 3
 
