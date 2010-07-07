@@ -1,38 +1,7 @@
 #!/usr/bin/env python
+
+from token import Token
 import re
-from special import star, plus, _or, expand
-
-class Token(object):
-    '''Base token class'''
-    __slots__ = ('lineno', 'charno', 'value', 'special')
-    def __init__(self, value, *more):
-        if len(more) == 1 and isinstance(more[0], Text):
-            self.lineno = more[0].lineno
-            self.charno = more[0].charno
-        elif len(more) == 2:
-            self.lineno = more[0]
-            self.charno = more[1]
-        elif not more:
-            self.lineno = self.charno = -1
-        else:
-            raise ValueError('invalid line/char arguments: %s' % (more,))
-        self.value = value
-
-    def __repr__(self):
-        return u'<%s token "%s" at (%d, %d)>' % (self.__class__.__name__,
-                self.value.encode('string_escape'), self.lineno, self.charno)
-
-    def __str__(self):
-        return self.value
-    
-    def __eq__(self, other):
-        if type(other) in (tuple, list):
-            return tuple(other) == (self.__class__, self.lineno, self.charno, self.value)
-
-    @classmethod
-    def check(cls, text):
-        '''test to see if a token matches the current text'''
-        raise NotImplementedError
 
 class StringToken(Token):
     '''a token that accepts one of many strings'''
