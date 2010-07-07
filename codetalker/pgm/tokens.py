@@ -2,10 +2,6 @@
 import re
 from special import star, plus, _or, expand
 
-EOF = object()
-INDENT = object()
-DEDENT = object()
-
 class Token(object):
     '''Base token class'''
     __slots__ = ('lineno', 'charno', 'value', 'special')
