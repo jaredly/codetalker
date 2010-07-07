@@ -1,6 +1,7 @@
 from libc.stdlib cimport malloc, free
 from codetalker.pgm.cgrammar.structs cimport *
 from codetalker.pgm.cgrammar cimport convert, parser, kill
+from codetalker.pgm.cgrammar.convert import pyToken, pyParseNode
 
 from codetalker.pgm.errors import ParseError
 
@@ -19,7 +20,7 @@ cdef object c_process(unsigned int start, TokenStream tokens, Rules rules, Ignor
         raise ParseError('parse failed', error)
     back = convert.nodes_back(tree)
     free(tokens.tokens)
-    kill.rules(rules)
-    kill.nodes(tree)
+    # kill.rules(rules)
+    # kill.nodes(tree)
     return back
 

@@ -18,7 +18,7 @@ class Token(object):
         elif not more:
             self.lineno = self.charno = -1
         else:
-            raise ValueError('invalid line/char arguments')
+            raise ValueError('invalid line/char arguments: %s' % (more,))
         self.value = value
 
     def __repr__(self):

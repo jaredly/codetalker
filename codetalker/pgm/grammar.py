@@ -132,18 +132,6 @@ class Grammar:
                 text = Text(text)
         return tuple(tokenize(self.tokens, text))
 
-    def get_tokens_(self, text):
-        real_tokens = [self.token_dict[func] for func in self.tokens[:-3]]
-        ignore = [self.tokens.index(tk) for tk in self.ignore]
-        try:
-            tokens = process.just_tokens(text, self.rules, self.token_rules, real_tokens, ignore, self.indent)
-        except Exception, e:
-            raise TokenError(*e.args)
-        for i, token in enumerate(tokens):
-            num = token[0]
-            tokens[i] = (self.tokens[num],) + token[1:]
-        return tokens
-
     def process(self, text, start=None, debug = False):
         '''main entry point for parsing text.
 
@@ -166,18 +154,6 @@ class Grammar:
         ignore = [self.tokens.index(tk) for tk in self.ignore]
         return main.process(start, tokens, self.rules, ignore)
     
-    def process_(self, text, start=0, debug = False):
-        '''main entry point for parsing text.
-
-            text: string - to parse
-            start: optional custom start function (for advanced parsing)
-            debug: boolean (default false) to output debug parse tracing
-        '''
-        real_tokens = [self.token_dict[func] for func in self.tokens[:-3]]
-        ignore = [self.tokens.index(tk) for tk in self.ignore]
-        tree = process.process(start, text, self.rules, self.token_rules, real_tokens, ignore, self.indent)
-        return tree
-    
     def which(self, obj):
         if isinstance(obj, Token):
             if not obj.__class__ in self.tokens:
@@ -196,17 +172,17 @@ class Grammar:
             return self.rule_dict[obj]
 
     def which_(self, child):
-        if isinstance(child, process.pyToken):
+        if isinstance(child, main.pyToken):
             return -(child.type + 1)
-        elif isinstance(child, process.pyParseNode):
+        elif isinstance(child, main.pyParseNode):
             return child.rule
         if type(child) == tuple:
             return -(child[0]+1)
         return child[0]
 
     def to_ast(self, tree):
-        if isinstance(tree, process.pyToken):
-            return Token(self.tokens[tree.type], tree.value, tree.lineno, tree.charno)
+        if isinstance(tree, main.pyToken):
+            return self.tokens[tree.type](tree.value, tree.lineno, tree.charno)
         rule = tree.rule
         name = self.rule_names[rule]
         if self.ast_attrs[rule]:
@@ -230,62 +206,19 @@ class Grammar:
             rload = self.real_rules[rule]
             if rload.pass_single:
                 for child in tree.children:
-                    if isinstance(child, process.pyToken):
+                    if isinstance(child, main.pyToken):
                         if self.tokens[child.type] in self.ast_tokens:
-                            return Token(self.tokens[child.type], child.value, child.lineno, child.charno)
+                            return self.tokens[child.type](child.value, child.lineno, child.charno)
                     else:
                         return self.to_ast(child)
                 raise RuleError('failure -- nothing to ast-tize %s %s' % (rload, tree))
             else:
                 items = []
                 for child in tree.children:
-                    if isinstance(child, process.pyToken):
-                        child = Token(self.tokens[child.type], child.value, child.lineno, child.charno)
-                        # child.type = self.tokens[child.type]
+                    if isinstance(child, main.pyToken):
+                        child = self.tokens[child.type](child.value, child.lineno, child.charno)
                         if child.rule in self.ast_tokens:
                             items.append(child)
-                    else:
-                        items.append(self.to_ast(child))
-                return items
-
-    def to_ast_(self, tree):
-        if isinstance(tree, Token):
-            return tree
-        rule = tree.rule
-        name = self.rule_names[rule]
-        if self.ast_attrs[rule]:
-            node = getattr(self.ast_classes, name)()
-            node._rule = rule
-            for attr, whiches, single, start, end, optional in self.ast_attrs[rule]:
-                children = [child for child in tree.children if self.which(child) in whiches]
-                if single and len(children) <= start:
-                    if optional:
-                        setattr(node, attr, None)
-                        continue
-                    raise RuleError('ast attribute not found: %s' % attr)
-                if single:
-                    setattr(node, attr, self.to_ast(children[start]))
-                else:
-                    setattr(node, attr, tuple(self.to_ast(child) for child in children[start:end]))
-            return node
-        else:
-            rload = self.real_rules[rule]
-            if rload.pass_single:
-                for child in tree.children:
-                    if isinstance(child, Token):
-                        if isinstance(child, self.ast_tokens):
-                            return child
-                        continue
-                    else:
-                        return self.to_ast(child)
-                raise RuleError('failure -- nothing to ast-tize %s %s' % (rload, tree))
-            else:
-                items = []
-                for child in tree.children:
-                    if isinstance(child, Token):
-                        if isinstance(child, self.ast_tokens):
-                            items.append(child)
-                        continue
                     else:
                         items.append(self.to_ast(child))
                 return items

@@ -36,7 +36,7 @@ class Translator:
 
     def translate(self, tree, scope):
         if isinstance(tree, Token):
-            which = -(self.grammar.tokens.index(tree.rule) + 1)
+            which = -(self.grammar.tokens.index(tree.__class__) + 1)
         else:
             which = tree.__class__
         if which not in self.register:
