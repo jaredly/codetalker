@@ -16,7 +16,7 @@ grammar = pgm.Grammar(start=start, tokens=[SMALL,NEWLINE])
 def test_one():
     tokens = grammar.get_tokens('hello')
     assert len(tokens) == 1
-    assert tokens == ((SMALL, 1, 1, 'hello'),)
+    assert list(tokens) == [(SMALL, 1, 1, 'hello')]
 
 def test_two():
     tokens = grammar.get_tokens('hello\nhello')

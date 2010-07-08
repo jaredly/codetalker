@@ -15,11 +15,11 @@ grammar = pgm.Grammar(start=start, tokens=[SMALL,NEWLINE])
 
 def test_one():
     tokens = grammar.get_tokens('\n')
-    assert tokens == ((NEWLINE, 1, 1, '\n'),)
+    assert tuple(tokens) == ((NEWLINE, 1, 1, '\n'),)
 
 def test_two():
     tokens = grammar.get_tokens('hello')
-    assert tokens == ((SMALL, 1, 1, 'hello'),)
+    assert tuple(tokens) == ((SMALL, 1, 1, 'hello'),)
 
 def test_three():
     tokens = grammar.get_tokens('hellohellohello\nhellohello\nhello\n\n')

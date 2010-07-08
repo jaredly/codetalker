@@ -15,11 +15,11 @@ grammar = pgm.Grammar(start=start, tokens=[SMALL,NEWLINE])
 
 def test_one():
     tokens = grammar.get_tokens('one')
-    assert tokens == ((SMALL, 1, 1, 'one'),)
+    assert tuple(tokens) == ((SMALL, 1, 1, 'one'),)
 
 def test_two():
     tokens = grammar.get_tokens('twoonetwo\noneone')
     assert len(tokens) == 6
-    assert tokens[:3] == ((SMALL, 1, 1, 'two'), (SMALL, 1, 4, 'one'), (SMALL, 1, 7, 'two'))
+    assert list(tokens[:3]) == [(SMALL, 1, 1, 'two'), (SMALL, 1, 4, 'one'), (SMALL, 1, 7, 'two')]
 
 # vim: et sw=4 sts=4

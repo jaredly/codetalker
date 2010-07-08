@@ -28,7 +28,7 @@ class Token(object):
             return tuple(other) == (self.__class__, self.lineno, self.charno, self.value)
 
     @classmethod
-    def check(cls, text):
+    def check(cls, at, text):
         '''test to see if a token matches the current text'''
         raise NotImplementedError
 

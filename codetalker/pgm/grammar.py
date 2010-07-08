@@ -8,7 +8,7 @@ from nodes import AstNode, ParseTree, TokenStream
 from logger import logger
 import inspect
 
-from tokenize import tokenize
+from codetalker.pgm.cgrammar.tokenize import tokenize
 from codetalker.pgm.cgrammar import main
 from text import Text, IndentText
 
@@ -125,12 +125,7 @@ class Grammar:
         builder(rule)
 
     def get_tokens(self, text):
-        if type(text) == str:
-            if self.indent:
-                text = IndentText(text)
-            else:
-                text = Text(text)
-        return tuple(tokenize(self.tokens, text))
+        return tokenize(self.tokens, text, self.indent)
 
     def process(self, text, start=None, debug = False):
         '''main entry point for parsing text.
@@ -139,10 +134,6 @@ class Grammar:
             start: optional custom start function (for advanced parsing)
             debug: boolean (default false) to output debug parse tracing
         '''
-        if self.indent:
-            text = IndentText(text)
-        else:
-            text = Text(text)
         # get tokens
         tokens = self.get_tokens(text)
         # set starting rule

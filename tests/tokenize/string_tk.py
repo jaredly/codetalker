@@ -12,7 +12,7 @@ grammar = pgm.Grammar(start=start, tokens=[STRING,NEWLINE])
 
 def test_one():
     tokens = grammar.get_tokens('"one"')
-    assert tokens == ((STRING, 1, 1, '"one"'),)
+    assert tuple(tokens) == ((STRING, 1, 1, '"one"'),)
 
 def test_two():
     tokens = grammar.get_tokens('"esca\\"pe"')
