@@ -86,7 +86,6 @@ cdef object tokens_back(Token* start):
     while start != NULL:
         res.append((start.which, start.lineno, start.charno, start.value))
         start = start.next
-    # print  'done', res
     return res
 
 class pyParseNode(object):

@@ -38,6 +38,7 @@ cdef void nodes(ParseNode* node):
     if node.child != NULL:
         nodes(node.child)
     if node.token != NULL:
-        free(node.token)
+        pass
+        # free(node.token)
     free(node)
 

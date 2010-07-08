@@ -31,7 +31,7 @@ cdef object c_process(unsigned int start, TokenStream tokens, Rules rules, Ignor
         return None
     back = convert.nodes_back(tree)
     free(tokens.tokens)
-    # kill.rules(rules)
-    # kill.nodes(tree)
+    kill.rules(rules)
+    kill.nodes(tree)
     return back
 

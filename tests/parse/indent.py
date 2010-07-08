@@ -19,6 +19,4 @@ def test_indent():
 def test_dedent():
     tree = grammar.process('hello\n hello\nhello')
 
-
-
 # vim: et sw=4 sts=4
