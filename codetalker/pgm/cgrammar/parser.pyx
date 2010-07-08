@@ -13,11 +13,11 @@ cdef ParseNode* _new_parsenode(unsigned int rule):
 
 indent = []
 
-def log(*a):
-    pass
-    # strs = []
-    # for e in a:strs.append(str(e))
-    # print '  |'*len(indent), ' '.join(strs)
+def log(*a):pass
+def log_(*a):
+    strs = []
+    for e in a:strs.append(str(e))
+    print '  |'*len(indent), ' '.join(strs)
 
 cdef ParseNode* parse_rule(unsigned int rule, State* state, object error):
     cdef ParseNode* node = _new_parsenode(rule)
@@ -28,6 +28,7 @@ cdef ParseNode* parse_rule(unsigned int rule, State* state, object error):
         log('child rule:', i)
         tmp = parse_children(rule, &state.rules.rules[rule].options[i], state, error)
         if tmp != NULL:
+            log('child success!', i)
             node.child = tmp
             indent.pop(0)
             return node
@@ -42,11 +43,9 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
         ParseNode* tmp = NULL
         RuleItem* item = NULL
         bint ignore
-    # log('children of', rule)
     indent.append(0)
     for i from 0<=i<option.num:
         item = &option.items[i]
-        # log('item', i)
         while state.tokens.at < state.tokens.num:
             ignore = False
             for m from 0<=m<state.ignore.num:
@@ -81,8 +80,19 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
             continue
         elif item.type == TOKEN:
             if state.tokens.at >= state.tokens.num:
+                if item.value.which == state.tokens.eof:
+                    log('EOF -- passing')
+                    tmp = _new_parsenode(rule)
+                    tmp.token = <Token*>malloc(sizeof(Token))
+                    tmp.token.value = NULL
+                    tmp.token.which = state.tokens.eof
+                    tmp.token.lineno = -1
+                    tmp.token.charno = -1
+                    tmp.type = NTOKEN
+                    current = append_nodes(current, tmp)
+                    continue
                 error[0] = state.tokens.at
-                error[1] = ['ran out', rule, i, item.value.which]
+                error[1] = ['ran out', rule, i, item.value.which, state.tokens.eof]
                 log('not enough tokens')
                 indent.pop(0)
                 return NULL
@@ -144,6 +154,7 @@ cdef ParseNode* check_special(unsigned int rule, RuleSpecial special, ParseNode*
                 state.tokens.at = at
                 break
             current = append_nodes(current, tmp)
+        log('awesome star')
         indent.pop(0)
         return current
     elif special.type == PLUS:
@@ -163,7 +174,7 @@ cdef ParseNode* check_special(unsigned int rule, RuleSpecial special, ParseNode*
                 state.tokens.at = at
                 break
             current = append_nodes(current, tmp)
-        log('ggod plus')
+        log('good plus')
         indent.pop(0)
         return current
     elif special.type == OR:
@@ -172,9 +183,11 @@ cdef ParseNode* check_special(unsigned int rule, RuleSpecial special, ParseNode*
         for i from 0<=i<special.option.num:
             tmp = parse_children(rule, special.option.items[i].value.special.option, state, error)
             if tmp != NULL:
+                log('got or...')
                 current = append_nodes(current, tmp)
                 indent.pop(0)
                 return current
+        log('fail or')
         indent.pop(0)
         return NULL
     elif special.type == QUESTION:
@@ -186,6 +199,7 @@ cdef ParseNode* check_special(unsigned int rule, RuleSpecial special, ParseNode*
             indent.pop(0)
             return current
         current = append_nodes(current, tmp)
+        log('got maybe')
         indent.pop(0)
         return current
     else:

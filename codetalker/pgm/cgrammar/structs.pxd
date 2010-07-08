@@ -15,6 +15,7 @@ cdef:
         Token* tokens
         unsigned int num
         unsigned int at
+        unsigned int eof
 
     struct IgnoreTokens:
         unsigned int* tokens

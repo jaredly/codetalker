@@ -83,7 +83,6 @@ cdef IgnoreTokens ignore(object ignore):
 
 cdef object tokens_back(Token* start):
     res = []
-    # print 'converting',start.which
     while start != NULL:
         res.append((start.which, start.lineno, start.charno, start.value))
         start = start.next
@@ -125,12 +124,16 @@ ind = []
 cdef object nodes_back(ParseNode* node):
     '''convert a ParseNode struct back to a python object (a tuple)'''
     if node.type == NTOKEN:
+        if node.token.value == NULL:
+            return None
         return pyToken(node.token.which, node.token.value, node.token.lineno, node.token.charno)
     current = pyParseNode(node.rule)
     cdef ParseNode* child = node.child
     ind.append(0)
     while child != NULL:
-        current.prepend(nodes_back(child))
+        res = nodes_back(child)
+        if res is not None:
+            current.prepend(res)
         child = child.prev
     ind.pop(0)
     return current

@@ -14,9 +14,10 @@ cdef object c_process(unsigned int start, TokenStream tokens, Rules rules, Ignor
     state.tokens = tokens
     state.rules = rules
     state.ignore = ignore
+    state.tokens.eof = len(tokens_list) - 1
     error = [0, None]
     cdef ParseNode* tree = parser.parse_rule(start, &state, error)
-    if tree == NULL:
+    if tree == NULL and error[1] is not None:
         if error[1][0] == 'rule':
             raise ParseError('failed to parse rule %s (at token %r)' % (py_rules[error[1][1]], py_tokens[error[0]]))
         elif error[1][0] == 'token':
@@ -26,6 +27,8 @@ cdef object c_process(unsigned int start, TokenStream tokens, Rules rules, Ignor
         elif error[1][0] == 'ran out':
             raise ParseError('insufficient tokens while parsing rule %s' % (py_rules[error[1][1]].builder), error)
         raise ParseError('parse failed', error)
+    elif tree == NULL:
+        return None
     back = convert.nodes_back(tree)
     free(tokens.tokens)
     # kill.rules(rules)
