@@ -11,7 +11,7 @@ def start(rule):
 class SMALL(ReToken):
     rx = re.compile('hello')
 
-grammar = pgm.Grammar(start=start, tokens=[SMALL, WHITE, NEWLINE], indent=True)
+grammar = pgm.Grammar(start=start, tokens=[SMALL, WHITE, NEWLINE], indent=True, ignore=[WHITE])
 
 def test_indent():
     tokens = grammar.get_tokens('hello\n  hello')

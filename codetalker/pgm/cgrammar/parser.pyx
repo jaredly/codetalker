@@ -74,7 +74,7 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
                 state.tokens.at = at
                 if state.tokens.at >= error[0]:
                     error[0] = at
-                    error[1] = [rule, i]
+                    error[1] = ['rule', rule, i]
                 indent.pop(0)
                 return NULL
             current = append_nodes(current, tmp)
@@ -96,7 +96,7 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
             else:
                 if state.tokens.at > error[0]:
                     error[0] = state.tokens.at
-                    error[1] = [rule, i, option.items[i].value.which]
+                    error[1] = ['token', rule, i, option.items[i].value.which]
                 log('failed token')
                 indent.pop(0)
                 return NULL
@@ -118,7 +118,7 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
             else:
                 if state.tokens.at > error[0]:
                     error[0] = state.tokens.at
-                    error[1] = [rule, i, option.items[i].value.which]
+                    error[1] = ['literal', rule, i, option.items[i].value.which, item.value.text]
                 log('failed...literally', state.tokens.tokens[state.tokens.at].value)
                 indent.pop(0)
                 return NULL

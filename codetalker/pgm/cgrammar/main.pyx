@@ -5,11 +5,11 @@ from codetalker.pgm.cgrammar.convert import pyToken, pyParseNode
 
 from codetalker.pgm.errors import ParseError
 
-def process(start, tokens, rules, ignore):
-    tree = c_process(start, convert.tokens(tokens), convert.rules(rules), convert.ignore(ignore))
+def process(start, tokens, rules, ignore, tokens_list):
+    tree = c_process(start, convert.tokens(tokens), convert.rules(rules), convert.ignore(ignore), tokens, rules, tokens_list)
     return tree
 
-cdef object c_process(unsigned int start, TokenStream tokens, Rules rules, IgnoreTokens ignore):
+cdef object c_process(unsigned int start, TokenStream tokens, Rules rules, IgnoreTokens ignore, object py_tokens, object py_rules, object tokens_list):
     cdef State state
     state.tokens = tokens
     state.rules = rules
@@ -17,6 +17,12 @@ cdef object c_process(unsigned int start, TokenStream tokens, Rules rules, Ignor
     error = [0, None]
     cdef ParseNode* tree = parser.parse_rule(start, &state, error)
     if tree == NULL:
+        if error[1][0] == 'rule':
+            raise ParseError('failed to parse rule %s (at token %r)' % (py_rules[error[1][1]], py_tokens[error[0]]))
+        elif error[1][0] == 'token':
+            raise ParseError('failed to parse rule %s (at token %r) -- looking for %s' % (py_rules[error[1][1]], py_tokens[error[0]], tokens_list[error[1][3]]))
+        elif error[1][0] == 'literal':
+            raise ParseError('failed to parse rule %s (at token %r) -- looking for \'%s\'' % (py_rules[error[1][1]], py_tokens[error[0]], error[1][4].encode('string_escape')))
         raise ParseError('parse failed', error)
     back = convert.nodes_back(tree)
     free(tokens.tokens)

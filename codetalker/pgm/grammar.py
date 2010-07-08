@@ -143,7 +143,7 @@ class Grammar:
             start = 0
         error = [0, None]
         ignore = [self.tokens.index(tk) for tk in self.ignore]
-        return main.process(start, tokens, self.rules, ignore)
+        return main.process(start, tokens, self.rules, ignore, self.tokens)
     
     def which(self, obj):
         if isinstance(obj, Token):
