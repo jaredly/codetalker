@@ -64,7 +64,7 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
         if item.type == RULE:
             if state.tokens.at >= state.tokens.num:
                 error[0] = state.tokens.at
-                error[1] = ['Not enough tokens -- expecting', rule, i, item.value.which]
+                error[1] = ['ran out', rule, i, item.value.which]
                 log('not enough tokens')
                 indent.pop(0)
                 return NULL
@@ -82,7 +82,7 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
         elif item.type == TOKEN:
             if state.tokens.at >= state.tokens.num:
                 error[0] = state.tokens.at
-                error[1] = ['Not enough tokens -- expecting', rule, i, item.value.which]
+                error[1] = ['ran out', rule, i, item.value.which]
                 log('not enough tokens')
                 indent.pop(0)
                 return NULL
@@ -103,7 +103,7 @@ cdef ParseNode* parse_children(unsigned int rule, RuleOption* option, State* sta
         elif item.type == LITERAL:
             if state.tokens.at >= state.tokens.num:
                 error[0] = state.tokens.at
-                error[1] = ['Not enough tokens -- expecting', rule, i, item.value.which]
+                error[1] = ['ran out', rule, i, item.value.which]
                 log('not enough tokens')
                 indent.pop(0)
                 return NULL

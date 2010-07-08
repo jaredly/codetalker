@@ -77,6 +77,7 @@ class Grammar:
         num = len(self.rules)
         name = getattr(builder, 'astName', builder.__name__)
         rule = RuleLoader(self)
+        # rule.builder = 1
 
         self.rule_dict[builder] = num
         self.rules.append(rule)
@@ -84,6 +85,7 @@ class Grammar:
         self.real_rules.append(rule)
         self.ast_attrs.append(())
         builder(rule)
+        rule.builder = builder
         if rule.dont_ignore:
             self.dont_ignore.append(num)
         '''ast attribute specification format:

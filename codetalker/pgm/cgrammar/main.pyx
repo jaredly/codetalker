@@ -23,6 +23,8 @@ cdef object c_process(unsigned int start, TokenStream tokens, Rules rules, Ignor
             raise ParseError('failed to parse rule %s (at token %r) -- looking for %s' % (py_rules[error[1][1]], py_tokens[error[0]], tokens_list[error[1][3]]))
         elif error[1][0] == 'literal':
             raise ParseError('failed to parse rule %s (at token %r) -- looking for \'%s\'' % (py_rules[error[1][1]], py_tokens[error[0]], error[1][4].encode('string_escape')))
+        elif error[1][0] == 'ran out':
+            raise ParseError('insufficient tokens while parsing rule %s' % (py_rules[error[1][1]].builder), error)
         raise ParseError('parse failed', error)
     back = convert.nodes_back(tree)
     free(tokens.tokens)
