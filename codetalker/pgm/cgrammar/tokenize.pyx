@@ -35,11 +35,11 @@ def tokenize(tokens, text, indent=False):
                 break
         else:
             raise TokenError('no token matches the text at (%d, %d) [%s]' % (lineno, charno, text[at:at+10]))
-        advance(at, res, ctext, ln, &lineno, &charno, result, indents)
+        advance(at, res, ctext, ln, &lineno, &charno, result, indent, indents, tokens)
         at += res
     return result
 
-cdef object advance(int at, int res, char* ctext, int ln, int* lineno, int* charno, object result, object indents):
+cdef object advance(int at, int res, char* ctext, int ln, int* lineno, int* charno, object result, bint indent, object indents, object tokens):
     cdef int nlines = 0
     cdef int last = at
     cdef int ind = 0
@@ -53,15 +53,19 @@ cdef object advance(int at, int res, char* ctext, int ln, int* lineno, int* char
     else:
         charno[0] += res
     ## check indents
-    if res == 1 and ctext[at] == <char>'\n':
+    if indent and res == 1 and ctext[at] == <char>'\n':
         ind = white(at+1, ctext, ln)
         if ind > indents[-1]:
             indents.append(ind)
-            result.append(INDENT('', lineno[0], charno[0]))
+            tk = INDENT('', lineno[0], charno[0])
+            tk.which = tokens.index(INDENT)
+            result.append(tk)
         elif ind < indents[-1]:
             while ind < indents[-1]:
                 indents.pop(-1)
-                result.append(DEDENT('', lineno[0], charno[0]))
+                tk = DEDENT('', lineno[0], charno[0])
+                tk.which = tokens.index(DEDENT)
+                result.append(tk)
             if ind != indents[-1]:
                 raise TokenError('invalid indentation at (%d, %d) -- %d (expected %d)' % (lineno[0], charno[0], ind, indents[-1]))
 
