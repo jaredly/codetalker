@@ -9,7 +9,6 @@ cdef extern from "_speed_tokens.h":
     int white(int at, char* text, int ln)
 
 def tokenize(tokens, text, indent=False):
-    # print 'tokenizing'
     cdef int at = 0
     cdef int ln = len(text)
     cdef char* ctext = text
@@ -19,20 +18,16 @@ def tokenize(tokens, text, indent=False):
     currtext = text
     result = []
     indents = [0]
-    # print 'a'
     while at < ln:
-        # print 'at', at
         res = 0
         currtext = ''
         for i, token in enumerate(tokens):
-            # print 'checking', i, token
             if issubclass(token, CToken):
                 res = check_token(token._check, at, ctext, ln)
             else:
                 if not currtext:
                     currtext = text[at:]
                 res = token.check(currtext)
-            # print 'result from', i, token, res
             if res != 0:
                 tk = token(ctext[at:at+res], lineno, charno)
                 tk.which = i
@@ -45,7 +40,6 @@ def tokenize(tokens, text, indent=False):
     return result
 
 cdef object advance(int at, int res, char* ctext, int ln, int* lineno, int* charno, object result, object indents):
-    ## TODO: indents
     cdef int nlines = 0
     cdef int last = at
     cdef int ind = 0
@@ -58,6 +52,7 @@ cdef object advance(int at, int res, char* ctext, int ln, int* lineno, int* char
         charno[0] = at + res - last
     else:
         charno[0] += res
+    ## check indents
     if res == 1 and ctext[at] == <char>'\n':
         ind = white(at+1, ctext, ln)
         if ind > indents[-1]:
