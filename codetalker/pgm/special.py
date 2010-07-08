@@ -104,7 +104,10 @@ def make_bop(ops, value, name, ops_token):
     meta.astName = name
     return meta
 
-def commas(item):
-    return (item, star(',', item), [','])
+def commas(item, trailing=True):
+    res = (item, star(',', item))
+    if trailing:
+        return res + ([','],)
+    return res
 
 # vim: et sw=4 sts=4
