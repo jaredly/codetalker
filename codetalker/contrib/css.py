@@ -9,13 +9,13 @@ class CSSID(ReToken):
     rx = re.compile('[\w-]+')
 
 class SSYMBOL(StringToken):
-    items = list('.>:#')
+    items = list('.>:#%')
 
 class SYMBOL(StringToken):
-    items = list('{};')
+    items = list('{};,')
 
 class CSSFN(ReToken):
-    rx = re.compile('\w+\(([^)\'"]+|\'([^\']|\\.)\'|"([^"]|\\.)")*\)')
+    rx = re.compile('\w+\(([^)\'"]+|\'([^\']|\\.)*\'|"([^"]|\\.)*")*\)')
 
 def start(rule):
     rule | star(declare)
@@ -34,8 +34,8 @@ def attr(rule):
     rule.astAttrs = {'attr':CSSID, 'value':value}
 
 def value(rule):
-    rule | plus(_or(CSSID, NUMBER, CSSFN))
-    rule.astAttrs = {'items':(CSSID, NUMBER, CSSFN)}
+    rule | plus(_or(CSSID, NUMBER, CSSFN, '#', '%'))
+    rule.astAttrs = {'items':(CSSID, NUMBER, CSSFN, SSYMBOL)}
 
 grammar = Grammar(start=start, indent=False, tokens = [SSYMBOL, SYMBOL, CSSFN, CSSID, NUMBER, CCOMMENT, NEWLINE, WHITE], ignore = [WHITE, CCOMMENT, NEWLINE], ast_tokens = [])
 
