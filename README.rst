@@ -30,12 +30,13 @@ Here's the process:
     modifications to your code (say, prettyfication), but don't want to
     completely throw out your whitespace and comments.
 
-:Abstract Syntax Tree: http://docs.python.org/library/ast.html
+:Abstract Syntax Tree: `parsetree -> ast` http://docs.python.org/library/ast.html
 
     An AST is used if you only care about the syntax -- whitespace, etc.
     doesn't matter. This the case during compilation or in some cases
     introspection. I've modeled Codetalker's AST implementation after that of
-    python.
+    python. Codetalker does the ParseTree -> AST conversion for you; you just
+    tell it how to populate your tree, base on a given node's children.
 
 :Translate:
 
