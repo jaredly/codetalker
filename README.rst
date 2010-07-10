@@ -1,58 +1,87 @@
 CodeTalker
 ==========
 
-A python library for parsing, prettifying, and even translating code.
+Codetalker has just undergone major revision! :D
 
-Here's how simple it is::
+The goal of code talker is to allow for speedy development of parsers +
+translators without compromizing performance or flexibility.
 
-    import codetalker
-    from codetalker.bnf import c
-    text = open('myfile.c').read()
-    root = codetalker.parse(text, c)
-    print root ## this print your code back verbatim
+Features:
 
-    # say you want to remove all whitespace
-    # which isn't actually great -- it will turn "int foo" into "intfoo"
-    # -- see examples/minify.py for a smart way to remove whitespace
+- Completely python-based grammar definitions `[example grammar]
+  <http://github.com/jabapyth/codetalker/blob/master/codetalker/contrib/json.py>`_
+- Fast (cythonized) tokenizing and parsing
 
-    whitespace = root.find('whites')
-    for node in whitespace:
-        node.remove()
-    print root
+...what more do you need?
 
-    # or just look at the comments
-    comments = root.find('comment')
-    for node in comments:
-        print node
+Here's the process:
 
-Features
---------
+:tokenize: `produce a list of tokens`
 
-- parsing is entirely driven by modular grammers in BNF
-- modular structure; can accomodate many different formats of BNF
-- C parsing (C BNF file included)
-- JSON parsing, proof of concept (really small grammar)
+    If you use the builtin tokens, you can get full c performance, and
+    if you need a bit more flexibility, you can define your own token - either
+    based on ReToken or StringToken
+
+:parse: `produce a ParseTree`
+
+    The parse tree corresponds exactly to your rules + original tokens;
+    calling str(tree) returns *the exact orignal code*. Including whitespace,
+    comments, etc. This step is perfect of you want to make some automated
+    modifications to your code (say, prettyfication), but don't want to
+    completely throw out your whitespace and comments.
+
+:Abstract Syntax Tree: http://docs.python.org/library/ast.html
+
+    An AST is used if you only care about the syntax -- whitespace, etc.
+    doesn't matter. This the case during compilation or in some cases
+    introspection. I've modeled Codetalker's AST implementation after that of
+    python.
+
+:Translate:
+
+    Once you get the AST, you want to do something with it, right? Most often
+    it's "traverse the tree and do something with each node, depending on it's
+    type". Here's where the `Translator
+    <http://github.com/jabapyth/codetalker/blob/master/codetalker/pgm/translator.py>`_
+    class comes in. It provied a nice easy interface to systematically
+    translate an AST into whatever you want. `Here's an example
+    <http://github.com/jabapyth/codetalker/blob/master/codetalker/contrib/json.py#L39>`_
+    of creating and filling out a Translator.
+
+For more info, check out my announcing blog post: `Announcing: CodeTalker
+<http://jaredforsyth.com/blog/2010/jul/8/announcing-codetalker/>`_.
+
+Here's the JSON grammar::
+
+    # some custom tokens
+    class SYMBOL(ReToken):
+        rx = re.compile('[{},[\\]:]')
+
+    class TFN(ReToken):
+        rx = re.compile('true|false|null')
+
+    # rules (value is the start rule)
+    def value(rule):
+        rule | dict_ | list_ | STRING | TFN | NUMBER
+        rule.pass_single = True
+
+    def dict_(rule):
+        rule | ('{', [commas((STRING, ':', value))], '}')
+        rule.astAttrs = {'keys': STRING, 'values': value}
+    dict_.astName = 'Dict'
+
+    def list_(rule):
+        rule | ('[', [commas(_or(dict_, list_, STRING, TFN, NUMBER))], ']')
+        rule.astAttrs = {'values': [dict_, list_, STRING, TFN, NUMBER]}
+    list_.astName = 'List'
+
+    grammar = Grammar(start=value,
+                    tokens=[STRING, NUMBER, NEWLINE, WHITE, SYMBOL, TFN],
+                    ignore=[WHITE, NEWLINE],              # we don't care about whitespace...
+                    ast_tokens=[STRING, TFN, NUMBER])     # tokens we want picked up in the Abstract Syntax Tree
 
 Todo
-----
+====
 
-- javascript parsing
-- python parsing
-- build a c to python translator using codetalker
-
-Examples
---------
-
-I currently have one working and one non-working example ;)
-
-To prettyfy some C code, type::
-
-    python examples/prettyc.py test/c/hanoi.c
-
-To parse some json (and return a python object) take a look at
-examples/json.py
-
-Or if you want pretty json, try to following::
-    
-    python examples/prettyjson.py test/json/json.json
+- modify codetalker to allow for streamed input
 
