@@ -1,4 +1,7 @@
 include README.rst
 include setup.py
+include test_cmd.py
 recursive-include codetalker *.py
+recursive-include codetalker *.pxd
+include codetalker/pgm/cgrammar/_speed_tokens.h
 recursive-include tests *.py
