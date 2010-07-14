@@ -5,5 +5,6 @@
 *.sess
 *.c
 *.so
+MANIFEST
 build/
 CodeTalker.egg-info
