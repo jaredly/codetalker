@@ -3,8 +3,6 @@
 from codetalker.contrib.math import m, grammar, evaluate
 from codetalker.pgm.grammar import TokenError
 
-import py.test
-
 def _parse(text):
     tree = grammar.process(text)
     ss = str(tree)
@@ -34,5 +32,12 @@ def test_7():
 
 def test_8():
     assert evaluate('4%3') == 1
+
+if __name__ == '__main__':
+    for name, fn in globals().items():
+        if name.startswith('test_'):
+            fn()
+            print 'test passed'
+    print 'Finished!'
 
 # vim: et sw=4 sts=4
