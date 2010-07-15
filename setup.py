@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+
 try:
     from distutils.core import setup
     from distutils.extension import Extension
 except ImportError:
     print 'distutils is required to install this module. If you have pip installed, run: pip instal distutils'
     raise
+
 try:
     from Cython.Distutils import build_ext
 except ImportError:
@@ -47,7 +49,14 @@ setup(
         'Programming Language :: Python',
         'License :: OSI Approved :: MIT License',
     ],
-    options={'test':{'test_dir':['tests/parse', 'tests/tokenize']}},
+    options={
+        'test':{
+            'test_dir':['tests/parse', 'tests/tokenize']
+        },
+        'bdist':{
+            'build_requires':['Cython']
+        }
+    },
 
     cmdclass = {'build_ext': build_ext , 'test':test},
     ext_modules = pyx_mods,

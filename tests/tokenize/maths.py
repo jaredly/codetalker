@@ -3,8 +3,6 @@
 from codetalker.contrib.math import m, grammar
 from codetalker.pgm.grammar import TokenError
 
-import py.test
-
 def _ttoken(text):
     tk = grammar.get_tokens(text)
     assert ''.join(token.value for token in tk) == text
