@@ -53,10 +53,8 @@ setup(
         'test':{
             'test_dir':['tests/parse', 'tests/tokenize']
         },
-        'bdist':{
-            'build_requires':['Cython']
-        }
     },
+    requires=['cython'],
 
     cmdclass = {'build_ext': build_ext , 'test':test},
     ext_modules = pyx_mods,
