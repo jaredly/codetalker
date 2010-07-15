@@ -1,6 +1,0 @@
-# tokens: preproc, id, reserved, number, string, char_const
-<start>:<lineitem>*
-
-<lineitem>:<preproc>|<enum>|<declassign>|<function>
-
-
