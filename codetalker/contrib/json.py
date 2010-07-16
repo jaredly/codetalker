@@ -63,4 +63,6 @@ def t_number(node, scope):
 def t_tfn(node, scope):
     return {'true':True, 'false':False, 'null':None}
 
+loads = JSON.from_string
+
 # vim: et sw=4 sts=4

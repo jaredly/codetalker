@@ -5,13 +5,11 @@ import types
 import inspect
 import copy
 from nodes import AstNode
+# from codetalker.blocks import takes_block
 
 from errors import CodeTalkerException
 
 class TranslatorException(CodeTalkerException):
-    pass
-
-class Scope:
     pass
 
 class Translator:
