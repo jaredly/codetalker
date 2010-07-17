@@ -2,7 +2,7 @@
 
 from token import Token
 
-from codetalker.pgm.cgrammar.tokens import STRING, ID, WHITE, NEWLINE, NUMBER
+from codetalker.pgm.cgrammar.tokens import SSTRING, STRING, ID, WHITE, NEWLINE, NUMBER
 
 import re
 

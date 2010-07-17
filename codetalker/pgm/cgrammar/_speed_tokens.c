@@ -25,6 +25,23 @@ int string(int at, char* text, int ln) {
     return 0;
 }
 
+int sstring(int at, char* text, int ln) {
+    int i = at;
+    if (text[i] != '\'') {
+        return 0;
+    }
+    i++;
+    for (;i<ln;i++) {
+        if (text[i] == '\\')
+            i++;
+        else if (text[i] == '\'')
+            return i + 1 - at;
+        else if (text[i] == '\n')
+            return 0;
+    }
+    return 0;
+}
+
 int alpha_(char what) {
     return (what >= 'a' && what <= 'z') || (what >= 'A' && what <= 'Z') || what == '_';
 }
@@ -89,6 +106,8 @@ int number(int at, char* text, int ln) {
 
 int check_token(ttype which, int at, char* text, int ln) {
     switch (which) {
+        case tSSTRING:
+            return sstring(at, text, ln);
         case tSTRING:
             return string(at, text, ln);
         case tID:

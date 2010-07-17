@@ -3,6 +3,7 @@ from codetalker.pgm.token import Token
 
 cdef extern from "_speed_tokens.h":
     enum ttype:
+        tSSTRING
         tSTRING
         tID
         tWHITE
@@ -14,6 +15,9 @@ cdef no_check(int at, char* text, int ln):
 
 class CToken(Token):
     _check = -1
+
+class SSTRING(CToken):
+    _check = tSSTRING
 
 class STRING(CToken):
     _check = tSTRING
