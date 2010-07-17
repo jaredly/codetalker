@@ -1,5 +1,3 @@
-# from tokenize import tokenize
-# from text import Text, IndentText
 from rules import RuleLoader
 from tokens import EOF, INDENT, DEDENT, Token
 from errors import *
@@ -16,19 +14,16 @@ import time
 
 TIME = False
 
-def timeit(func, *args, **kwargs):
-    start = time.time()
-    res = func(*args, **kwargs)
-    total = time.time() - start
-    print >> logger, 'time to execute %s: %s' % (func, total)
-    return res
+def camelCase(text):
+    return text.replace('_', ' ').title().replace(' ', '')
 
 class Grammar:
     '''This is the main driving class -- it sets up the grammar,
     tokenizes, parses, and translates into an AST.
 
     "process" is the main entry point (currently) -- you feed it
-    text, it gives you back a ParseTree (tokenizes and parses)'''
+    text, it gives you back a ParseTree (tokenizes and parses)
+    '''
     special_tokens = (INDENT, DEDENT, EOF)
     def __init__(self, start, tokens, ignore=(), indent=False, ast_tokens=()):
         '''Grammar constructor
@@ -57,7 +52,6 @@ class Grammar:
         self.ast_attrs  = []
         self.ast_classes = type('ClassHolder', (), {})
 
-        [self.load_token(token) for token in self.tokens[:-3]]
         self.load_rule(self.start)
 
     def load_rule(self, builder):
@@ -71,24 +65,6 @@ class Grammar:
                 rule.astAttrs = {'left':{'type':ID, 'single':True},
                                  'right':{'type':value}}
                 rule.astName = 'main'
-        '''
-        if builder in self.rule_dict:
-            return self.rule_dict[builder]
-        num = len(self.rules)
-        name = getattr(builder, 'astName', builder.__name__)
-        rule = RuleLoader(self)
-        # rule.builder = 1
-
-        self.rule_dict[builder] = num
-        self.rules.append(rule)
-        self.rule_names.append(name)
-        self.real_rules.append(rule)
-        self.ast_attrs.append(())
-        builder(rule)
-        rule.builder = builder
-        if rule.dont_ignore:
-            self.dont_ignore.append(num)
-        '''ast attribute specification format:
 
         self.ast_attrs[num] = ((name, which, single, start, end), ...)
 
@@ -99,6 +75,24 @@ class Grammar:
             end: int; for slicing
             optional: bool - default False
         '''
+        if builder in self.rule_dict:
+            return self.rule_dict[builder]
+        num = len(self.rules)
+        name = getattr(builder, 'astName', None)
+        if name is None:
+            name = camelCase(builder.__name__)
+        
+        rule = RuleLoader(self)
+
+        self.rule_dict[builder] = num
+        self.rules.append(rule)
+        self.rule_names.append(name)
+        self.real_rules.append(rule)
+        self.ast_attrs.append(())
+        builder(rule)
+        rule.builder = builder
+        if rule.dont_ignore:
+            self.dont_ignore.append(num)
         attrs = []
         for attr, dct in rule.astAttrs.iteritems():
             error_suffix = ' for astAttr "%s" in rule "%s"' % (attr, name)

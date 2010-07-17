@@ -5,7 +5,6 @@ import types
 import inspect
 import copy
 from nodes import AstNode
-# from codetalker.blocks import takes_block
 
 from errors import CodeTalkerException
 
@@ -45,7 +44,10 @@ class Translator:
         return self.register[which](tree, scope)
 
     def from_string(self, text, **args):
-        tree = self.grammar.to_ast(self.grammar.process(text))
+        ptree = self.grammar.process(text)
+        if ptree is None:
+            return None
+        tree = self.grammar.to_ast(ptree)
         return self.from_ast(tree, **args)
 
     def from_ast(self, tree, **args):
