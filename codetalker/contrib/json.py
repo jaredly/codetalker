@@ -61,7 +61,7 @@ def t_number(node, scope):
 
 @JSON.translates(TFN)
 def t_tfn(node, scope):
-    return {'true':True, 'false':False, 'null':None}
+    return {'true':True, 'false':False, 'null':None}[node.value]
 
 loads = JSON.from_string
 
