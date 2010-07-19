@@ -3,7 +3,6 @@
 *.swp
 *.swo
 *.sess
-*.c
 *.so
 MANIFEST
 build/
