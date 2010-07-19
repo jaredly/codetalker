@@ -8,24 +8,27 @@
 /**
  * Backend code for tokenizing strings
  */
-int string(int at, char* text, int ln) {
-    int i = at;
-    if (text[i] != '"') {
+int t_tstring(int at, char* text, int ln) {
+    if (ln <= at + 6 || (text[i] != '\'' && text[i] != '"')) {
         return 0;
     }
-    i++;
-    for (;i<ln;i++) {
+    int i = at;
+    char which = text[i];
+    if (text[i+1] != which || text[i+2] != which) {
+        return 0;
+    }
+    i += 3;
+    for (;i<ln-2;i++) {
         if (text[i] == '\\')
             i++;
-        else if (text[i] == '"')
-            return i + 1 - at;
-        else if (text[i] == '\n')
-            return 0;
+        else if (text[i] == which && text[i+1] == which && text[i+2] == which) {
+            return i + 3 - at;
+        }
     }
     return 0;
 }
 
-int sstring(int at, char* text, int ln) {
+int t_sstring(int at, char* text, int ln) {
     int i = at;
     if (text[i] != '\'') {
         return 0;
@@ -42,15 +45,28 @@ int sstring(int at, char* text, int ln) {
     return 0;
 }
 
-int alpha_(char what) {
-    return (what >= 'a' && what <= 'z') || (what >= 'A' && what <= 'Z') || what == '_';
+int t_string(int at, char* text, int ln) {
+    int i = at;
+    if (text[i] != '"') {
+        return 0;
+    }
+    i++;
+    for (;i<ln;i++) {
+        if (text[i] == '\\')
+            i++;
+        else if (text[i] == '"')
+            return i + 1 - at;
+        else if (text[i] == '\n')
+            return 0;
+    }
+    return 0;
 }
 
-int num(char what) {
-    return (what >= '0' && what <= '9');
-}
+#define alpha_(what) (what >= 'a' && what <= 'z') || (what >= 'A' && what <= 'Z') || what == '_'
 
-int id(int at, char* text, int ln) {
+#define num(what) (what >= '0' && what <= '9')
+
+int t_id(int at, char* text, int ln) {
     int i = at;
     if (!alpha_(text[i])) {
         return 0;
@@ -62,21 +78,7 @@ int id(int at, char* text, int ln) {
     return i - at;
 }
 
-int white(int at, char* text, int ln) {
-    int i = at;
-    while (i < ln && (text[i] == ' ' || text[i] == '\t')) {
-        i++;
-    }
-    return i - at;
-}
-
-int newline(int at, char* text, int ln) {
-    if (text[at] == '\n')
-        return 1;
-    return 0;
-}
-
-int number(int at, char* text, int ln) {
+int t_number(int at, char* text, int ln) {
     int i = at;
     if (text[i] == '-') i++;
     if (i >= ln) return 0;
@@ -104,22 +106,115 @@ int number(int at, char* text, int ln) {
     return 0;
 }
 
-int check_token(ttype which, int at, char* text, int ln) {
-    switch (which) {
+int t_int(int at, char* text, int ln) {
+    int i = at;
+    if (text[i] >= '1' && text[i] <= '9') {
+        i += 1;
+        while (num(text[i])) {
+            i += 1;
+        }
+    }
+    return i - at;
+}
+
+int t_ccomment(int at, char* text, int ln) {
+    int i = at;
+    if (text[i] != '/' || ln-1 == at) {
+        return 0;
+    }
+    if (text[i+1] == '/') { // this kind
+        i += 2;
+        for (;i<ln;i++) {
+            if (text[i] == '\\') i++;
+            else if (text[i] == '\n') {
+                return i + 1 - at;
+            }
+        }
+        return i - at;
+    } else if (text[i+1] == '*') { /* this kind */
+        i += 2;
+        for (;i<ln-1;i++) {
+            if (text[i] == '\\') i++;
+            else if (text[i] == '*' && text[i+1] == '/') {
+                return i + 2 - at;
+            }
+        }
+    }
+    return 0;
+}
+
+int t_pycomment(int at, char* text, int ln) {
+    int i = at;
+    if (text[i] != '#') {
+        return 0;
+    }
+    i += 1;
+    for (;i<ln;i++) {
+        if (text[i] == '\\') i++;
+        else if (text[i] == '\n') {
+            return i + 1 - at;
+        }
+    }
+    return i - at;
+}
+
+int t_white(int at, char* text, int ln) {
+    int i = at;
+    while (i < ln && (text[i] == ' ' || text[i] == '\t')) {
+        i++;
+    }
+    return i - at;
+}
+
+int t_newline(int at, char* text, int ln) {
+    if (text[at] == '\n')
+        return 1;
+    return 0;
+}
+
+int check_ctoken(ttype tid, int at, char* text, int ln) {
+    switch (tid) {
+        case tTSTRING:
+            return t_tstring(at, text, ln);
         case tSSTRING:
-            return sstring(at, text, ln);
+            return t_sstring(at, text, ln);
         case tSTRING:
-            return string(at, text, ln);
+            return t_string(at, text, ln);
         case tID:
-            return id(at, text, ln);
-        case tWHITE:
-            return white(at, text, ln);
-        case tNEWLINE:
-            return newline(at, text, ln);
+            return t_id(at, text, ln);
         case tNUMBER:
-            return number(at, text, ln);
+            return t_number(at, text, ln);
+        case tINT:
+            return t_int(at, text, ln);
+        case tCCOMENT:
+            return t_ccomment(at, text, ln);
+        case tPYCOMMENT:
+            return t_pycomment(at, text, ln);
+        case tWHITE:
+            return t_white(at, text, ln);
+        case tNEWLINE:
+            return t_newline(at, text, ln);
         default:
             return 0;
     }
+}
+
+int check_chartoken(char* chars, int num, int at, char* text, int ln) {
+    int i;
+    for (i=0;i<num;i++) {
+        if (text[at] == chars[i]) return 1;
+    }
+    return 0;
+}
+
+int check_stringtoken(char** strings, int num, int at, char* text, int ln) {
+    int i, l;
+    for (i=0;i<num;i++) {
+        l = strlen(strings[i]);
+        if (strncmp(text+at, strings[i], l) == 0) {
+            return l;
+        }
+    }
+    return 0;
 }
 

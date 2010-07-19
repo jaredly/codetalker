@@ -37,12 +37,12 @@ void free_grammars() {
 
 /** parsing then? **/
 
-struct ParseNode _get_parse_tree(struct Grammar* gram, struct TokenStream tokens, struct Error error) {
-
+struct cParseNode* _get_parse_tree(int start, struct Grammar* gram, struct TokenStream* tokens, struct Error error) {
+    return parse_rule(start, gram, tokens, error);
 }
 
-struct ParseNode* _new_parsenode(unsigned int rule) {
-    struct ParseNode* node = (struct ParseNode*)malloc(sizeof(struct ParseNode));
+struct cParseNode* _new_parsenode(unsigned int rule) {
+    struct cParseNode* node = (struct cParseNode*)malloc(sizeof(struct cParseNode));
     node->rule = rule;
     node->next = NULL;
     node->prev = NULL;
@@ -60,19 +60,21 @@ def log_(*a):
     strs = []
     for e in a:strs.append(str(e))
     print '  |'*len(indent), ' '.join(strs)
-    **/
-struct ParseNode* parse_children(unsigned int rule, struct RuleOption* option, struct Grammar* state, struct Error* error);
 
-// clean
-struct ParseNode* parse_rule(unsigned int rule, struct Grammar* state, struct Error* error) {
-    struct ParseNode* node = _new_parsenode(rule);
-    struct ParseNode* tmp;
+**/
+struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, struct Grammar* grammar, struct Error* error);
+struct cParseNode* append_nodes(struct cParseNode* one, struct cParseNode* two);
+struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, struct cParseNode* current, struct Grammar* grammar, struct Error* error);
+
+struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error) {
+    struct cParseNode* node = _new_parsenode(rule);
+    struct cParseNode* tmp;
     int i;
     // log('parsing rule', rule)
     // indent.append(0);
-    for (i=0; i < state->rules.rules[rule].num; i++) {
+    for (i=0; i < grammar->rules.rules[rule].num; i++) {
         // log('child rule:', i)
-        tmp = parse_children(rule, &(state->rules.rules[rule].options[i]), state, error);
+        tmp = parse_children(rule, &(grammar->rules.rules[rule].options[i]), grammar, tokens, error);
         if (tmp != NULL) {
             // log('child success!', i)
             node->child = tmp;
@@ -85,20 +87,20 @@ struct ParseNode* parse_rule(unsigned int rule, struct Grammar* state, struct Er
 }
 
 // clean
-struct ParseNode* parse_children(unsigned int rule, struct RuleOption* option, struct Grammar* state, struct Error* error) {
-    struct ParseNode* current = NULL;
+struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error) {
+    struct cParseNode* current = NULL;
     unsigned int i = 0, m = 0;
     unsigned int at = 0;
-    struct ParseNode* tmp = NULL;
+    struct cParseNode* tmp = NULL;
     struct RuleItem* item = NULL;
     int ignore;
     // indent.append(0)
     for (i=0;i<option->num;i++) {
         item = &option->items[i];
-        while (state->tokens.at < state->tokens.num) {
+        while (tokens.at < tokens.num) {
             ignore = 0;
-            for (m=0;m<state->ignore.num;m++) {
-                if (state->tokens.tokens[state->tokens.at].which == state->ignore.tokens[m]) {
+            for (m=0;m<grammar->ignore.num;m++) {
+                if (tokens.tokens[tokens.at].which == grammar->ignore.tokens[m]) {
                     ignore = 1;
                     break;
                 }
@@ -108,14 +110,14 @@ struct ParseNode* parse_children(unsigned int rule, struct RuleOption* option, s
             }
             // log('ignoring white')
             tmp = _new_parsenode(rule);
-            tmp->token = &state->tokens.tokens[state->tokens.at];
+            tmp->token = &tokens.tokens[tokens.at];
             tmp->type = NTOKEN;
             current = append_nodes(current, tmp);
-            state->tokens.at += 1;
+            tokens.at += 1;
         }
         if (item->type == RULE) {
-            if (0 && state->tokens.at >= state->tokens.num) { // disabling
-                error->at = state->tokens.at;
+            if (0 && tokens.at >= tokens.num) { // disabling
+                error->at = tokens.at;
                 error->reason = 1;
                 error->token = NULL;
                 error->text = "ran out";
@@ -124,14 +126,14 @@ struct ParseNode* parse_children(unsigned int rule, struct RuleOption* option, s
                 // indent.pop(0)
                 return NULL;
             }
-            at = state->tokens.at;
-            tmp = parse_rule(item->value.which, state, error);
+            at = tokens.at;
+            tmp = parse_rule(item->value.which, grammar, tokens, error);
             if (tmp == NULL) {
-                state->tokens.at = at;
-                if (state->tokens.at >= error->at) {
-                    error->at = state->tokens.at;
+                tokens.at = at;
+                if (tokens.at >= error->at) {
+                    error->at = tokens.at;
                     error->reason = 2;
-                    error->token = &state->tokens.tokens[state->tokens.at];
+                    error->token = &tokens.tokens[tokens.at];
                     error->text = "rule failed";
                 }
                 // indent.pop(0)
@@ -140,20 +142,20 @@ struct ParseNode* parse_children(unsigned int rule, struct RuleOption* option, s
             current = append_nodes(current, tmp);
             continue;
         } else if (item->type == TOKEN) {
-            if (state->tokens.at >= state->tokens.num) {
-                if (item->value.which == state->tokens.eof) {
+            if (tokens.at >= tokens.num) {
+                if (item->value.which == tokens.eof) {
                     // log('EOF -- passing')
                     tmp = _new_parsenode(rule);
                     tmp->token = (struct Token*)malloc(sizeof(struct Token));
                     tmp->token->value = NULL;
-                    tmp->token->which = state->tokens.eof;
+                    tmp->token->which = tokens.eof;
                     tmp->token->lineno = -1;
                     tmp->token->charno = -1;
                     tmp->type = NTOKEN;
                     current = append_nodes(current, tmp);
                     continue;
                 }
-                error->at = state->tokens.at;
+                error->at = tokens.at;
                 error->reason = 1;
                 error->token = NULL;
                 error->text = "ran out";
@@ -161,19 +163,19 @@ struct ParseNode* parse_children(unsigned int rule, struct RuleOption* option, s
                 // indent.pop(0)
                 return NULL;
             }
-            // log('token... [looking for', item->value.which, '] got', state->tokens.tokens[state->tokens.at].which)
-            if (state->tokens.tokens[state->tokens.at].which == item->value.which) {
+            // log('token... [looking for', item->value.which, '] got', tokens.tokens[tokens.at].which)
+            if (tokens.tokens[tokens.at].which == item->value.which) {
                 tmp = _new_parsenode(rule);
-                tmp->token = &state->tokens.tokens[state->tokens.at];
+                tmp->token = &tokens.tokens[tokens.at];
                 tmp->type = NTOKEN;
                 current = append_nodes(current, tmp);
-                state->tokens.at += 1;
+                tokens.at += 1;
                 continue;
             } else {
-                if (state->tokens.at > error->at) {
-                    error->at = state->tokens.at;
+                if (tokens.at > error->at) {
+                    error->at = tokens.at;
                     error->reason = 3;
-                    error->token = &state->tokens.tokens[state->tokens.at];
+                    error->token = &tokens.tokens[tokens.at];
                     error->text = "token failed";
                     error->wanted = option->items[i].value.which;
                 }
@@ -182,8 +184,8 @@ struct ParseNode* parse_children(unsigned int rule, struct RuleOption* option, s
                 return NULL;
             }
         } else if (item->type == LITERAL) {
-            if (state->tokens.at >= state->tokens.num) {
-                error->at = state->tokens.at;
+            if (tokens.at >= tokens.num) {
+                error->at = tokens.at;
                 error->reason = 1;
                 error->token = NULL;
                 error->text = "ran out";
@@ -192,27 +194,27 @@ struct ParseNode* parse_children(unsigned int rule, struct RuleOption* option, s
                 return NULL;
             }
             // log('looking for literal', item->value.text)
-            if (item->value.text == state->tokens.tokens[state->tokens.at].value) {
+            if (item->value.text == tokens.tokens[tokens.at].value) {
                 tmp = _new_parsenode(rule);
-                tmp->token = &state->tokens.tokens[state->tokens.at];
+                tmp->token = &tokens.tokens[tokens.at];
                 tmp->type = NTOKEN;
                 current = append_nodes(current, tmp);
-                state->tokens.at += 1;
+                tokens.at += 1;
                 continue;
                 // log('success!!')
             } else {
-                if (state->tokens.at > error->at) {
-                    error->at = state->tokens.at;
+                if (tokens.at > error->at) {
+                    error->at = tokens.at;
                     error->reason = 4;
-                    error->token = &state->tokens.tokens[state->tokens.at];
+                    error->token = &tokens.tokens[tokens.at];
                     error->text = item->value.text;
                 }
-                // log('failed...literally', state->tokens.tokens[state->tokens.at].value)
+                // log('failed...literally', tokens.tokens[tokens.at].value)
                 // indent.pop(0)
                 return NULL;
             }
         } else if (item->type == SPECIAL) {
-            tmp = check_special(rule, item->value.special, current, state, error);
+            tmp = check_special(rule, item->value.special, current, grammar, tokens, error);
             if (tmp == NULL) {
                 // indent.pop(0)
                 return NULL;
@@ -224,83 +226,96 @@ struct ParseNode* parse_children(unsigned int rule, struct RuleOption* option, s
     return current;
 }
 
-/**
-struct ParseNode* check_special(unsigned int rule, struct RuleSpecial special, struct ParseNode* current, struct Grammar* state, struct Error error):
-    struct ParseNode* tmp
+struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, struct cParseNode* current, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error) {
+    struct cParseNode* tmp;
+    int at, i;
     // log('special')
     // indent.append(0)
-    if special.type == STAR:
+    if (special.type == STAR) {
         // log('star!')
-        while state->tokens.at < state->tokens.num:
-            at = state->tokens.at
-            tmp = parse_children(rule, special.option, state, error)
-            if tmp == NULL:
-                state->tokens.at = at
-                break
-            current = append_nodes(current, tmp)
+        while (tokens.at < tokens.num) {
+            at = tokens.at;
+            tmp = parse_children(rule, special.option, grammar, tokens, error);
+            if (tmp == NULL) {
+                tokens.at = at;
+                break;
+            }
+            current = append_nodes(current, tmp);
+        }
         // log('awesome star')
         // indent.pop(0)
-        return current
-    elif special.type == PLUS:
+        return current;
+    } else if (special.type == PLUS) {
         // log('plus!')
-        at = state->tokens.at
-        tmp = parse_children(rule, special.option, state, error)
-        if tmp == NULL:
-            state->tokens.at = at
+        at = tokens.at;
+        tmp = parse_children(rule, special.option, grammar, tokens, error);
+        if (tmp == NULL) {
+            tokens.at = at;
             // log('failed plus')
             // indent.pop(0)
-            return NULL
-        current = append_nodes(current, tmp)
-        while state->tokens.at < state->tokens.num:
-            at = state->tokens.at
-            tmp = parse_children(rule, special.option, state, error)
-            if tmp == NULL:
-                state->tokens.at = at
-                break
-            current = append_nodes(current, tmp)
+            return NULL;
+        }
+        current = append_nodes(current, tmp);
+        while (tokens.at < tokens.num) {
+            at = tokens.at;
+            tmp = parse_children(rule, special.option, grammar, tokens, error);
+            if (tmp == NULL) {
+                tokens.at = at;
+                break;
+            }
+            current = append_nodes(current, tmp);
+        }
         // log('good plus')
         // indent.pop(0)
-        return current
-    elif special.type == OR:
+        return current;
+    } else if (special.type == OR) {
         // log('or!')
-        at = state->tokens.at
-        for i from 0<=i<special.option->num:
-            tmp = parse_children(rule, special.option->items[i].value.special.option, state, error)
-            if tmp != NULL:
+        at = tokens.at;
+        for (i=0;i<special.option->num;i++) {
+            tmp = parse_children(rule, special.option->items[i].value.special.option, grammar, tokens, error);
+            if (tmp != NULL) {
                 // log('got or...')
-                current = append_nodes(current, tmp)
+                current = append_nodes(current, tmp);
                 // indent.pop(0)
-                return current
+                return current;
+            }
+        }
         // log('fail or')
         // indent.pop(0)
-        return NULL
-    elif special.type == QUESTION:
+        return NULL;
+    } else if (special.type == QUESTION) {
         // log('?maybe')
-        at = state->tokens.at
-        tmp = parse_children(rule, special.option, state, error)
-        if tmp == NULL:
+        at = tokens.at;
+        tmp = parse_children(rule, special.option, grammar, tokens, error);
+        if (tmp == NULL) {
             // log('not taking it')
             // indent.pop(0)
-            return current
-        current = append_nodes(current, tmp)
+            return current;
+        }
+        current = append_nodes(current, tmp);
         // log('got maybe')
         // indent.pop(0)
-        return current
-    else:
-        print 'unknown special type:', special.type
+        return current;
+    } else {
+        // print 'unknown special type:', special.type;
         // indent.pop(0)
-        return NULL
+        return NULL;
+    }
     // log('umm shouldnt happen')
     // indent.pop(0)
-    return NULL
+    return NULL;
+}
 
-ParseNode* append_nodes(ParseNode* one, ParseNode* two):
-    if one == NULL:return two
-    ParseNode* tmp = two
-    while tmp->prev != NULL:
-        tmp = tmp->prev
-    one.next = tmp
-    tmp->prev = one
-    return two
-**/
+struct cParseNode* append_nodes(struct cParseNode* one, struct cParseNode* two) {
+    if (one == NULL) {
+        return two;
+    }
+    struct cParseNode* tmp = two;
+    while (tmp->prev != NULL) {
+        tmp = tmp->prev;
+    }
+    one->next = tmp;
+    tmp->prev = one;
+    return two;
+}
 

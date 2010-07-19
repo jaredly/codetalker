@@ -69,13 +69,13 @@ enum NodeType {
     NNODE, NTOKEN
 };
 
-struct ParseNode {
+struct cParseNode {
     unsigned int rule;
     enum NodeType type;
     struct Token* token;
-    struct ParseNode* next;
-    struct ParseNode* prev;
-    struct ParseNode* child;
+    struct cParseNode* next;
+    struct cParseNode* prev;
+    struct cParseNode* child;
 };
 
 struct AstAttr {
@@ -96,7 +96,6 @@ struct AstAttrs {
 struct Grammar {
     struct Rules rules;
     struct IgnoreTokens ignore;
-    struct TokenStream tokens;
     struct AstAttrs* ast_attrs;
     char** rule_names;
 };
@@ -112,5 +111,5 @@ struct Error {
 int store_grammar(struct Grammar);
 struct Grammar* load_grammar(int);
 void free_grammars();
-struct ParseNode _get_parse_tree(struct Grammar*, struct TokenStream, struct Error);
+struct cParseNode* _get_parse_tree(struct Grammar*, struct TokenStream, struct Error);
 
