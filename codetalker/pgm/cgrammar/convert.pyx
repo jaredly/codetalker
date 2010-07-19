@@ -1,4 +1,4 @@
-from libc.stdlib cimport malloc
+from stdlib cimport malloc
 from codetalker.pgm.cgrammar.structs cimport *
 
 cdef TokenStream tokens(tstream):

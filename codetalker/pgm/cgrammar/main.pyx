@@ -1,4 +1,4 @@
-from libc.stdlib cimport malloc, free
+from stdlib cimport malloc, free
 from codetalker.pgm.cgrammar.structs cimport *
 from codetalker.pgm.cgrammar cimport convert, parser, kill
 from codetalker.pgm.cgrammar.convert import pyToken, pyParseNode

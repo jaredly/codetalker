@@ -1,4 +1,4 @@
-from libc.stdlib cimport free
+from stdlib cimport free
 
 cdef void ignore(IgnoreTokens ignore):
     free(ignore.tokens)

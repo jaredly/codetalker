@@ -1,5 +1,5 @@
 from codetalker.pgm.cgrammar.structs cimport *
-from libc.stdlib cimport *
+from stdlib cimport *
 
 cdef ParseNode* _new_parsenode(unsigned int rule):
     cdef ParseNode* node = <ParseNode*>malloc(sizeof(ParseNode))
