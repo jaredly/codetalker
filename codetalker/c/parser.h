@@ -83,6 +83,7 @@ struct AstAttr {
     unsigned int single;
     unsigned int numtypes;
     int* types;
+    int pass_single;
     int start;
     int end;
     int step;

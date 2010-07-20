@@ -1,7 +1,7 @@
 from stdlib cimport malloc, free
 
 from codetalker.pgm.tokens import INDENT, DEDENT, EOF, Token as PyToken, ReToken
-from codetalker.pgm.errors import ParseError, TokenError
+from codetalker.pgm.errors import ParseError, TokenError, AstError
 
 '''Stuff in here:
 
@@ -240,7 +240,7 @@ def get_parse_tree(gid, text):
     kill_tokens(tokens)
     return pyptree
 
-def get_ast(gid, text):
+def get_ast(gid, text, ast_classes):
     cdef Grammar* grammar = load_grammar(gid)
     cdef cTokenError terror
     terror.text = ''
@@ -252,10 +252,10 @@ def get_ast(gid, text):
     tsream.eof = python_data[gid][1].index(EOF)
     cdef Error error
     cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tsream, &error)
-    # ast = _get_ast(grammar, gid, ptree)
+    ast = _get_ast(grammar, gid, ptree, ast_classes)
     kill_ptree(ptree)
     kill_tokens(tokens)
-    return False
+    return ast
 
 ### CONVERT STUFF ###
 
@@ -345,10 +345,14 @@ cdef IgnoreTokens convert_ignore(object ignore, object tokens):
 cdef AstAttrs* convert_ast_attrs(object ast_attrs, object rules, object tokens):
     cdef AstAttrs* result = <AstAttrs*>malloc(sizeof(AstAttrs)*len(ast_attrs))
     for i from 0<=i<len(ast_attrs):
-        print ast_attrs[i],i
+        # print ast_attrs[i],i
         keys = ast_attrs[i].keys()
         result[i].num = len(keys)
-        result[i].attrs = <AstAttr*>malloc(sizeof(AstAttr)*result[i].num);
+        if len(keys):
+            result[i].attrs = <AstAttr*>malloc(sizeof(AstAttr)*result[i].num);
+        else:
+            result[i].attrs = NULL
+
         for m from 0<=m<result[i].num:
             result[i].attrs[m] = convert_ast_attr(keys[m], ast_attrs[i][keys[m]], rules, tokens)
     return result
@@ -369,7 +373,7 @@ cdef AstAttr convert_ast_attr(char* name, object ast_attr, object rules, object 
     if attr.single:
         attr.numtypes = 1
         attr.types = <int*>malloc(sizeof(int))
-        attr.types[0] = ast_attr['type']
+        attr.types[0] = which_rt(ast_attr['type'], rules, tokens)
     else:
         attr.numtypes = len(ast_attr['type'])
         attr.types = <int*>malloc(sizeof(int)*attr.numtypes)
@@ -513,7 +517,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
                 print 'Unknown token type', tokens[i]._type, tokens[i]
 
             if res:
-                print 'got token!', res, state.at
+                # print 'got token!', res, state.at
                 tmp = <Token*>malloc(sizeof(Token))
                 tmp.value = <char*>malloc(sizeof(char)*(res+1))
                 strncpy(tmp.value, state.text + state.at, res)
@@ -538,7 +542,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
             error.lineno = state.lineno
             error.charno = state.charno
             return NULL
-    print 'done tokenizing'
+    # print 'done tokenizing'
     return start
 
 cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int ID_t, int DD_t, cTokenError* error):
@@ -607,7 +611,61 @@ cdef void add_indent(TokenState* state, int ind):
     state.indents[state.num_indents] = ind
     state.num_indents += 1
 
-
-
-
 ### ASTTIZE ###
+
+cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_classes):
+    if node == NULL:
+        return None
+    if node.type == NTOKEN:
+        if node.token.value == NULL:
+            return None
+        return python_data[gid][1][node.token.which](node.token.value, node.token.lineno, node.token.charno)
+    name = python_data[gid][0][node.rule]
+    obj = getattr(ast_classes, name)()
+    cdef AstAttrs attrs = grammar.ast_attrs[node.rule]
+    cdef cParseNode* child
+    cdef cParseNode* start
+    start = node.child
+    while start.prev != NULL:
+        start.prev.next = start
+        start = start.prev
+
+    for i from 0<=i<attrs.num:
+        child = start
+        if attrs.attrs[i].single:
+            print 'single'
+            while child != NULL:
+                if matches(child, attrs.attrs[i].types[0]):
+                    setattr(obj, attrs.attrs[i].name, _get_ast(grammar, gid, child, ast_classes))
+                    break
+                child = child.next
+            else:
+                raise AstError('No child nodes match astAttr %s' % attrs.attrs[i].name)
+        else:
+            print 'multi'
+            kids = []
+            setattr(obj, attrs.attrs[i].name, kids)
+            while child != NULL:
+                for m from 0<=m<attrs.attrs[i].numtypes:
+                    if matches(child, attrs.attrs[i].types[m]):
+                        kids.append(_get_ast(grammar, gid, child, ast_classes))
+                        break
+                child = child.next
+    return obj
+
+cdef int matches(cParseNode* node, int which):
+    print 'checking match', node.rule, node.type, which
+    if which < 0:
+        if node.type != NTOKEN:
+            return 0
+        if node.token == NULL:
+            return 0
+        print 'token?', node.token.which, -(1+which)
+        if node.token.which == -(1 + which):
+            return 1
+        return 0
+    else:
+        if node.rule == which:
+            return 1
+    return 0
+

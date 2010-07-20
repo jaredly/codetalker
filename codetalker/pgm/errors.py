@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 
 class CodeTalkerException(Exception):
+    pass
+
+class LineError(CodeTalkerException):
     def __init__(self, text, lineno, charno):
         Exception.__init__(self, text + ' at (%d, %d)' % (lineno, charno))
 
-class ParseError(CodeTalkerException):
+class ParseError(LineError):
     pass
 
-class TokenError(CodeTalkerException):
+class TokenError(LineError):
+    pass
+
+class AstError(CodeTalkerException):
     pass
 
 class RuleError(CodeTalkerException):

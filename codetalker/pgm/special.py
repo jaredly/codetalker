@@ -100,7 +100,14 @@ def binop(*items, **args):
 def make_bop(ops, value, name, ops_token):
     def meta(rule):
         rule | (value, star(_or(*ops), value))
-        rule.astAttrs = {'left': {'type':value, 'single':True}, 'ops': ops_token, 'values': {'type':value, 'start':1}}
+        rule.astAttrs = {
+            'left': value,
+            'ops': [ops_token],
+            'values': {
+                'type':[value],
+                'start':1,
+            },
+        }
     meta.astName = name
     return meta
 

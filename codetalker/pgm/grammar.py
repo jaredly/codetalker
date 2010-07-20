@@ -134,7 +134,7 @@ class Grammar:
         # return tokenize(self.tokens, text, self.indent)
 
     def get_ast(self, text):
-        return get_ast(self.GID, text)
+        return get_ast(self.GID, text, self.ast_classes)
 
     def process(self, text, start=None, debug = False):
         return get_parse_tree(self.GID, text)
