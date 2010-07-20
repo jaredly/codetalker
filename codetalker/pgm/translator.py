@@ -44,6 +44,7 @@ class Translator:
         return self.register[which](tree, scope)
 
     def from_string(self, text, **args):
+        assert text == str(self.grammar.process(text))
         tree = self.grammar.get_ast(text)
         '''
         ptree = self.grammar.process(text)

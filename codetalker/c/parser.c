@@ -1,6 +1,7 @@
 
 #include "parser.h"
 #include "stdlib.h"
+#include <string.h>
 #include "stdio.h"
 
 /** grammar storage and loading **/
@@ -56,6 +57,16 @@ struct cParseNode* _new_parsenode(unsigned int rule) {
     return node;
 }
 
+int indent = 0;
+int IND = 4;
+
+void pind(void) {
+    int i;
+    for (i=0;i<indent;i++) {
+        printf(" ");
+    }
+}
+
 /**
 // indent = []
 
@@ -74,34 +85,34 @@ struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct
     struct cParseNode* node = _new_parsenode(rule);
     struct cParseNode* tmp;
     int i;
-    //printf("parsing rule %d\n", rule);
+    pind();printf("parsing rule %d (token at %d)\n", rule, tokens->at);
     // log('parsing rule', rule)
-    // indent.append(0);
+    indent+=IND;;
     for (i=0; i < grammar->rules.rules[rule].num; i++) {
         // log('child rule:', i)
         tmp = parse_children(rule, &(grammar->rules.rules[rule].options[i]), grammar, tokens, error);
         if (tmp != NULL) {
-            //printf("CHild success! %d", i);
+            pind();printf("CHild success! %d\n", i);
             // log('child success!', i)
             node->child = tmp;
-            // indent.pop(0)
+            indent-=IND;
             return node;
         }
     }
-    // indent.pop(0)
+    indent-=IND;
     return NULL;
 }
 
 // clean
 struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error) {
-    //printf("parsing children of %d\n", rule);
+    pind();printf("parsing children of %d (token at %d)\n", rule, tokens->at);
     struct cParseNode* current = NULL;
     unsigned int i = 0, m = 0;
     unsigned int at = 0;
     struct cParseNode* tmp = NULL;
     struct RuleItem* item = NULL;
     int ignore;
-    // indent.append(0)
+    indent+=IND;
     for (i=0;i<option->num;i++) {
         item = &option->items[i];
         while (tokens->at < tokens->num) {
@@ -115,19 +126,21 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
             if (ignore == 0) {
                 break;
             }
-            //printf("ignoring white\n");
+            pind();printf("ignoring white\n");
             // log('ignoring white')
             tmp = _new_parsenode(rule);
             tmp->token = &tokens->tokens[tokens->at];
             tmp->type = NTOKEN;
             current = append_nodes(current, tmp);
+            pind();printf("inc token %d %d\n", tokens->at, tokens->at+1);
             tokens->at += 1;
         }
         if (tokens->at < tokens->num) {
-            //printf("At token %d '%s'", tokens->tokens[tokens->at].which, tokens->tokens[tokens->at].value);
+            pind();printf("At token %d '%s'\n", tokens->tokens[tokens->at].which, tokens->tokens[tokens->at].value);
         }
         if (item->type == RULE) {
-            //printf(">RULE\n");
+            pind();printf(">RULE\n");
+            /**
             if (0 && tokens->at >= tokens->num) { // disabling
                 error->at = tokens->at;
                 error->reason = 1;
@@ -135,9 +148,10 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                 error->text = "ran out";
                 // error[1] = ['ran out', rule, i, item->value.which];
                 // log('not enough tokens')
-                // indent.pop(0)
+                indent-=IND;
                 return NULL;
             }
+            **/
             at = tokens->at;
             tmp = parse_rule(item->value.which, grammar, tokens, error);
             if (tmp == NULL) {
@@ -148,17 +162,17 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                     error->token = &tokens->tokens[tokens->at];
                     error->text = "rule failed";
                 }
-                // indent.pop(0)
+                indent-=IND;
                 return NULL;
             }
             current = append_nodes(current, tmp);
             continue;
         } else if (item->type == TOKEN) {
-            //printf(">TOKEN\n");
+            pind();printf(">TOKEN\n");
             if (tokens->at >= tokens->num) {
                 if (item->value.which == tokens->eof) {
                     // log('EOF -- passing')
-                    //printf("EOF -- passing\n");
+                    pind();printf("EOF -- passing\n");
                     tmp = _new_parsenode(rule);
                     tmp->token = (struct Token*)malloc(sizeof(struct Token));
                     tmp->token->value = NULL;
@@ -169,22 +183,23 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                     current = append_nodes(current, tmp);
                     continue;
                 }
-                //printf("no more tokens\n");
+                pind();printf("no more tokens\n");
                 error->at = tokens->at;
                 error->reason = 1;
                 error->token = NULL;
                 error->text = "ran out";
                 // log('not enough tokens')
-                // indent.pop(0)
+                indent-=IND;
                 return NULL;
             }
             // log('token... [looking for', item->value.which, '] got', tokens->tokens[tokens->at].which)
             if (tokens->tokens[tokens->at].which == item->value.which) {
-                //printf("got token! %d\n", item->value.which);
+                pind();printf("got token! %d\n", item->value.which);
                 tmp = _new_parsenode(rule);
                 tmp->token = &tokens->tokens[tokens->at];
                 tmp->type = NTOKEN;
                 current = append_nodes(current, tmp);
+                pind();printf("inc token %d %d\n", tokens->at, tokens->at+1);
                 tokens->at += 1;
                 continue;
             } else {
@@ -195,28 +210,31 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                     error->text = "token failed";
                     error->wanted = option->items[i].value.which;
                 }
-                //printf("token failed (wanted %d, got %d)\n", item->value.which, tokens->tokens[tokens->at].which);
+                pind();printf("token failed (wanted %d, got %d)\n",
+                        item->value.which, tokens->tokens[tokens->at].which);
                 // log('failed token')
-                // indent.pop(0)
+                indent-=IND;
                 return NULL;
             }
         } else if (item->type == LITERAL) {
-            //printf(">LITERAL\n");
+            pind();printf(">LITERAL\n");
             if (tokens->at >= tokens->num) {
                 error->at = tokens->at;
                 error->reason = 1;
                 error->token = NULL;
                 error->text = "ran out";
                 // log('not enough tokens')
-                // indent.pop(0)
+                indent-=IND;
                 return NULL;
             }
             // log('looking for literal', item->value.text)
-            if (item->value.text == tokens->tokens[tokens->at].value) {
+            if (strcmp(item->value.text, tokens->tokens[tokens->at].value) == 0) {
+                pind();printf("got literal!\n");
                 tmp = _new_parsenode(rule);
                 tmp->token = &tokens->tokens[tokens->at];
                 tmp->type = NTOKEN;
                 current = append_nodes(current, tmp);
+                pind();printf("inc token %d %d\n", tokens->at, tokens->at+1);
                 tokens->at += 1;
                 continue;
                 // log('success!!')
@@ -227,21 +245,22 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                     error->token = &tokens->tokens[tokens->at];
                     error->text = item->value.text;
                 }
+                pind();printf("failed....literally: %s\n", item->value.text);
                 // log('failed...literally', tokens->tokens[tokens->at].value)
-                // indent.pop(0)
+                indent-=IND;
                 return NULL;
             }
         } else if (item->type == SPECIAL) {
-            //printf(">SPECIAL\n");
+            pind();printf(">SPECIAL\n");
             tmp = check_special(rule, item->value.special, current, grammar, tokens, error);
             if (tmp == NULL) {
-                // indent.pop(0)
+                indent-=IND;
                 return NULL;
             }
             current = tmp;
         }
     }
-    // indent.pop(0)
+    indent-=IND;
     return current;
 }
 
@@ -249,7 +268,7 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
     struct cParseNode* tmp;
     int at, i;
     // log('special')
-    // indent.append(0)
+    indent+=IND;
     if (special.type == STAR) {
         // log('star!')
         while (tokens->at < tokens->num) {
@@ -262,7 +281,7 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
             current = append_nodes(current, tmp);
         }
         // log('awesome star')
-        // indent.pop(0)
+        indent-=IND;
         return current;
     } else if (special.type == PLUS) {
         // log('plus!')
@@ -271,7 +290,7 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
         if (tmp == NULL) {
             tokens->at = at;
             // log('failed plus')
-            // indent.pop(0)
+            indent-=IND;
             return NULL;
         }
         current = append_nodes(current, tmp);
@@ -285,7 +304,7 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
             current = append_nodes(current, tmp);
         }
         // log('good plus')
-        // indent.pop(0)
+        indent-=IND;
         return current;
     } else if (special.type == OR) {
         // log('or!')
@@ -295,12 +314,12 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
             if (tmp != NULL) {
                 // log('got or...')
                 current = append_nodes(current, tmp);
-                // indent.pop(0)
+                indent-=IND;
                 return current;
             }
         }
         // log('fail or')
-        // indent.pop(0)
+        indent-=IND;
         return NULL;
     } else if (special.type == QUESTION) {
         // log('?maybe')
@@ -308,20 +327,20 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
         tmp = parse_children(rule, special.option, grammar, tokens, error);
         if (tmp == NULL) {
             // log('not taking it')
-            // indent.pop(0)
+            indent-=IND;
             return current;
         }
         current = append_nodes(current, tmp);
         // log('got maybe')
-        // indent.pop(0)
+        indent-=IND;
         return current;
     } else {
         // print 'unknown special type:', special.type;
-        // indent.pop(0)
+        indent-=IND;
         return NULL;
     }
     // log('umm shouldnt happen')
-    // indent.pop(0)
+    indent-=IND;
     return NULL;
 }
 

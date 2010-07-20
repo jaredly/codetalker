@@ -10,7 +10,9 @@ def _parse(text):
     return tree
 
 def test_1():
-    assert 5 == m.from_string('2+3')
+    r = m.from_string('2+3')
+    print r,5
+    assert 5 == r
 
 def test_2():
     tree = _parse('2+3')
@@ -34,6 +36,9 @@ def test_8():
     assert evaluate('4%3') == 1
 
 if __name__ == '__main__':
+    import sys
+    test_1()
+    sys.exit(0)
     for name, fn in globals().items():
         if name.startswith('test_'):
             fn()

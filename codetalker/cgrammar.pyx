@@ -174,6 +174,7 @@ cdef extern from "c/parser.h":
     struct AstAttrs:
         unsigned int num
         AstAttr* attrs
+        unsigned int pass_single
 
     struct Grammar:
         Rules rules
@@ -230,17 +231,20 @@ def get_parse_tree(gid, text):
     if tokens == NULL:
         if len(terror.text):
             raise TokenError(terror.text, terror.lineno, terror.charno)
-    cdef TokenStream tsream = tokens_to_stream(tokens)
-    tsream.eof = python_data[gid][1].index(EOF)
+    cdef TokenStream tstream = tokens_to_stream(tokens)
+    tstream.eof = python_data[gid][1].index(EOF)
     print 'parsing'
     cdef Error error
-    cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tsream, &error)
+    cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tstream, &error)
+    if tstream.at < tstream.num-1:
+        print "Didn't use all the tokens (%d out of %d)" % (tstream.at+1, tstream.num)
+        raise ParseError('Didn\'t use all the tokens: %s' % error.text, error.token.lineno, error.token.charno)
     pyptree = convert_back_ptree(gid, ptree)
     kill_ptree(ptree)
     kill_tokens(tokens)
     return pyptree
 
-def get_ast(gid, text, ast_classes):
+def get_ast(gid, text, ast_classes, ast_tokens):
     cdef Grammar* grammar = load_grammar(gid)
     cdef cTokenError terror
     terror.text = ''
@@ -248,11 +252,14 @@ def get_ast(gid, text, ast_classes):
     if tokens == NULL:
         if len(terror.text):
             raise TokenError(terror.text, terror.lineno, terror.charno)
-    cdef TokenStream tsream = tokens_to_stream(tokens)
-    tsream.eof = python_data[gid][1].index(EOF)
+    cdef TokenStream tstream = tokens_to_stream(tokens)
+    tstream.eof = python_data[gid][1].index(EOF)
     cdef Error error
-    cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tsream, &error)
-    ast = _get_ast(grammar, gid, ptree, ast_classes)
+    cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tstream, &error)
+    if tstream.at < tstream.num-1:
+        print "Didn't use all the tokens (%d out of %d)" % (tstream.at+1, tstream.num)
+        raise ParseError('Didn\'t use all the tokens: %s' % error.text, error.token.lineno, error.token.charno)
+    ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
     kill_ptree(ptree)
     kill_tokens(tokens)
     return ast
@@ -346,7 +353,12 @@ cdef AstAttrs* convert_ast_attrs(object ast_attrs, object rules, object tokens):
     cdef AstAttrs* result = <AstAttrs*>malloc(sizeof(AstAttrs)*len(ast_attrs))
     for i from 0<=i<len(ast_attrs):
         # print ast_attrs[i],i
-        keys = ast_attrs[i].keys()
+        if ast_attrs[i]['pass_single']:
+            result[i].pass_single = 1
+            continue
+        else:
+            result[i].pass_single = 0
+        keys = ast_attrs[i]['attrs'].keys()
         result[i].num = len(keys)
         if len(keys):
             result[i].attrs = <AstAttr*>malloc(sizeof(AstAttr)*result[i].num);
@@ -354,7 +366,7 @@ cdef AstAttrs* convert_ast_attrs(object ast_attrs, object rules, object tokens):
             result[i].attrs = NULL
 
         for m from 0<=m<result[i].num:
-            result[i].attrs[m] = convert_ast_attr(keys[m], ast_attrs[i][keys[m]], rules, tokens)
+            result[i].attrs[m] = convert_ast_attr(keys[m], ast_attrs[i]['attrs'][keys[m]], rules, tokens)
     return result
 
 cdef object which_rt(object it, object rules, object tokens):
@@ -417,7 +429,7 @@ class ParseNode(object):
         return ''.join(strs)
     
     def __repr__(self):
-        return u'<ParseNode type="%s" itype="%d" children="%d">' % (self.name, self.rule, len(self.children))
+        return u'<ParseNode type="%s" itype="%d" children="%d" str="%s">' % (self.name, self.rule, len(self.children), str(self))
 
 cdef object convert_back_ptree(int gid, cParseNode* node):
     '''convert a cParseNode struct back to a python object'''
@@ -613,15 +625,13 @@ cdef void add_indent(TokenState* state, int ind):
 
 ### ASTTIZE ###
 
-cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_classes):
+cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_classes, object ast_tokens):
     if node == NULL:
         return None
     if node.type == NTOKEN:
         if node.token.value == NULL:
             return None
         return python_data[gid][1][node.token.which](node.token.value, node.token.lineno, node.token.charno)
-    name = python_data[gid][0][node.rule]
-    obj = getattr(ast_classes, name)()
     cdef AstAttrs attrs = grammar.ast_attrs[node.rule]
     cdef cParseNode* child
     cdef cParseNode* start
@@ -630,31 +640,44 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
         start.prev.next = start
         start = start.prev
 
+    if attrs.pass_single:
+        child = start
+        while child != NULL:
+            if child.type != NTOKEN or child.token.which in ast_tokens:
+                return _get_ast(grammar, gid, child, ast_classes, ast_tokens)
+    elif not attrs.num:
+        res = []
+        child = start
+        while child != NULL:
+            if child.type != NTOKEN or child.token.which in ast_tokens:
+                res.append(_get_ast(grammar, gid, child, ast_classes, ast_tokens))
+        return res
+
+    name = python_data[gid][0][node.rule]
+    obj = getattr(ast_classes, name)()
+
     for i from 0<=i<attrs.num:
         child = start
         if attrs.attrs[i].single:
-            print 'single'
             while child != NULL:
                 if matches(child, attrs.attrs[i].types[0]):
-                    setattr(obj, attrs.attrs[i].name, _get_ast(grammar, gid, child, ast_classes))
+                    setattr(obj, attrs.attrs[i].name, _get_ast(grammar, gid, child, ast_classes, ast_tokens))
                     break
                 child = child.next
             else:
                 raise AstError('No child nodes match astAttr %s' % attrs.attrs[i].name)
         else:
-            print 'multi'
             kids = []
             setattr(obj, attrs.attrs[i].name, kids)
             while child != NULL:
                 for m from 0<=m<attrs.attrs[i].numtypes:
                     if matches(child, attrs.attrs[i].types[m]):
-                        kids.append(_get_ast(grammar, gid, child, ast_classes))
+                        kids.append(_get_ast(grammar, gid, child, ast_classes, ast_tokens))
                         break
                 child = child.next
     return obj
 
 cdef int matches(cParseNode* node, int which):
-    print 'checking match', node.rule, node.type, which
     if which < 0:
         if node.type != NTOKEN:
             return 0

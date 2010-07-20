@@ -40,7 +40,7 @@ class Grammar:
         self.start = start
         self.tokens = tuple(tokens) + self.special_tokens
         self.ignore = tuple(ignore)
-        self.ast_tokens = tuple(ast_tokens)
+        self.ast_tokens = tuple(self.tokens.index(tok) for tok in ast_tokens)
         self.indent = indent
 
         self.token_rules = []
@@ -113,7 +113,7 @@ class Grammar:
             whiches = tuple(self.which(that) for that in dct['type'])
             attrs.append((attr, whiches, dct.get('single', False), dct.get('start', 0), dct.get('end', None), dct.get('optional', False)))
             '''
-        self.ast_attrs[num] = rule.astAttrs
+        self.ast_attrs[num] = {'attrs':rule.astAttrs, 'pass_single':getattr(rule, 'pass_single', False)}
         if len(rule.astAttrs):
             ## TODO: convert name to TitleCase for class name?
             setattr(self.ast_classes, name, type(name, (AstNode,), {'__slots__':('_rule',) + tuple(rule.astAttrs.keys())}))
@@ -134,7 +134,7 @@ class Grammar:
         # return tokenize(self.tokens, text, self.indent)
 
     def get_ast(self, text):
-        return get_ast(self.GID, text, self.ast_classes)
+        return get_ast(self.GID, text, self.ast_classes, self.ast_tokens)
 
     def process(self, text, start=None, debug = False):
         return get_parse_tree(self.GID, text)

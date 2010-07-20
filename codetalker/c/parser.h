@@ -83,7 +83,6 @@ struct AstAttr {
     unsigned int single;
     unsigned int numtypes;
     int* types;
-    int pass_single;
     int start;
     int end;
     int step;
@@ -92,6 +91,7 @@ struct AstAttr {
 struct AstAttrs {
     unsigned int num;
     struct AstAttr* attrs;
+    unsigned int pass_single;
 };
 
 struct Grammar {
