@@ -1,7 +1,7 @@
 from stdlib cimport malloc, free
 
 from codetalker.pgm.tokens import INDENT, DEDENT, EOF, Token as PyToken, ReToken
-from codetalker.pgm.errors import ParseError
+from codetalker.pgm.errors import ParseError, TokenError
 
 '''Stuff in here:
 
@@ -206,15 +206,30 @@ def consume_grammar(rules, ignore, indent, rule_names, rule_funcs, tokens, ast_a
     python_data[gid] = rule_names, tokens, indent
     return gid
 
+cdef struct cTokenError:
+    int lineno
+    int charno
+    char* text
+
 def get_tokens(gid, text):
-    cdef Token* tokens = _get_tokens(gid, text)
+    cdef cTokenError error
+    error.text = ''
+    cdef Token* tokens = _get_tokens(gid, text, &error)
+    if tokens == NULL:
+        if len(error.text):
+            raise TokenError(error.text, error.lineno, error.charno)
     pytokens = convert_back_tokens(gid, tokens)
     kill_tokens(tokens)
     return pytokens
 
 def get_parse_tree(gid, text):
     cdef Grammar* grammar = load_grammar(gid)
-    cdef Token* tokens = _get_tokens(gid, text)
+    cdef cTokenError terror
+    terror.text = ''
+    cdef Token* tokens = _get_tokens(gid, text, &terror)
+    if tokens == NULL:
+        if len(terror.text):
+            raise TokenError(terror.text, terror.lineno, terror.charno)
     cdef TokenStream tsream = tokens_to_stream(tokens)
     tsream.eof = python_data[gid][1].index(EOF)
     cdef Error error
@@ -226,7 +241,12 @@ def get_parse_tree(gid, text):
 
 def get_ast(gid, text):
     cdef Grammar* grammar = load_grammar(gid)
-    cdef Token* tokens = _get_tokens(gid, text)
+    cdef cTokenError terror
+    terror.text = ''
+    cdef Token* tokens = _get_tokens(gid, text, &terror)
+    if tokens == NULL:
+        if len(terror.text):
+            raise TokenError(terror.text, terror.lineno, terror.charno)
     cdef TokenStream tsream = tokens_to_stream(tokens)
     tsream.eof = python_data[gid][1].index(EOF)
     cdef Error error
@@ -434,7 +454,7 @@ cdef struct TokenState:
     int num_indents
     int max_indents
 
-cdef Token* _get_tokens(int gid, char* text):
+cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
     tokens = python_data[gid][1]
     cdef:
         Token* start = NULL
@@ -449,23 +469,26 @@ cdef Token* _get_tokens(int gid, char* text):
         char** strings = NULL
         bint indent = python_data[gid][2]
 
+
     state.at = 0
     state.text = text
     state.ln = len(text)
-    print "tokenizing '%s' (length %d)'" % (str(text).encode('string_escape'), state.ln)
+    # print "tokenizing '%s' (length %d)'" % (str(text).encode('string_escape'), state.ln)
     state.lineno = 1
     state.charno = 1
+
+    state.num_indents = 1
     state.indents = <int*>malloc(sizeof(int)*100)
-    state.num_indents = 0
+    state.indents[0] = 0
     state.max_indents = 100
 
     ID_t = tokens.index(INDENT)
     DD_t = tokens.index(DEDENT)
 
     while state.at < state.ln:
-        print 'at',state.at
+        # print 'at',state.at
         for i from 0<=i<ntokens:
-            print 'for token', tokens[i]
+            # print 'for token', tokens[i]
             if tokens[i]._type == CTOKEN:
                 res = check_ctoken(tokens[i].tid, state.at, state.text, state.ln)
             elif tokens[i]._type == CHARTOKEN:
@@ -497,16 +520,25 @@ cdef Token* _get_tokens(int gid, char* text):
                     current.next = tmp
                 current = tmp
 
-                current = advance(res, current, indent, &state, ID_t, DD_t)
+                current = advance(res, current, indent, &state, ID_t, DD_t, error)
+                if current == NULL:
+                    return NULL
                 state.at += res
                 break
+        else:
+            error.text = 'no valid token found'
+            error.lineno = state.lineno
+            error.charno = state.charno
+            return NULL
     return start
 
-cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int ID_t, int DD_t):
+cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int ID_t, int DD_t, cTokenError* error):
     cdef:
         int numlines = 0
-        last = state.at
-        ind = 0
+        int cindent
+        int last = state.at
+        int ind = 0
+        Token* tmp
     for i from state.at <= i < state.at + res:
         if state.text[i] == '\n':
             numlines+=1
@@ -519,7 +551,52 @@ cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int
     if not indent:
         return current
     ## TODO: check indent
+    if indent and res == 1 and state.text[state.at] == <char>'\n':
+        ind = t_white(state.at + 1, state.text, state.ln)
+        if ind < 0:
+            return current
+        cindent = state.indents[state.num_indents - 1]
+        if ind > cindent:
+            add_indent(state, ind)
+            tmp = <Token*>malloc(sizeof(Token))
+            tmp.value = ''
+            tmp.which = ID_t
+            tmp.next = NULL
+            tmp.lineno = state.lineno
+            tmp.charno = state.charno
+            current.next = tmp
+            current = tmp
+        elif ind < cindent:
+            while ind < cindent:
+                state.num_indents -= 1
+                tmp = <Token*>malloc(sizeof(Token))
+                tmp.value = ''
+                tmp.which = DD_t
+                tmp.next = NULL
+                tmp.lineno = state.lineno
+                tmp.charno = state.charno
+                current.next = tmp
+                current = tmp
+                cindent = state.indents[state.num_indents - 1]
+            if ind != cindent:
+                etxt = 'invalid indentation -- %d (expected %d)' % (ind, cindent)
+                error.text = etxt
+                error.lineno = state.lineno
+                error.charno = state.charno
+                return NULL
     return current
+
+cdef void add_indent(TokenState* state, int ind):
+    cdef int* indents
+    if state.num_indents == state.max_indents:
+        indents = <int*>malloc(sizeof(int)*state.max_indents*2)
+        for i from 0<=i<state.max_indents:
+            indents[i] = state.indents[i]
+        free(state.indents)
+        state.indents = indents
+        state.max_indents *= 2
+    state.indents[state.num_indents] = ind
+    state.num_indents += 1
 
 
 
