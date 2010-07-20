@@ -113,4 +113,5 @@ int store_grammar(struct Grammar);
 struct Grammar* load_grammar(int);
 void free_grammars(void);
 struct cParseNode* _get_parse_tree(int start, struct Grammar*, struct TokenStream*, struct Error*);
+int matches(struct cParseNode* node, int which);
 

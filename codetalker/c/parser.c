@@ -7,6 +7,21 @@
 #define LOG pind();printf
 #define LOG //[log]
 
+int matches(struct cParseNode* node, int which) {
+    if (which < 0) {
+        if (node->type != NTOKEN || node->token == NULL || node->token->which != -(1 + which)) {
+            return 0;
+        }
+        return 1;
+    } else {
+        if (node->rule == which) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
 /** grammar storage and loading **/
 
 struct Grammar* grammars = 0;

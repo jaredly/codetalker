@@ -1,3 +1,4 @@
+# cython: profile=True
 from stdlib cimport malloc, free
 
 from codetalker.pgm.tokens import INDENT, DEDENT, EOF, Token as PyToken, ReToken
@@ -195,6 +196,7 @@ cdef extern from "c/parser.h":
     void free_grammars()
 
     cParseNode* _get_parse_tree(int start, Grammar* gram, TokenStream* tokens, Error* error)
+    int matches(cParseNode* node, int which)
 
 python_data = {}
 
@@ -694,18 +696,4 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
                         break
                 child = child.next
     return obj
-
-cdef int matches(cParseNode* node, int which):
-    if which < 0:
-        if node.type != NTOKEN:
-            return 0
-        if node.token == NULL:
-            return 0
-        if node.token.which == -(1 + which):
-            return 1
-        return 0
-    else:
-        if node.rule == which:
-            return 1
-    return 0
 
