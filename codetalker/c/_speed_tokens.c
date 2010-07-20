@@ -3,16 +3,18 @@
  * author: Jared Forsyth <jared@jaredforsyth.com>
  */
 
+#include "stdlib.h"
+#include "string.h"
 #include "_speed_tokens.h"
 
 /**
  * Backend code for tokenizing strings
  */
 int t_tstring(int at, char* text, int ln) {
+    int i = at;
     if (ln <= at + 6 || (text[i] != '\'' && text[i] != '"')) {
         return 0;
     }
-    int i = at;
     char which = text[i];
     if (text[i+1] != which || text[i+2] != which) {
         return 0;
@@ -186,7 +188,7 @@ int check_ctoken(ttype tid, int at, char* text, int ln) {
             return t_number(at, text, ln);
         case tINT:
             return t_int(at, text, ln);
-        case tCCOMENT:
+        case tCCOMMENT:
             return t_ccomment(at, text, ln);
         case tPYCOMMENT:
             return t_pycomment(at, text, ln);

@@ -110,6 +110,6 @@ struct Error {
 
 int store_grammar(struct Grammar);
 struct Grammar* load_grammar(int);
-void free_grammars();
-struct cParseNode* _get_parse_tree(struct Grammar*, struct TokenStream, struct Error);
+void free_grammars(void);
+struct cParseNode* _get_parse_tree(int start, struct Grammar*, struct TokenStream*, struct Error*);
 

@@ -32,4 +32,15 @@ class Token(object):
         '''test to see if a token matches the current text'''
         raise NotImplementedError
 
+class ReToken(Token):
+    '''a token that is based off of a regular expression'''
+    rx = None
+
+    @classmethod
+    def check(cls, text):
+        m = cls.rx.match(text)
+        if m:
+            return len(m.group())
+        return 0
+
 # vim: et sw=4 sts=4

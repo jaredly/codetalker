@@ -25,6 +25,7 @@ except IOError:
 
 pyx_mods = []
 
+'''
 for filen in glob.glob('codetalker/pgm/cgrammar/*.pyx'):
     if filen.split('/')[-1].startswith('_'):
         continue
@@ -33,6 +34,11 @@ for filen in glob.glob('codetalker/pgm/cgrammar/*.pyx'):
     else:
         extra = []
     pyx_mods.append(Extension(filen.replace('/','.')[:-4], [filen]+extra))
+    '''
+
+pyx_mods = [
+        Extension('codetalker.cgrammar', ['codetalker/cgrammar.pyx', 'codetalker/c/parser.c', 'codetalker/c/_speed_tokens.c'])
+    ]
 
 from test_cmd import test
 
@@ -59,7 +65,7 @@ setup(
     cmdclass = {'build_ext': build_ext , 'test':test},
     ext_modules = pyx_mods,
     include_dirs = 'codetalker',
-    packages = ['codetalker', 'codetalker.pgm', 'codetalker.contrib', 'codetalker.pgm.cgrammar'],
+    packages = ['codetalker', 'codetalker.pgm', 'codetalker.contrib'],
 )
 
 # vim: et sw=4 sts=4

@@ -6,9 +6,11 @@ from nodes import AstNode, ParseTree, TokenStream
 from logger import logger
 import inspect
 
-from codetalker.pgm.cgrammar.tokenize import tokenize
-from codetalker.pgm.cgrammar import main
-from text import Text, IndentText
+# from codetalker.pgm.cgrammar.tokenize import tokenize
+# from codetalker.pgm.cgrammar import main
+# from text import Text, IndentText
+
+from codetalker.cgrammar import consume_grammar, get_tokens, get_parse_tree, get_ast
 
 import time
 
@@ -54,6 +56,9 @@ class Grammar:
 
         self.load_rule(self.start)
 
+        self.GID = consume_grammar(self.rules, self.ignore, self.indent, self.rule_names, self.tokens, self.ast_attrs)
+        print 'GID', self.GID
+
     def load_rule(self, builder):
         '''Load a rule into the grammar and cache it for
         future use
@@ -93,6 +98,8 @@ class Grammar:
         rule.builder = builder
         if rule.dont_ignore:
             self.dont_ignore.append(num)
+        if not rule.options:
+            raise Exception('no rule options specified in %r' % builder)
         attrs = []
         for attr, dct in rule.astAttrs.iteritems():
             error_suffix = ' for astAttr "%s" in rule "%s"' % (attr, name)
