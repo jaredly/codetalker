@@ -2,8 +2,6 @@
 
 from token import Token, ReToken
 
-from codetalker.pgm.cgrammar import TSTRING, SSTRING, STRING, ID, NUMBER, INT, CCOMMENT, PYCOMMENT, WHITE, NEWLINE
-
 import re
 
 class SpecialToken(Token):
@@ -20,5 +18,7 @@ class INDENT(SpecialToken):
 
 class DEDENT(SpecialToken):
     '''used by the preprocessor to indicate the end of an indented block'''
+
+from codetalker.cgrammar import TSTRING, SSTRING, STRING, ID, NUMBER, INT, CCOMMENT, PYCOMMENT, WHITE, NEWLINE
 
 # vim: et sw=4 sts=4

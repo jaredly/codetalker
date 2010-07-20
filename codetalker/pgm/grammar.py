@@ -56,7 +56,7 @@ class Grammar:
 
         self.load_rule(self.start)
 
-        self.GID = consume_grammar(self.rules, self.ignore, self.indent, self.rule_names, self.tokens, self.ast_attrs)
+        self.GID = consume_grammar(self.rules, self.ignore, self.indent, self.rule_names, self.rule_dict, self.tokens, self.ast_attrs)
         print 'GID', self.GID
 
     def load_rule(self, builder):
@@ -101,6 +101,7 @@ class Grammar:
         if not rule.options:
             raise Exception('no rule options specified in %r' % builder)
         attrs = []
+        '''
         for attr, dct in rule.astAttrs.iteritems():
             error_suffix = ' for astAttr "%s" in rule "%s"' % (attr, name)
             if type(dct) != dict:
@@ -111,8 +112,9 @@ class Grammar:
                 dct['type'] = (dct['type'],)
             whiches = tuple(self.which(that) for that in dct['type'])
             attrs.append((attr, whiches, dct.get('single', False), dct.get('start', 0), dct.get('end', None), dct.get('optional', False)))
-        self.ast_attrs[num] = tuple(attrs)
-        if attrs:
+            '''
+        self.ast_attrs[num] = rule.astAttrs
+        if len(rule.astAttrs):
             ## TODO: convert name to TitleCase for class name?
             setattr(self.ast_classes, name, type(name, (AstNode,), {'__slots__':('_rule',) + tuple(rule.astAttrs.keys())}))
         return num
@@ -128,9 +130,14 @@ class Grammar:
         builder(rule)
 
     def get_tokens(self, text):
-        return tokenize(self.tokens, text, self.indent)
+        return get_tokens(self.GID, text)
+        # return tokenize(self.tokens, text, self.indent)
+
+    def get_ast(self, text):
+        return get_ast(self.GID, text)
 
     def process(self, text, start=None, debug = False):
+        return get_parse_tree(self.GID, text)
         '''main entry point for parsing text.
 
             text: string - to parse

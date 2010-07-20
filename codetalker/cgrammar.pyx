@@ -1,6 +1,6 @@
 from stdlib cimport malloc, free
 
-from codetalker.pgm.tokens import INDENT, DEDENT, EOF
+from codetalker.pgm.tokens import INDENT, DEDENT, EOF, Token as PyToken, ReToken
 from codetalker.pgm.errors import ParseError
 
 '''Stuff in here:
@@ -59,13 +59,11 @@ cdef enum t_type:
     CHARTOKEN
     STRTOKEN
     RETOKEN
-'''
 
-from codetalker.pgm.token import Token, ReToken
 
 ReToken._type = RETOKEN
 
-class CToken(Token):
+class CToken(PyToken):
     _type = CTOKEN
 
 class TSTRING(CToken):
@@ -89,14 +87,13 @@ class WHITE(CToken):
 class NEWLINE(CToken):
     tid = tNEWLINE
 
-class CharToken(Token):
+class CharToken(PyToken):
     _type = CHARTOKEN
     chars = ''
 
-class StringToken(Token):
+class StringToken(PyToken):
     _type = STRTOKEN
     strings = []
-    '''
 
 cdef extern from "c/parser.h":
     struct Token
@@ -200,11 +197,11 @@ cdef extern from "c/parser.h":
 
 python_data = {}
 
-def consume_grammar(rules, ignore, indent, rule_names, tokens, ast_attrs):
+def consume_grammar(rules, ignore, indent, rule_names, rule_funcs, tokens, ast_attrs):
     cdef Grammar grammar
     grammar.rules = convert_rules(rules)
-    grammar.ignore = convert_ignore(ignore)
-    grammar.ast_attrs = convert_ast_attrs(ast_attrs)
+    grammar.ignore = convert_ignore(ignore, tokens)
+    grammar.ast_attrs = convert_ast_attrs(ast_attrs, rule_funcs, tokens)
     cdef int gid = store_grammar(grammar)
     python_data[gid] = rule_names, tokens, indent
     return gid
@@ -313,25 +310,33 @@ cdef RuleItem convert_item(object item, bint from_or=False):
         citem.value.special.option[0] = convert_option(item[1:], to_or)
     return citem
 
-cdef IgnoreTokens convert_ignore(object ignore):
+cdef IgnoreTokens convert_ignore(object ignore, object tokens):
     cdef IgnoreTokens itokens
     itokens.num = len(ignore)
     itokens.tokens = <unsigned int*>malloc(sizeof(unsigned int)*itokens.num)
     for i from 0<=i<itokens.num:
-        itokens.tokens[i] = ignore[i]
+        itokens.tokens[i] = tokens.index(ignore[i])
     return itokens
 
-cdef AstAttrs* convert_ast_attrs(object ast_attrs):
+cdef AstAttrs* convert_ast_attrs(object ast_attrs, object rules, object tokens):
     cdef AstAttrs* result = <AstAttrs*>malloc(sizeof(AstAttrs)*len(ast_attrs))
     for i from 0<=i<len(ast_attrs):
+        print ast_attrs[i],i
         keys = ast_attrs[i].keys()
         result[i].num = len(keys)
         result[i].attrs = <AstAttr*>malloc(sizeof(AstAttr)*result[i].num);
         for m from 0<=m<result[i].num:
-            result[i].attrs[m] = convert_ast_attr(keys[m], ast_attrs[i][keys[m]])
+            result[i].attrs[m] = convert_ast_attr(keys[m], ast_attrs[i][keys[m]], rules, tokens)
     return result
 
-cdef AstAttr convert_ast_attr(char* name, object ast_attr):
+cdef object which_rt(object it, object rules, object tokens):
+    if it in rules:
+        return rules[it]
+    elif it in tokens:
+        return -(1 + tokens.index(it))
+    raise Exception('invalid AST type: %s' % it)
+
+cdef AstAttr convert_ast_attr(char* name, object ast_attr, object rules, object tokens):
     cdef AstAttr attr
     attr.name = name
     if type(ast_attr) != dict:
@@ -345,7 +350,7 @@ cdef AstAttr convert_ast_attr(char* name, object ast_attr):
         attr.numtypes = len(ast_attr['type'])
         attr.types = <int*>malloc(sizeof(int)*attr.numtypes)
         for i from 0<=i<attr.numtypes:
-            attr.types[i] = ast_attr['type'][i]
+            attr.types[i] = which_rt(ast_attr['type'][i], rules, tokens)
 
     attr.start = ast_attr.get('start', 0)
     attr.end = ast_attr.get('end', 0)
@@ -430,6 +435,7 @@ cdef struct TokenState:
     int max_indents
 
 cdef Token* _get_tokens(int gid, char* text):
+    tokens = python_data[gid][1]
     cdef:
         Token* start = NULL
         Token* current = NULL
@@ -446,18 +452,20 @@ cdef Token* _get_tokens(int gid, char* text):
     state.at = 0
     state.text = text
     state.ln = len(text)
+    print "tokenizing '%s' (length %d)'" % (str(text).encode('string_escape'), state.ln)
     state.lineno = 1
     state.charno = 1
     state.indents = <int*>malloc(sizeof(int)*100)
     state.num_indents = 0
     state.max_indents = 100
 
-    tokens = python_data[gid][1]
     ID_t = tokens.index(INDENT)
     DD_t = tokens.index(DEDENT)
 
     while state.at < state.ln:
+        print 'at',state.at
         for i from 0<=i<ntokens:
+            print 'for token', tokens[i]
             if tokens[i]._type == CTOKEN:
                 res = check_ctoken(tokens[i].tid, state.at, state.text, state.ln)
             elif tokens[i]._type == CHARTOKEN:
@@ -470,12 +478,17 @@ cdef Token* _get_tokens(int gid, char* text):
                 res = check_stringtoken(strings, num, state.at, state.text, state.ln)
             elif tokens[i]._type == RETOKEN:
                 res = tokens[i].check(state.text[state.at:])
+            else:
+                print 'Unknown token type', tokens[i]._type, tokens[i]
 
             if res:
+                print 'got token!', res, state.at
                 tmp = <Token*>malloc(sizeof(Token))
                 tmp.value = <char*>malloc(sizeof(char)*(res+1))
-                strncpy(tmp.value, state.text+state.at, res)
+                strncpy(tmp.value, state.text + state.at, res)
+                tmp.value[res] = '\0'
                 tmp.which = i
+                tmp.next = NULL
                 tmp.lineno = state.lineno
                 tmp.charno = state.charno
                 if start == NULL:
@@ -487,6 +500,7 @@ cdef Token* _get_tokens(int gid, char* text):
                 current = advance(res, current, indent, &state, ID_t, DD_t)
                 state.at += res
                 break
+    return start
 
 cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int ID_t, int DD_t):
     cdef:
