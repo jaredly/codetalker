@@ -182,6 +182,7 @@ class Grammar:
         return child[0]
 
     def to_ast(self, tree):
+        raise Exception('not using this one anymore')
         if isinstance(tree, main.pyToken):
             return self.tokens[tree.type](tree.value, tree.lineno, tree.charno)
         rule = tree.rule

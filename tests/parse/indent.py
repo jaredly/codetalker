@@ -22,6 +22,7 @@ def test_dedent():
 if __name__ == '__main__':
     for name, fn in globals().items():
         if name.startswith('test_'):
+            print 'testing', fn
             fn()
             print 'test passed'
     print 'Finished!'

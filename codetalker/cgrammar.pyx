@@ -232,6 +232,7 @@ def get_parse_tree(gid, text):
             raise TokenError(terror.text, terror.lineno, terror.charno)
     cdef TokenStream tsream = tokens_to_stream(tokens)
     tsream.eof = python_data[gid][1].index(EOF)
+    print 'parsing'
     cdef Error error
     cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tsream, &error)
     pyptree = convert_back_ptree(gid, ptree)
@@ -260,13 +261,16 @@ def get_ast(gid, text):
 
 cdef TokenStream tokens_to_stream(Token* tokens):
     cdef TokenStream ts
-    ts.num = 1
+    ts.num = 0
     cdef Token* tmp = tokens
-    while tmp.next != NULL:
+    while tmp != NULL:
         ts.num += 1
         tmp = tmp.next
     ts.tokens = <Token*>malloc(sizeof(Token)*ts.num)
     ts.at = 0
+    for i from 0<=i<ts.num:
+        ts.tokens[i] = tokens[0]
+        tokens = tokens.next
     return ts
 
 cdef Rules convert_rules(object rules):
@@ -388,8 +392,9 @@ cdef object convert_back_tokens(int gid, Token* start):
     return res
 
 class ParseNode(object):
-    def __init__(self, rule):
+    def __init__(self, rule, name):
         self.rule = rule
+        self.name = name
         self.children = []
         self.parent = None
     
@@ -406,6 +411,9 @@ class ParseNode(object):
         for child in self.children:
             strs.append(str(child))
         return ''.join(strs)
+    
+    def __repr__(self):
+        return u'<ParseNode type="%s" itype="%d" children="%d">' % (self.name, self.rule, len(self.children))
 
 cdef object convert_back_ptree(int gid, cParseNode* node):
     '''convert a cParseNode struct back to a python object'''
@@ -530,6 +538,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
             error.lineno = state.lineno
             error.charno = state.charno
             return NULL
+    print 'done tokenizing'
     return start
 
 cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int ID_t, int DD_t, cTokenError* error):
