@@ -635,6 +635,8 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
     cdef AstAttrs attrs = grammar.ast_attrs[node.rule]
     cdef cParseNode* child
     cdef cParseNode* start
+    cdef int cnum
+    cdef int stepnum
     start = node.child
     while start.prev != NULL:
         start.prev.next = start
@@ -659,20 +661,33 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
     for i from 0<=i<attrs.num:
         child = start
         if attrs.attrs[i].single:
+            cnum = 0
+            stepnum = 0
             while child != NULL:
                 if matches(child, attrs.attrs[i].types[0]):
-                    setattr(obj, attrs.attrs[i].name, _get_ast(grammar, gid, child, ast_classes, ast_tokens))
-                    break
+                    if stepnum == 0 and cnum >= attrs.attrs[i].start:
+                        setattr(obj, attrs.attrs[i].name, _get_ast(grammar, gid, child, ast_classes, ast_tokens))
+                        break
+                    cnum += 1
+                    stepnum += 1
+                    if stepnum == attrs.attrs[i].step:
+                        stepnum = 0
                 child = child.next
             else:
                 raise AstError('No child nodes match astAttr %s' % attrs.attrs[i].name)
         else:
             kids = []
             setattr(obj, attrs.attrs[i].name, kids)
+            cnum = 0
             while child != NULL:
                 for m from 0<=m<attrs.attrs[i].numtypes:
                     if matches(child, attrs.attrs[i].types[m]):
-                        kids.append(_get_ast(grammar, gid, child, ast_classes, ast_tokens))
+                        if cnum >= attrs.attrs[i].start and (attrs.attrs[i].end == 0 or cnum < attrs.attrs[i].end):
+                            kids.append(_get_ast(grammar, gid, child, ast_classes, ast_tokens))
+                        cnum += 1
+                        stepnum += 1
+                        if stepnum == attrs.attrs[i].step:
+                            stepnum = 0
                         break
                 child = child.next
     return obj
