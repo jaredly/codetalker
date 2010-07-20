@@ -2,7 +2,7 @@
 
 from codetalker.pgm import Grammar, Translator
 from codetalker.pgm.special import star, plus, _or, commas
-from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE, ReToken, re
+from codetalker.pgm.tokens import STRING, NUMBER, EOF, NEWLINE, WHITE, ReToken, re, CharToken, StringToken
 
 '''Man this looks sweet. It really should be
 this easy to write a json parser.'''
@@ -12,8 +12,15 @@ this easy to write a json parser.'''
 class SYMBOL(ReToken):
     rx = re.compile('[{},[\\]:]')
 
+class SYMBOL(CharToken):
+    chars = '{},[]:'
+    num = 6
+
 class TFN(ReToken):
     rx = re.compile('true|false|null')
+
+class TFN(StringToken):
+    strings = ['true', 'false', 'null']
 
 # rules (value is the start rule)
 def value(rule):

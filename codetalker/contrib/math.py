@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from codetalker import pgm
-from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE, ReToken, re
+from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE, ReToken, re, CharToken, StringToken
 from codetalker.pgm.special import star, plus, _or, expand, binop
 from codetalker.pgm.grammar import ParseError
 
@@ -10,8 +10,16 @@ from codetalker.pgm.grammar import ParseError
 class OP(ReToken):
     rx = re.compile('\\*\\*|[-+*/%]')
 
+class OP(StringToken):
+    strings = ['**', '[', '-', '+', '*', '/', '%']
+    num = 7
+
 class SYMBOL(ReToken):
     rx = re.compile('[()]')
+
+class SYMBOL(CharToken):
+    chars = '()'
+    num = 2
 
 ## RUlES
 

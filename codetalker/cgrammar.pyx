@@ -515,12 +515,14 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
             if tokens[i]._type == CTOKEN:
                 res = check_ctoken(tokens[i].tid, state.at, state.text, state.ln)
             elif tokens[i]._type == CHARTOKEN:
+                # print 'chartoken', tokens[i].chars, tokens[i].num
                 res = check_chartoken(tokens[i].chars, tokens[i].num, state.at, state.text, state.ln)
             elif tokens[i]._type == STRTOKEN:
+                # print 'stringtoken', tokens[i].strings
                 num = len(tokens[i].strings)
                 strings = <char**>malloc(sizeof(char*)*num)
                 for m from 0<=m<num:
-                    strings[m] = tokens[i][m]
+                    strings[m] = tokens[i].strings[m]
                 res = check_stringtoken(strings, num, state.at, state.text, state.ln)
             elif tokens[i]._type == RETOKEN:
                 res = tokens[i].check(state.text[state.at:])

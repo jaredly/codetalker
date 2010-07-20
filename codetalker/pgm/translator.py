@@ -18,6 +18,7 @@ class Translator:
         self.defaults = defaults
 
     def translates(self, what):
+        '''
         if what in self.grammar.tokens:
             what = -(self.grammar.tokens.index(what) + 1)
         elif inspect.isclass(what):
@@ -27,11 +28,13 @@ class Translator:
                 raise TranslatorException('Unexpected translation target: %s' % what)
         else:
             raise TranslatorException('Unexpected translation target: %s' % what)
+            '''
         def meta(func):
             self.register[what] = func
         return meta
 
     def translate(self, tree, scope):
+        '''
         if isinstance(tree, Token):
             which = -(self.grammar.tokens.index(tree.__class__) + 1)
         else:
@@ -41,10 +44,11 @@ class Translator:
                 raise TranslatorException('unknown rule to translate: %s' % which)
             else:
                 raise TranslatorException('unknown token to translate: %s' % self.grammar.tokens[-(which + 1)])
-        return self.register[which](tree, scope)
+        '''
+        return self.register[tree.__class__](tree, scope)
 
     def from_string(self, text, **args):
-        assert text == str(self.grammar.process(text))
+        # assert text == str(self.grammar.process(text))
         tree = self.grammar.get_ast(text)
         '''
         ptree = self.grammar.process(text)
@@ -57,7 +61,7 @@ class Translator:
     def from_ast(self, tree, **args):
         stuff = copy.deepcopy(self.defaults)
         stuff.update(args)
-        Scope = type('Scope', (), {'__slots__': tuple(stuff.keys())})
+        Scope = type('Scope', (), {})
         scope = Scope()
         for k,v in stuff.iteritems():
             setattr(scope, k, v)
