@@ -11,7 +11,6 @@ def _parse(text):
 
 def test_1():
     r = m.from_string('2+3')
-    print r,5
     assert 5 == r
 
 def test_2():
@@ -36,11 +35,9 @@ def test_8():
     assert evaluate('4%3') == 1
 
 if __name__ == '__main__':
-    import sys
-    test_1()
-    sys.exit(0)
-    for name, fn in globals().items():
+    for name, fn in sorted(globals().items()):
         if name.startswith('test_'):
+            print 'testing', name
             fn()
             print 'test passed'
     print 'Finished!'

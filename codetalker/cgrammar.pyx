@@ -233,7 +233,6 @@ def get_parse_tree(gid, text):
             raise TokenError(terror.text, terror.lineno, terror.charno)
     cdef TokenStream tstream = tokens_to_stream(tokens)
     tstream.eof = python_data[gid][1].index(EOF)
-    print 'parsing'
     cdef Error error
     cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tstream, &error)
     if tstream.at < tstream.num-1:
@@ -642,20 +641,22 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
         start.prev.next = start
         start = start.prev
 
+    name = python_data[gid][0][node.rule]
     if attrs.pass_single:
         child = start
         while child != NULL:
             if child.type != NTOKEN or child.token.which in ast_tokens:
                 return _get_ast(grammar, gid, child, ast_classes, ast_tokens)
+            child = child.next
     elif not attrs.num:
         res = []
         child = start
         while child != NULL:
             if child.type != NTOKEN or child.token.which in ast_tokens:
                 res.append(_get_ast(grammar, gid, child, ast_classes, ast_tokens))
+            child = child.next
         return res
 
-    name = python_data[gid][0][node.rule]
     obj = getattr(ast_classes, name)()
 
     for i from 0<=i<attrs.num:
@@ -698,7 +699,6 @@ cdef int matches(cParseNode* node, int which):
             return 0
         if node.token == NULL:
             return 0
-        print 'token?', node.token.which, -(1+which)
         if node.token.which == -(1 + which):
             return 1
         return 0

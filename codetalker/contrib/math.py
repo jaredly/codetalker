@@ -37,17 +37,14 @@ ops = {'**':operator.pow, '*':operator.mul, '/':operator.div, '%':operator.mod, 
 
 @m.translates(ast.BinOp)
 def binop(node, scope):
-    print 'binoop...', node.ops, node.values
     value = m.translate(node.left, scope)
     for op, right in zip(node.ops, node.values):
         nv = m.translate(right, scope)
-        print 'doing something',value, nv, op.value
         value = ops[op.value](value, nv)
     return value
 
 @m.translates(NUMBER)
 def number(node, scope):
-    print 'number...', node
     return float(node.value)
 
 evaluate = m.from_string
