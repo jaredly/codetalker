@@ -3,17 +3,9 @@
 class Token(object):
     '''Base token class'''
     __slots__ = ('lineno', 'charno', 'value', 'special')
-    def __init__(self, value, *more):
-        if len(more) == 1 and hasattr(more[0], 'lineno') and hasattr(more[0], 'charno'):
-            self.lineno = more[0].lineno
-            self.charno = more[0].charno
-        elif len(more) == 2:
-            self.lineno = more[0]
-            self.charno = more[1]
-        elif not more:
-            self.lineno = self.charno = -1
-        else:
-            raise ValueError('invalid line/char arguments: %s' % (more,))
+    def __init__(self, value, lineno=-1, charno=-1):
+        self.lineno = lineno
+        self.charno = charno
         self.value = value
 
     def __repr__(self):
