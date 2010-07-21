@@ -124,7 +124,9 @@ def run_py_test(tester):
         suite = unittest.TestSuite()
         for filen in test_files:
             mod = get_pyfile(filen)
-            suite.addTest(make_testcase(filen, (fn for fn in mod.__dict__.values() if getattr(fn, '__name__', '').startswith('test_'))))
+            suite.addTest(make_testcase(filen,
+                (fn for fn in mod.__dict__.values() if getattr(fn, '__name__', '').startswith('test_'))
+            ))
         t = unittest.TextTestRunner()
         t.run(suite)
 

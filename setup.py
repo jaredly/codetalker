@@ -23,19 +23,6 @@ try:
 except IOError:
     readme_text = ''
 
-pyx_mods = []
-
-'''
-for filen in glob.glob('codetalker/pgm/cgrammar/*.pyx'):
-    if filen.split('/')[-1].startswith('_'):
-        continue
-    if filen.endswith('/tokens.pyx') or filen.endswith('/tokenize.pyx'):
-        extra = ['codetalker/pgm/cgrammar/_speed_tokens.c']
-    else:
-        extra = []
-    pyx_mods.append(Extension(filen.replace('/','.')[:-4], [filen]+extra))
-    '''
-
 pyx_mods = [
         Extension('codetalker.cgrammar', ['codetalker/cgrammar.pyx', 'codetalker/c/parser.c', 'codetalker/c/_speed_tokens.c'])
     ]
