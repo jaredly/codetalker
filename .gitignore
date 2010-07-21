@@ -4,6 +4,8 @@
 *.swo
 *.sess
 *.so
+codetalker/cgrammar.c
+codetalker/cgrammar.so
 MANIFEST
 build/
 CodeTalker.egg-info
