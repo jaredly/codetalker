@@ -131,6 +131,7 @@ struct Grammar {
     struct IgnoreTokens ignore;
     struct AstAttrs* ast_attrs;
     struct PTokens tokens;
+    char* idchars;
     char** rule_names;
 };
 

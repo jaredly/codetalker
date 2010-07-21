@@ -27,7 +27,7 @@ class Grammar:
     text, it gives you back a ParseTree (tokenizes and parses)
     '''
     special_tokens = (INDENT, DEDENT, EOF)
-    def __init__(self, start, tokens, ignore=(), indent=False, ast_tokens=()):
+    def __init__(self, start, tokens, ignore=(), idchars='', indent=False, ast_tokens=()):
         '''Grammar constructor
 
             start: the start rule [function]
@@ -42,6 +42,7 @@ class Grammar:
         self.ignore = tuple(ignore)
         self.ast_tokens = tuple(self.tokens.index(tok) for tok in ast_tokens)
         self.indent = indent
+        self.idchars = idchars
 
         self.token_rules = []
         self.token_names = []
@@ -56,7 +57,7 @@ class Grammar:
 
         self.load_rule(self.start)
 
-        self.GID = consume_grammar(self.rules, self.ignore, self.indent, self.rule_names, self.rule_dict, self.tokens, self.ast_attrs)
+        self.GID = consume_grammar(self.rules, self.ignore, self.indent, self.idchars, self.rule_names, self.rule_dict, self.tokens, self.ast_attrs)
         print 'GID', self.GID
 
     def load_rule(self, builder):

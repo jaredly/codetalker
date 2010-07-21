@@ -24,10 +24,10 @@ from c:
     store_grammar
 
     # tokenize stuff
-    check_ctoken(int tid, int at, char* text)
-    check_chartoken(char* chars, int at, char* text)
-    check_stringtoken(char** strings, int num, int at, char* text)
-    check_idtoken(char** strings, int num, int at, char* text)
+    check_ctoken(int tid, int at, char* text, int ln, char* idchars)
+    check_chartoken(char* chars, int at, char* text, int ln)
+    check_stringtoken(char** strings, int num, int at, char* text, int ln)
+    check_idtoken(char** strings, int num, int at, char* text, int ln, char* idchars)
 
     # parse stuff
     _get_parse_tree(Grammar grammar, TokenStream tokens, Error error)
@@ -40,10 +40,10 @@ cdef extern from "stdlib.h" nogil:
     int strncmp(char* dest, char* src, int num)
 
 cdef extern from "c/_speed_tokens.h":
-    int check_ctoken(int tid, int at, char* text, int ln)
+    int check_ctoken(int tid, int at, char* text, int ln, char* idchars)
     int check_chartoken(char* chars, int num, int at, char* text, int ln)
     int check_stringtoken(char** strings, int num, int at, char* text, int ln)
-    int check_idtoken(char** strings, int num, int at, char* text, int ln)
+    int check_idtoken(char** strings, int num, int at, char* text, int ln, char* idchars)
     int t_white(int at, char* text, int ln)
     enum ttype:
         tTSTRING  # triple string
@@ -170,6 +170,7 @@ cdef extern from "c/parser.h":
         IgnoreTokens ignore
         AstAttrs* ast_attrs
         PTokens tokens
+        char* idchars
         char** rule_names
 
     struct Error:
@@ -228,12 +229,13 @@ class IdToken(PyToken):
 
 python_data = {}
 
-def consume_grammar(rules, ignore, indent, rule_names, rule_funcs, tokens, ast_attrs):
+def consume_grammar(rules, ignore, indent, idchars, rule_names, rule_funcs, tokens, ast_attrs):
     cdef Grammar grammar
     grammar.rules = convert_rules(rules)
     grammar.ignore = convert_ignore(ignore, tokens)
     grammar.ast_attrs = convert_ast_attrs(ast_attrs, rule_funcs, tokens)
     grammar.tokens = convert_ptokens(tokens)
+    grammar.idchars = idchars
     cdef int gid = store_grammar(grammar)
     python_data[gid] = rule_names, tokens, indent
     return gid
@@ -247,7 +249,7 @@ def get_tokens(gid, text):
     if grammar.tokens.num != -1:
         tokens = c_get_tokens(grammar, text, python_data[gid][2], &error)
     else:
-        tokens = _get_tokens(gid, text, &error)
+        tokens = _get_tokens(gid, text, &error, grammar.idchars)
 
     if tokens == NULL:
         if len(error.text):
@@ -265,7 +267,7 @@ def get_parse_tree(gid, text):
     if grammar.tokens.num != -1:
         tokens = c_get_tokens(grammar, text, python_data[gid][2], &terror)
     else:
-        tokens = _get_tokens(gid, text, &terror)
+        tokens = _get_tokens(gid, text, &terror, grammar.idchars)
 
     if tokens == NULL:
         if len(terror.text):
@@ -292,7 +294,7 @@ def get_ast(gid, text, ast_classes, ast_tokens):
     if grammar.tokens.num != -1:
         tokens = c_get_tokens(grammar, text, python_data[gid][2], &terror)
     else:
-        tokens = _get_tokens(gid, text, &terror)
+        tokens = _get_tokens(gid, text, &terror, grammar.idchars)
 
     if tokens == NULL:
         if len(terror.text):
@@ -552,7 +554,7 @@ cdef struct TokenState:
     int num_indents
     int max_indents
 
-cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
+cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
     tokens = python_data[gid][1]
     cdef:
         Token* start = NULL
@@ -587,7 +589,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
         for i from 0<=i<ntokens:
             # print 'for token', tokens[i]
             if tokens[i]._type == CTOKEN:
-                res = check_ctoken(tokens[i].tid, state.at, state.text, state.ln)
+                res = check_ctoken(tokens[i].tid, state.at, state.text, state.ln, idchars)
             elif tokens[i]._type == CHARTOKEN:
                 # print 'chartoken', tokens[i].chars, tokens[i].num
                 res = check_chartoken(tokens[i].chars, len(tokens[i].chars), state.at, state.text, state.ln)
@@ -603,7 +605,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
                 strings = <char**>malloc(sizeof(char*)*num)
                 for m from 0<=m<num:
                     strings[m] = tokens[i].strings[m]
-                res = check_idtoken(strings, num, state.at, state.text, state.ln)
+                res = check_idtoken(strings, num, state.at, state.text, state.ln, idchars)
             elif tokens[i]._type == RETOKEN:
                 res = tokens[i].check(state.text[state.at:])
             else:

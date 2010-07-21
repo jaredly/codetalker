@@ -70,13 +70,13 @@ int t_string(int at, char* text, int ln) {
 
 #define alphanum(what) (alpha_(what) || num(what))
 
-int t_id(int at, char* text, int ln) {
+int t_id(int at, char* text, int ln, char* idchars) {
     int i = at;
-    if (!alpha_(text[i])) {
+    if (!alpha_(text[i]) && strchr(idchars, text[i]) == NULL) {
         return 0;
     }
     i += 1;
-    while (i < ln && (alpha_(text[i]) || num(text[i]))) {
+    while (i < ln && (alpha_(text[i]) || num(text[i]) || strchr(idchars, text[i]) != NULL)) {
         i++;
     }
     return i - at;
@@ -176,7 +176,7 @@ int t_newline(int at, char* text, int ln) {
     return 0;
 }
 
-int check_ctoken(ttype tid, int at, char* text, int ln) {
+int check_ctoken(ttype tid, int at, char* text, int ln, char* idchars) {
     switch (tid) {
         case tTSTRING:
             return t_tstring(at, text, ln);
@@ -185,7 +185,7 @@ int check_ctoken(ttype tid, int at, char* text, int ln) {
         case tSTRING:
             return t_string(at, text, ln);
         case tID:
-            return t_id(at, text, ln);
+            return t_id(at, text, ln, idchars);
         case tNUMBER:
             return t_number(at, text, ln);
         case tINT:
@@ -222,11 +222,11 @@ int check_stringtoken(char** strings, int num, int at, char* text, int ln) {
     return 0;
 }
 
-int check_idtoken(char** strings, int num, int at, char* text, int ln) {
+int check_idtoken(char** strings, int num, int at, char* text, int ln, char* idchars) {
     int i, l;
     for (i=0;i<num;i++) {
         l = strlen(strings[i]);
-        if (strncmp(text+at, strings[i], l) == 0 && !alphanum(text[at+l])) {
+        if (strncmp(text+at, strings[i], l) == 0 && !alphanum(text[at+l]) && strchr(idchars, text[at+l]) == NULL) {
             return l;
         }
     }

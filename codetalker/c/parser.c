@@ -434,7 +434,7 @@ struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, stru
             ptoken = grammar->tokens.tokens[i];
             switch (ptoken.type) {
                 case CTOKEN:
-                    res = check_ctoken(ptoken.value.tid, state.at, text, state.ln);
+                    res = check_ctoken(ptoken.value.tid, state.at, text, state.ln, grammar->idchars);
                     break;
                 case CHARTOKEN:
                     res = check_chartoken(ptoken.value.chars, ptoken.num, state.at, text, state.ln);
@@ -443,7 +443,7 @@ struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, stru
                     res = check_stringtoken(ptoken.value.strings, ptoken.num, state.at, text, state.ln);
                     break;
                 case IDTOKEN:
-                    res = check_idtoken(ptoken.value.strings, ptoken.num, state.at, text, state.ln);
+                    res = check_idtoken(ptoken.value.strings, ptoken.num, state.at, text, state.ln, grammar->idchars);
                     break;
                 default:
                     res = 0;
@@ -482,6 +482,8 @@ struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, stru
     }
     return start;
 }
+
+void add_indent(struct TokenState* state, int ind);
 
 struct Token* advance_token(int res, struct Token* current, int indent, struct TokenState* state, char* text, int ID_t, int DD_t, struct cTokenError* error) {
     int numlines = 0;
