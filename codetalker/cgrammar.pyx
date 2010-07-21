@@ -27,6 +27,7 @@ from c:
     check_ctoken(int tid, int at, char* text)
     check_chartoken(char* chars, int at, char* text)
     check_stringtoken(char** strings, int num, int at, char* text)
+    check_idtoken(char** strings, int num, int at, char* text)
 
     # parse stuff
     _get_parse_tree(Grammar grammar, TokenStream tokens, Error error)
@@ -42,6 +43,7 @@ cdef extern from "c/_speed_tokens.h":
     int check_ctoken(int tid, int at, char* text, int ln)
     int check_chartoken(char* chars, int num, int at, char* text, int ln)
     int check_stringtoken(char** strings, int num, int at, char* text, int ln)
+    int check_idtoken(char** strings, int num, int at, char* text, int ln)
     int t_white(int at, char* text, int ln)
     enum ttype:
         tTSTRING  # triple string
@@ -66,6 +68,7 @@ cdef extern from "c/parser.h":
         CHARTOKEN
         STRTOKEN
         RETOKEN
+        IDTOKEN
 
     union PTokenValue:
         char** strings
@@ -217,6 +220,10 @@ class CharToken(PyToken):
 
 class StringToken(PyToken):
     _type = STRTOKEN
+    strings = []
+
+class IdToken(PyToken):
+    _type = IDTOKEN
     strings = []
 
 python_data = {}
@@ -461,6 +468,12 @@ cdef PTokens convert_ptokens(object tokens):
             ptokens.tokens[i].type = CHARTOKEN
             ptokens.tokens[i].num = len(tokens[i].chars)
             ptokens.tokens[i].value.chars = tokens[i].chars
+        elif issubclass(tokens[i], IdToken):
+            ptokens.tokens[i].type = IDTOKEN
+            ptokens.tokens[i].num = len(tokens[i].strings)
+            ptokens.tokens[i].value.strings = <char**>malloc(sizeof(char*)*ptokens.tokens[i].num)
+            for m from 0<=m<ptokens.tokens[i].num:
+                ptokens.tokens[i].value.strings[m] = tokens[i].strings[m]
         else:
             ptokens.num = -1
             print 'failed'
@@ -577,7 +590,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
                 res = check_ctoken(tokens[i].tid, state.at, state.text, state.ln)
             elif tokens[i]._type == CHARTOKEN:
                 # print 'chartoken', tokens[i].chars, tokens[i].num
-                res = check_chartoken(tokens[i].chars, tokens[i].num, state.at, state.text, state.ln)
+                res = check_chartoken(tokens[i].chars, len(tokens[i].chars), state.at, state.text, state.ln)
             elif tokens[i]._type == STRTOKEN:
                 # print 'stringtoken', tokens[i].strings
                 num = len(tokens[i].strings)
@@ -585,6 +598,12 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
                 for m from 0<=m<num:
                     strings[m] = tokens[i].strings[m]
                 res = check_stringtoken(strings, num, state.at, state.text, state.ln)
+            elif tokens[i]._type == IDTOKEN:
+                num = len(tokens[i].strings)
+                strings = <char**>malloc(sizeof(char*)*num)
+                for m from 0<=m<num:
+                    strings[m] = tokens[i].strings[m]
+                res = check_idtoken(strings, num, state.at, state.text, state.ln)
             elif tokens[i]._type == RETOKEN:
                 res = tokens[i].check(state.text[state.at:])
             else:

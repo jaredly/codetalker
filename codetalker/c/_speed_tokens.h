@@ -15,6 +15,7 @@ typedef enum {
 int check_ctoken(ttype tid, int at, char* text, int ln);
 int check_chartoken(char* chars, int num, int at, char* text, int ln);
 int check_stringtoken(char** strings, int num, int at, char* text, int ln);
+int check_idtoken(char** strings, int num, int at, char* text, int ln);
 
 int t_white(int at, char* text, int ln);
 

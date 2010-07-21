@@ -442,6 +442,9 @@ struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, stru
                 case STRTOKEN:
                     res = check_stringtoken(ptoken.value.strings, ptoken.num, state.at, text, state.ln);
                     break;
+                case IDTOKEN:
+                    res = check_idtoken(ptoken.value.strings, ptoken.num, state.at, text, state.ln);
+                    break;
                 default:
                     res = 0;
             }

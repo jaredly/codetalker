@@ -64,9 +64,11 @@ int t_string(int at, char* text, int ln) {
     return 0;
 }
 
-#define alpha_(what) (what >= 'a' && what <= 'z') || (what >= 'A' && what <= 'Z') || what == '_'
+#define alpha_(what) ((what >= 'a' && what <= 'z') || (what >= 'A' && what <= 'Z') || what == '_')
 
 #define num(what) (what >= '0' && what <= '9')
+
+#define alphanum(what) (alpha_(what) || num(what))
 
 int t_id(int at, char* text, int ln) {
     int i = at;
@@ -214,6 +216,17 @@ int check_stringtoken(char** strings, int num, int at, char* text, int ln) {
     for (i=0;i<num;i++) {
         l = strlen(strings[i]);
         if (strncmp(text+at, strings[i], l) == 0) {
+            return l;
+        }
+    }
+    return 0;
+}
+
+int check_idtoken(char** strings, int num, int at, char* text, int ln) {
+    int i, l;
+    for (i=0;i<num;i++) {
+        l = strlen(strings[i]);
+        if (strncmp(text+at, strings[i], l) == 0 && !alphanum(text[at+l])) {
             return l;
         }
     }
