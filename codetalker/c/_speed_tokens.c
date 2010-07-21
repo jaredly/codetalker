@@ -226,7 +226,7 @@ int check_idtoken(char** strings, int num, int at, char* text, int ln, char* idc
     int i, l;
     for (i=0;i<num;i++) {
         l = strlen(strings[i]);
-        if (strncmp(text+at, strings[i], l) == 0 && !alphanum(text[at+l]) && strchr(idchars, text[at+l]) == NULL) {
+        if (strncmp(text+at, strings[i], l) == 0 && (at+l==ln || !alphanum(text[at+l]) && strchr(idchars, text[at+l]) == NULL)) {
             return l;
         }
     }
