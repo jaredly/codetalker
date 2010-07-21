@@ -19,6 +19,6 @@ class INDENT(SpecialToken):
 class DEDENT(SpecialToken):
     '''used by the preprocessor to indicate the end of an indented block'''
 
-from codetalker.cgrammar import TSTRING, SSTRING, STRING, ID, NUMBER, INT, CCOMMENT, PYCOMMENT, WHITE, NEWLINE, CharToken, StringToken
+from codetalker.cgrammar import TSTRING, SSTRING, STRING, ID, NUMBER, INT, CCOMMENT, PYCOMMENT, WHITE, NEWLINE, CharToken, StringToken, IdToken
 
 # vim: et sw=4 sts=4
