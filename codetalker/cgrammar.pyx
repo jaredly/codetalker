@@ -55,52 +55,37 @@ cdef extern from "c/_speed_tokens.h":
         tWHITE    # space | \t
         tNEWLINE  # \n
 
-cdef enum t_type:
-    CTOKEN
-    CHARTOKEN
-    STRTOKEN
-    RETOKEN
-
-
-ReToken._type = RETOKEN
-
-class CToken(PyToken):
-    _type = CTOKEN
-
-class TSTRING(CToken):
-    tid = tTSTRING
-class SSTRING(CToken):
-    tid = tSSTRING
-class STRING(CToken):
-    tid = tSTRING
-class ID(CToken):
-    tid = tID
-class NUMBER(CToken):
-    tid = tNUMBER
-class INT(CToken):
-    tid = tINT
-class CCOMMENT(CToken):
-    tid = tCCOMMENT
-class PYCOMMENT(CToken):
-    tid = tPYCOMMENT
-class WHITE(CToken):
-    tid = tWHITE
-class NEWLINE(CToken):
-    tid = tNEWLINE
-
-class CharToken(PyToken):
-    _type = CHARTOKEN
-    chars = ''
-
-class StringToken(PyToken):
-    _type = STRTOKEN
-    strings = []
-
 cdef extern from "c/parser.h":
     struct Token
     struct TokenStream
     struct RuleSpecial
     struct RuleOption
+
+    enum t_type:
+        CTOKEN
+        CHARTOKEN
+        STRTOKEN
+        RETOKEN
+
+    union PTokenValue:
+        char** strings
+        char* chars
+        int tid
+
+    struct PToken:
+        unsigned int which
+        t_type type
+        PTokenValue value
+        int num
+
+    struct PTokens:
+        unsigned int num
+        PToken* tokens
+
+    struct cTokenError:
+        int lineno
+        int charno
+        char* text
 
     struct Token:
         unsigned int which
@@ -180,8 +165,8 @@ cdef extern from "c/parser.h":
     struct Grammar:
         Rules rules
         IgnoreTokens ignore
-        TokenStream tokens
         AstAttrs* ast_attrs
+        PTokens tokens
         char** rule_names
 
     struct Error:
@@ -197,6 +182,42 @@ cdef extern from "c/parser.h":
 
     cParseNode* _get_parse_tree(int start, Grammar* gram, TokenStream* tokens, Error* error)
     int matches(cParseNode* node, int which)
+    void _kill_ptree(cParseNode* node)
+    Token* c_get_tokens(Grammar* grammar, char* text, int indent, cTokenError* error)
+
+ReToken._type = RETOKEN
+
+class CToken(PyToken):
+    _type = CTOKEN
+
+class TSTRING(CToken):
+    tid = tTSTRING
+class SSTRING(CToken):
+    tid = tSSTRING
+class STRING(CToken):
+    tid = tSTRING
+class ID(CToken):
+    tid = tID
+class NUMBER(CToken):
+    tid = tNUMBER
+class INT(CToken):
+    tid = tINT
+class CCOMMENT(CToken):
+    tid = tCCOMMENT
+class PYCOMMENT(CToken):
+    tid = tPYCOMMENT
+class WHITE(CToken):
+    tid = tWHITE
+class NEWLINE(CToken):
+    tid = tNEWLINE
+
+class CharToken(PyToken):
+    _type = CHARTOKEN
+    chars = ''
+
+class StringToken(PyToken):
+    _type = STRTOKEN
+    strings = []
 
 python_data = {}
 
@@ -205,19 +226,22 @@ def consume_grammar(rules, ignore, indent, rule_names, rule_funcs, tokens, ast_a
     grammar.rules = convert_rules(rules)
     grammar.ignore = convert_ignore(ignore, tokens)
     grammar.ast_attrs = convert_ast_attrs(ast_attrs, rule_funcs, tokens)
+    grammar.tokens = convert_ptokens(tokens)
     cdef int gid = store_grammar(grammar)
     python_data[gid] = rule_names, tokens, indent
     return gid
 
-cdef struct cTokenError:
-    int lineno
-    int charno
-    char* text
-
 def get_tokens(gid, text):
     cdef cTokenError error
     error.text = ''
-    cdef Token* tokens = _get_tokens(gid, text, &error)
+
+    cdef Token* tokens
+    cdef Grammar* grammar = load_grammar(gid)
+    if grammar.tokens.num != -1:
+        tokens = c_get_tokens(grammar, text, python_data[gid][2], &error)
+    else:
+        tokens = _get_tokens(gid, text, &error)
+
     if tokens == NULL:
         if len(error.text):
             raise TokenError(error.text, error.lineno, error.charno)
@@ -229,16 +253,23 @@ def get_parse_tree(gid, text):
     cdef Grammar* grammar = load_grammar(gid)
     cdef cTokenError terror
     terror.text = ''
-    cdef Token* tokens = _get_tokens(gid, text, &terror)
+
+    cdef Token* tokens
+    if grammar.tokens.num != -1:
+        tokens = c_get_tokens(grammar, text, python_data[gid][2], &terror)
+    else:
+        tokens = _get_tokens(gid, text, &terror)
+
     if tokens == NULL:
         if len(terror.text):
             raise TokenError(terror.text, terror.lineno, terror.charno)
     cdef TokenStream tstream = tokens_to_stream(tokens)
     tstream.eof = python_data[gid][1].index(EOF)
     cdef Error error
+    error.text = '(no error)'
     cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tstream, &error)
     if tstream.at < tstream.num-1:
-        print "Didn't use all the tokens (%d out of %d)" % (tstream.at+1, tstream.num)
+        print "Didn't use all the tokens (%d out of %d)" % (error.at+1, tstream.num)
         raise ParseError('Didn\'t use all the tokens: %s' % error.text, error.token.lineno, error.token.charno)
     pyptree = convert_back_ptree(gid, ptree)
     kill_ptree(ptree)
@@ -249,17 +280,26 @@ def get_ast(gid, text, ast_classes, ast_tokens):
     cdef Grammar* grammar = load_grammar(gid)
     cdef cTokenError terror
     terror.text = ''
-    cdef Token* tokens = _get_tokens(gid, text, &terror)
+
+    cdef Token* tokens
+    if grammar.tokens.num != -1:
+        tokens = c_get_tokens(grammar, text, python_data[gid][2], &terror)
+    else:
+        tokens = _get_tokens(gid, text, &terror)
+
     if tokens == NULL:
         if len(terror.text):
             raise TokenError(terror.text, terror.lineno, terror.charno)
     cdef TokenStream tstream = tokens_to_stream(tokens)
     tstream.eof = python_data[gid][1].index(EOF)
     cdef Error error
+    error.text = '(no error reported)'
+    error.at = 0
+    error.wanted = 0
     cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tstream, &error)
     if tstream.at < tstream.num-1:
-        print "Didn't use all the tokens (%d out of %d)" % (tstream.at+1, tstream.num)
-        raise ParseError('Didn\'t use all the tokens: %s' % error.text, error.token.lineno, error.token.charno)
+        print "Didn't use all the tokens (%d out of %d)" % (error.at+1, tstream.num)
+        raise ParseError('Didn\'t use all the tokens: %s (failed on #%d "%s")' % (error.text, error.at, tstream.tokens[error.at].value), error.token.lineno, error.token.charno)
     ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
     kill_ptree(ptree)
     kill_tokens(tokens)
@@ -399,6 +439,34 @@ cdef AstAttr convert_ast_attr(char* name, object ast_attr, object rules, object 
 
     return attr
 
+cdef PTokens convert_ptokens(object tokens):
+    cdef PTokens ptokens
+    ptokens.num = len(tokens) - 3 # don't include INDENT, DEDENT, and EOF
+    ptokens.tokens = <PToken*>malloc(sizeof(PToken)*ptokens.num)
+    for i from 0<=i<ptokens.num:
+        if isinstance(tokens[i], ReToken):
+            ptokens.num = -1
+            return ptokens
+        ptokens.tokens[i].which = i
+        if issubclass(tokens[i], CToken):
+            ptokens.tokens[i].type = CTOKEN
+            ptokens.tokens[i].value.tid = tokens[i].tid
+        elif issubclass(tokens[i], StringToken):
+            ptokens.tokens[i].type = STRTOKEN
+            ptokens.tokens[i].num = len(tokens[i].strings)
+            ptokens.tokens[i].value.strings = <char**>malloc(sizeof(char*)*ptokens.tokens[i].num)
+            for m from 0<=m<ptokens.tokens[i].num:
+                ptokens.tokens[i].value.strings[m] = tokens[i].strings[m]
+        elif issubclass(tokens[i], CharToken):
+            ptokens.tokens[i].type = CHARTOKEN
+            ptokens.tokens[i].num = len(tokens[i].chars)
+            ptokens.tokens[i].value.chars = tokens[i].chars
+        else:
+            ptokens.num = -1
+            print 'failed'
+            return ptokens
+    return ptokens
+
 ### CONVERT IT BACK ###
 
 cdef object convert_back_tokens(int gid, Token* start):
@@ -457,15 +525,7 @@ cdef void kill_tokens(Token* start):
         free(tmp)
 
 cdef void kill_ptree(cParseNode* node):
-    if node.type == NTOKEN:
-        free(node)
-        return
-    cdef cParseNode* child = node.child
-    free(node)
-    while child != NULL:
-        node = child
-        child = child.prev
-        kill_ptree(node)
+    _kill_ptree(node)
 
 ### TOKENIZE ###
 
@@ -490,10 +550,9 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
 
         int res = 0
         int num = 0
-        int ntokens = len(tokens)
+        int ntokens = len(tokens) - 3 # ignore INDENT, DEDENT, EOF
         char** strings = NULL
         bint indent = python_data[gid][2]
-
 
     state.at = 0
     state.text = text
@@ -532,11 +591,11 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error):
                 print 'Unknown token type', tokens[i]._type, tokens[i]
 
             if res:
-                # print 'got token!', res, state.at
                 tmp = <Token*>malloc(sizeof(Token))
                 tmp.value = <char*>malloc(sizeof(char)*(res+1))
                 strncpy(tmp.value, state.text + state.at, res)
                 tmp.value[res] = '\0'
+                # print 'got token!', res, state.at, [tmp.value], state.lineno, state.charno
                 tmp.which = i
                 tmp.next = NULL
                 tmp.lineno = state.lineno
@@ -629,6 +688,7 @@ cdef void add_indent(TokenState* state, int ind):
 ### ASTTIZE ###
 
 cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_classes, object ast_tokens):
+    # print 'getting ast'
     if node == NULL:
         return None
     if node.type == NTOKEN:
@@ -647,12 +707,14 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
 
     name = python_data[gid][0][node.rule]
     if attrs.pass_single:
+        # print 'pass single'
         child = start
         while child != NULL:
             if child.type != NTOKEN or child.token.which in ast_tokens:
                 return _get_ast(grammar, gid, child, ast_classes, ast_tokens)
             child = child.next
     elif not attrs.num:
+        # print 'pass multi'
         res = []
         child = start
         while child != NULL:
@@ -664,15 +726,21 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
     obj = getattr(ast_classes, name)()
 
     for i from 0<=i<attrs.num:
+        # print 'attr num', i, 'of', attrs.num
         child = start
         if attrs.attrs[i].single:
             cnum = 0
             stepnum = 0
+            # print 'stype'
             while child != NULL:
+                # print 'looking', attrs.attrs[i].numtypes
+                # print attrs.attrs[i].types[0]
                 if matches(child, attrs.attrs[i].types[0]):
+                    # print 'match!'
                     if stepnum == 0 and cnum >= attrs.attrs[i].start:
                         setattr(obj, attrs.attrs[i].name, _get_ast(grammar, gid, child, ast_classes, ast_tokens))
                         break
+                    # print '(but not gotten)'
                     cnum += 1
                     stepnum += 1
                     if stepnum == attrs.attrs[i].step:
@@ -684,16 +752,21 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
             kids = []
             setattr(obj, attrs.attrs[i].name, kids)
             cnum = 0
+            # print 'mtype'
             while child != NULL:
                 for m from 0<=m<attrs.attrs[i].numtypes:
                     if matches(child, attrs.attrs[i].types[m]):
+                        # print 'match!'
                         if cnum >= attrs.attrs[i].start and (attrs.attrs[i].end == 0 or cnum < attrs.attrs[i].end):
                             kids.append(_get_ast(grammar, gid, child, ast_classes, ast_tokens))
+                        # else:
+                            # print '(but not gotten)'
                         cnum += 1
                         stepnum += 1
                         if stepnum == attrs.attrs[i].step:
                             stepnum = 0
                         break
                 child = child.next
+    # print 'got ast'
     return obj
 

@@ -3,9 +3,13 @@
 #include "stdlib.h"
 #include <string.h>
 #include "stdio.h"
+#include "c/_speed_tokens.h"
 
+/* *
 #define LOG pind();printf
-#define LOG //[log]
+/* */
+#define LOG //log
+/**/
 
 int matches(struct cParseNode* node, int which) {
     if (which < 0) {
@@ -18,6 +22,20 @@ int matches(struct cParseNode* node, int which) {
             return 1;
         } else {
             return 0;
+        }
+    }
+}
+
+void _kill_ptree(struct cParseNode* node) {
+    if (node->type == NTOKEN) {
+        free(node);
+    } else {
+        struct cParseNode* child = node->child;
+        free(node);
+        while (child != NULL) {
+            node = child;
+            child = child->prev;
+            _kill_ptree(node);
         }
     }
 }
@@ -85,16 +103,6 @@ void pind(void) {
     }
 }
 
-/**
-// indent = []
-
-def log(*a):pass
-def log_(*a):
-    strs = []
-    for e in a:strs.append(str(e))
-    print '  |'*len(indent), ' '.join(strs)
-
-**/
 struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error);
 struct cParseNode* append_nodes(struct cParseNode* one, struct cParseNode* two);
 struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, struct cParseNode* current, struct Grammar* grammar, struct TokenStream* tokens,  struct Error* error);
@@ -373,5 +381,144 @@ struct cParseNode* append_nodes(struct cParseNode* one, struct cParseNode* two) 
     one->next = tmp;
     tmp->prev = one;
     return two;
+}
+
+/** tokenizing **/
+
+struct TokenState {
+    int at;
+    int ln;
+    char* text;
+    int lineno;
+    int charno;
+    int* indents;
+    int num_indents;
+    int max_indents;
+};
+
+struct Token* advance_token(int res, struct Token* current, int indent, struct TokenState* state, char* text, int ID_t, int DD_t, struct cTokenError* error);
+
+struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, struct cTokenError* error) {
+    struct Token* start = NULL;
+    struct Token* current = NULL;
+    struct Token* tmp = NULL;
+
+    struct TokenState state;
+    state.at = 0;
+    state.ln = strlen(text);
+    // state.text = text;
+    state.lineno = 1;
+    state.charno = 1;
+    state.indents = (int*)malloc(sizeof(int)*100);
+    state.indents[0] = 0;
+    state.max_indents = 100;
+    state.num_indents = 1;
+
+    struct PToken ptoken;
+
+    int ID_t = grammar->tokens.num;
+    int DD_t = grammar->tokens.num+1;
+
+    int res = 0;
+    int num = 0;
+
+    int dirty;
+
+    // printf("with text:: %s\n\n", text);
+
+    while (state.at < state.ln) {
+        int i;
+        dirty = 0;
+        for (i=0;i<grammar->tokens.num;i++) {
+            // printf("looking for token: %d\n", i);
+            ptoken = grammar->tokens.tokens[i];
+            switch (ptoken.type) {
+                case CTOKEN:
+                    res = check_ctoken(ptoken.value.tid, state.at, text, state.ln);
+                    break;
+                case CHARTOKEN:
+                    res = check_chartoken(ptoken.value.chars, ptoken.num, state.at, text, state.ln);
+                    break;
+                case STRTOKEN:
+                    res = check_stringtoken(ptoken.value.strings, ptoken.num, state.at, text, state.ln);
+                    break;
+                default:
+                    res = 0;
+            }
+            if (res > 0) {
+                tmp = (struct Token*)malloc(sizeof(struct Token));
+                tmp->value = (char*)malloc(sizeof(char)*(res+1));
+                strncpy(tmp->value, text + state.at, res);
+                tmp->value[res] = '\0';
+                // printf("got token! %d (%s)\n", res, tmp->value);
+                tmp->which = ptoken.which;
+                tmp->next = NULL;
+                tmp->lineno = state.lineno;
+                tmp->charno = state.charno;
+                if (start == NULL) {
+                    start = tmp;
+                } else {
+                    current->next = tmp;
+                }
+                current = tmp;
+                current = advance_token(res, current, indent, &state, text, ID_t, DD_t, error);
+                if (current == NULL) {
+                    return NULL;
+                }
+                state.at += res;
+                dirty = 1;
+                break;
+            }
+        }
+        if (!dirty) {
+            error->text = "no valid token found";
+            error->lineno = state.lineno;
+            error->charno = state.charno;
+            return NULL;
+        }
+    }
+    return start;
+}
+
+struct Token* advance_token(int res, struct Token* current, int indent, struct TokenState* state, char* text, int ID_t, int DD_t, struct cTokenError* error) {
+    int numlines = 0;
+    int cindent;
+    int last = state->at;
+    int ind = 0;
+    struct Token* tmp;
+    int i;
+
+    for (i=state->at; i < state->at + res; i++) {
+        if (text[i] == '\n') {
+            numlines += 1;
+            last = i;
+        }
+    }
+    state->lineno += numlines;
+    if (numlines) {
+        state->charno = state->at + res - last;
+    } else {
+        state->charno += res;
+    }
+    if (!indent) {
+        return current;
+    }
+    return current;
+}
+
+void add_indent(struct TokenState* state, int ind) {
+    int* indents;
+    int i;
+    if (state->num_indents == state->max_indents) {
+        indents = (int*)malloc(sizeof(int)*state->max_indents*2);
+        for (i=0;i<state->max_indents;i++) {
+            indents[i] = state->indents[i];
+        }
+        free(state->indents);
+        state->indents = indents;
+        state->max_indents *= 2;
+    }
+    state->indents[state->num_indents] = ind;
+    state->num_indents += 1;
 }
 

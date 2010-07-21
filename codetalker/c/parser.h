@@ -4,6 +4,37 @@ struct TokenStream;
 struct RuleSpecial;
 struct RuleOption;
 
+typedef enum {
+    CTOKEN,
+    CHARTOKEN,
+    STRTOKEN,
+    RETOKEN
+} t_type;
+
+union PTokenValue {
+    char** strings;
+    char* chars;
+    int tid;
+};
+
+struct PToken {
+    unsigned int which;
+    t_type type;
+    union PTokenValue value;
+    int num;
+};
+
+struct PTokens {
+    unsigned int num;
+    struct PToken* tokens;
+};
+
+struct cTokenError {
+    int lineno;
+    int charno;
+    char* text;
+};
+
 struct Token {
     unsigned int which;
     unsigned int lineno;
@@ -98,6 +129,7 @@ struct Grammar {
     struct Rules rules;
     struct IgnoreTokens ignore;
     struct AstAttrs* ast_attrs;
+    struct PTokens tokens;
     char** rule_names;
 };
 
@@ -114,4 +146,6 @@ struct Grammar* load_grammar(int);
 void free_grammars(void);
 struct cParseNode* _get_parse_tree(int start, struct Grammar*, struct TokenStream*, struct Error*);
 int matches(struct cParseNode* node, int which);
+void _kill_ptree(struct cParseNode* node);
+struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, struct cTokenError* error);
 
