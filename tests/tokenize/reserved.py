@@ -26,5 +26,9 @@ def test_2():
     assert isinstance(tks[4], RESERVED)
     assert isinstance(tks[6], ID)
 
+def test_3():
+    tks = grammar.get_tokens('at the end for')
+    assert len(tks) == 7
+    assert isinstance(tks[-1], RESERVED)
 
 # vim: et sw=4 sts=4
