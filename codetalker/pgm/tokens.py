@@ -21,4 +21,8 @@ class DEDENT(SpecialToken):
 
 from codetalker.cgrammar import TSTRING, SSTRING, STRING, ID, NUMBER, INT, CCOMMENT, PYCOMMENT, WHITE, NEWLINE, CharToken, StringToken, IdToken
 
+__all__ = ['Token', 'ReToken', 'CharToken', 'StringToken', 'IdToken',
+           'TSTRING', 'SSTRING', 'STRING', 'ID', 'NUMBER', 'INT',
+           'CCOMMENT', 'PYCOMMENT', 'WHITE', 'NEWLINE', 'INDENT', 'DEDENT', 'EOF']
+
 # vim: et sw=4 sts=4
