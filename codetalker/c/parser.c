@@ -503,8 +503,45 @@ struct Token* advance_token(int res, struct Token* current, int indent, struct T
     } else {
         state->charno += res;
     }
-    if (!indent) {
+    if (!indent || res != 1 || text[state->at] != '\n') {
         return current;
+    }
+    ind = t_white(state->at+1, text, state->ln);
+    if (ind < 0) {
+        return current;
+    }
+    cindent = state->indents[state->num_indents-1];
+    if (ind > cindent) {
+        add_indent(state, ind);
+        tmp = (struct Token*)malloc(sizeof(struct Token));
+        tmp->value = "";
+        tmp->which = ID_t;
+        tmp->next = NULL;
+        tmp->lineno = state->lineno;
+        tmp->charno = state->charno;
+        current->next = tmp;
+        current = tmp;
+    } else if (ind < cindent) {
+        while (ind < cindent) {
+            state->num_indents -= 1;
+            tmp = (struct Token*)malloc(sizeof(struct Token));
+            tmp->value = "";
+            tmp->which = DD_t;
+            tmp->next = NULL;
+            tmp->lineno = state->lineno;
+            tmp->charno = state->charno;
+            current->next = tmp;
+            current = tmp;
+            cindent = state->indents[state->num_indents - 1];
+        }
+        if (ind != cindent) {
+            // etxt = "invalid indentation -- %d (expected %d)' % (ind, cindent)";
+            error->text = "invalid indentation";
+            error->lineno = state->lineno;
+            error->charno = state->charno;
+            // error->wanted = cindent;
+            return NULL;
+        }
     }
     return current;
 }
