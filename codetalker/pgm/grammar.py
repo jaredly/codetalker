@@ -102,6 +102,23 @@ class Grammar:
         if not rule.options:
             raise Exception('no rule options specified in %r' % builder)
         attrs = []
+        for attr, dct in rule.astAttrs.iteritems():
+            if type(dct) != dict:
+                dct = {'type':dct}
+            if type(dct['type']) not in (tuple, list):
+                types = [dct['type']]
+            else:
+                types = dct['type']
+            for typ in types:
+                if inspect.isclass(typ):
+                    if not issubclass(typ, Token):
+                        raise AstError('invalid ast "type": %s (must be a token or rule)' % typ)
+                elif inspect.isfunction(typ):
+                    if typ not in self.rule_dict:
+                        raise AstError('invalid ast "type": %s (must be a token or rule)' % typ)
+                else:
+                    raise AstError('invalid ast "type": %s (must be a token or rule)' % typ)
+
         '''
         for attr, dct in rule.astAttrs.iteritems():
             error_suffix = ' for astAttr "%s" in rule "%s"' % (attr, name)

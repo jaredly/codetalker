@@ -424,7 +424,7 @@ cdef object which_rt(object it, object rules, object tokens):
         return rules[it]
     elif it in tokens:
         return -(1 + tokens.index(it))
-    raise Exception('invalid AST type: %s' % it)
+    raise Exception('invalid AST type: %s' % (it,))
 
 cdef AstAttr convert_ast_attr(char* name, object ast_attr, object rules, object tokens):
     cdef AstAttr attr
