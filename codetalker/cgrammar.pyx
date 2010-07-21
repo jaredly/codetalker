@@ -431,7 +431,7 @@ cdef AstAttr convert_ast_attr(char* name, object ast_attr, object rules, object 
     attr.name = name
     if type(ast_attr) != dict:
         ast_attr = {'type':ast_attr}
-    attr.single = type(ast_attr.get('type')) != list
+    attr.single = type(ast_attr.get('type')) not in (list, tuple)
     if attr.single:
         attr.numtypes = 1
         attr.types = <int*>malloc(sizeof(int))
