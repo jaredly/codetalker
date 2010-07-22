@@ -9,15 +9,9 @@ this easy to write a json parser.'''
 
 # special tokens
 
-class SYMBOL(ReToken):
-    rx = re.compile('[{},[\\]:]')
-
 class SYMBOL(CharToken):
     chars = '{},[]:'
     num = 6
-
-class TFN(ReToken):
-    rx = re.compile('true|false|null')
 
 class TFN(StringToken):
     strings = ['true', 'false', 'null']
