@@ -42,26 +42,26 @@ JSON = Translator(grammar)
 ast = grammar.ast_classes
 
 @JSON.translates(ast.Dict)
-def t_dict(node, scope):
-    return dict((JSON.translate(key, scope), JSON.translate(value, scope))\
+def t_dict(node):
+    return dict((JSON.translate(key), JSON.translate(value))\
                  for (key, value) in zip(node.keys, node.values))
 
 @JSON.translates(ast.List)
-def t_list(node, scope):
-    return list(JSON.translate(value, scope) for value in node.values)
+def t_list(node):
+    return list(JSON.translate(value) for value in node.values)
 
 @JSON.translates(STRING)
-def t_string(node, scope):
+def t_string(node):
     return node.value[1:-1].decode('string_escape')
 
 @JSON.translates(NUMBER)
-def t_number(node, scope):
+def t_number(node):
     if '.' in node.value:
         return float(node.value)
     return int(node.value)
 
 @JSON.translates(TFN)
-def t_tfn(node, scope):
+def t_tfn(node):
     return {'true':True, 'false':False, 'null':None}[node.value]
 
 loads = JSON.from_string
