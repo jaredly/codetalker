@@ -44,15 +44,15 @@ import operator
 ops = {'**':operator.pow, '*':operator.mul, '/':operator.div, '%':operator.mod, '+':operator.add, '-':operator.sub}
 
 @m.translates(ast.BinOp)
-def binop(node, scope):
-    value = m.translate(node.left, scope)
+def binop(node):
+    value = m.translate(node.left)
     for op, right in zip(node.ops, node.values):
-        nv = m.translate(right, scope)
+        nv = m.translate(right)
         value = ops[op.value](value, nv)
     return value
 
 @m.translates(NUMBER)
-def number(node, scope):
+def number(node):
     return float(node.value)
 
 evaluate = m.from_string
