@@ -5,7 +5,7 @@
 #include "stdio.h"
 #include "c/_speed_tokens.h"
 
-/* * /
+/* */
 #define LOG pind();printf
 /*///
 #define LOG //log
@@ -75,14 +75,56 @@ void free_grammars() {
     free(grammars);
 }
 
+int indent = 0;
+int IND = 4;
+
+void pind(void) {
+    int i;
+    for (i=0;i<indent;i++) {
+        printf(" ");
+    }
+}
+
 /** @end grammar storage and loading **/
 
 /** parsing then? **/
 
 struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error);
+struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error);
+struct cParseNode* append_nodes(struct cParseNode* one, struct cParseNode* two);
+struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, struct cParseNode* current, struct Grammar* grammar, struct TokenStream* tokens,  struct Error* error);
+struct cParseNode* _new_parsenode(unsigned int rule);
 
-struct cParseNode* _get_parse_tree(int start, struct Grammar* gram, struct TokenStream* tokens, struct Error* error) {
-    return parse_rule(start, gram, tokens, error);
+struct cParseNode* _get_parse_tree(int start, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error) {
+    struct cParseNode* parent = parse_rule(start, grammar, tokens, error);
+    if (parent == NULL) {
+        return NULL;
+    }
+    struct cParseNode* current = parent->child;
+    struct cParseNode* tmp;
+    int m, ignore;
+    int rule = start;
+    while (tokens->at < tokens->num) {
+        ignore = 0;
+        for (m=0;m<grammar->ignore.num;m++) {
+            if (tokens->tokens[tokens->at].which == grammar->ignore.tokens[m]) {
+                ignore = 1;
+                break;
+            }
+        }
+        if (ignore == 0) {
+            break;
+        }
+        LOG("ignoring white\n");
+        tmp = _new_parsenode(rule);
+        tmp->token = &tokens->tokens[tokens->at];
+        tmp->type = NTOKEN;
+        current = append_nodes(current, tmp);
+        LOG("inc token %d %d\n", tokens->at, tokens->at+1);
+        tokens->at += 1;
+    }
+    parent->child = current;
+    return parent;
 }
 
 struct cParseNode* _new_parsenode(unsigned int rule) {
@@ -95,20 +137,6 @@ struct cParseNode* _new_parsenode(unsigned int rule) {
     node->type = NNODE;
     return node;
 }
-
-int indent = 0;
-int IND = 4;
-
-void pind(void) {
-    int i;
-    for (i=0;i<indent;i++) {
-        printf(" ");
-    }
-}
-
-struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error);
-struct cParseNode* append_nodes(struct cParseNode* one, struct cParseNode* two);
-struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, struct cParseNode* current, struct Grammar* grammar, struct TokenStream* tokens,  struct Error* error);
 
 struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error) {
     struct cParseNode* node = _new_parsenode(rule);
@@ -128,6 +156,7 @@ struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct
             return node;
         }
     }
+    LOG("failed rule %d\n", rule);
     indent-=IND;
     return NULL;
 }
@@ -190,6 +219,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                     error->reason = 2;
                     error->token = &tokens->tokens[tokens->at];
                     error->text = "rule failed";
+                    error->wanted = item->value.which;
                 }
                 indent-=IND;
                 return NULL;
@@ -200,7 +230,6 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
             LOG(">TOKEN\n");
             if (tokens->at >= tokens->num) {
                 if (item->value.which == tokens->eof) {
-                    // log('EOF -- passing')
                     LOG("EOF -- passing\n");
                     tmp = _new_parsenode(rule);
                     tmp->token = (struct Token*)malloc(sizeof(struct Token));
@@ -217,7 +246,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                 error->reason = 1;
                 error->token = NULL;
                 error->text = "ran out";
-                // log('not enough tokens')
+                error->wanted = item->value.which;
                 indent-=IND;
                 return NULL;
             }
@@ -241,7 +270,6 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                 }
                 LOG("token failed (wanted %d, got %d)\n",
                         item->value.which, tokens->tokens[tokens->at].which);
-                // log('failed token')
                 indent-=IND;
                 return NULL;
             }
@@ -249,9 +277,9 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
             LOG(">LITERAL\n");
             if (tokens->at >= tokens->num) {
                 error->at = tokens->at;
-                error->reason = 1;
+                error->reason = 4;
                 error->token = NULL;
-                error->text = "ran out";
+                error->text = item->value.text;
                 // log('not enough tokens')
                 indent-=IND;
                 return NULL;
@@ -270,7 +298,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
             } else {
                 if (tokens->at > error->at) {
                     error->at = tokens->at;
-                    error->reason = 4;
+                    error->reason = 5;
                     error->token = &tokens->tokens[tokens->at];
                     error->text = item->value.text;
                 }
@@ -358,6 +386,7 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
         LOG("done maybe children\n");
         if (tmp == NULL) {
             LOG("not taking it\n");
+            tokens->at = at;
             indent-=IND;
             return current;
         }

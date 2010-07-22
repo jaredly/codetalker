@@ -57,8 +57,10 @@ class Grammar:
 
         self.load_rule(self.start)
 
-        self.GID = consume_grammar(self.rules, self.ignore, self.indent, self.idchars, self.rule_names, self.rule_dict, self.tokens, self.ast_attrs)
-        print 'GID', self.GID
+        ## cache the grammar definition
+        self.GID = consume_grammar(self.rules, self.ignore, self.indent,
+                                   self.idchars, self.rule_names, self.rule_dict,
+                                   self.tokens, self.ast_attrs)
 
     def load_rule(self, builder):
         '''Load a rule into the grammar and cache it for

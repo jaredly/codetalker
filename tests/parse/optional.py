@@ -16,6 +16,11 @@ def test_one():
     tree = g.get_ast('"string" "string" "strin" ')
     assert len(tree) == 3
 
+def test_onother():
+    st = '"string" "string" "strin" '
+    tree = g.process(st)
+    assert str(tree) == st
+
 def test_two():
     tree = g.get_ast('one "two" three "four" five "six"')
     assert len(tree) == 3

@@ -275,15 +275,44 @@ def get_parse_tree(gid, text):
     cdef TokenStream tstream = tokens_to_stream(tokens)
     tstream.eof = python_data[gid][1].index(EOF)
     cdef Error error
+    error.reason = -1
     error.text = '(no error)'
     cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tstream, &error)
-    if tstream.at < tstream.num-1:
-        print "Didn't use all the tokens (%d out of %d)" % (error.at+1, tstream.num)
-        raise ParseError('Didn\'t use all the tokens: %s' % error.text, error.token.lineno, error.token.charno)
+    if tstream.at < tstream.num or (not tstream.num and error.reason != -1):
+        if error.reason == 1:
+            txt = "Ran out of tokens (expected %s)" % python_data[gid][1][error.wanted].__name__
+            error.token = get_last_token(&tstream)
+        elif error.reason == 4:
+            txt = "just ran out of tokens... (expected '%s')" % error.text
+            error.token = get_last_token(&tstream)
+        else:
+            txt = format_parse_error(gid, &tstream, &error)
+        print "Didn't use all the tokens (%d out of %d)" % (tstream.at, tstream.num)
+        raise ParseError(txt, error.token.lineno, error.token.charno)
+    if ptree == NULL:
+        return None
     pyptree = convert_back_ptree(gid, ptree)
     kill_ptree(ptree)
     kill_tokens(tokens)
     return pyptree
+
+cdef char* format_parse_error(int gid, TokenStream* tstream, Error* error):
+    txt = 'Unknown Error'
+    rule_names, tokens, indent = python_data[gid]
+    if error.reason == 1:
+        txt = "Ran out of tokens (expected %s)" % tokens[error.wanted]
+    elif error.reason == 2:
+        txt = "Failed while parsing rule '%s'" % rule_names[error.wanted]
+    elif error.reason == 3:
+        txt = "Invalid token %s <%s> (expected <%s>)" % (error.token.value,
+                tokens[error.token.which].__name__, tokens[error.wanted].__name__)
+    elif error.reason == 4:
+        txt = "just ran out of tokens... (expected '%s')" % error.text
+    elif error.reason == 5:
+        txt = "Invalid token '%s' <%s> (expected '%s')" % (error.token.value,
+                tokens[error.token.which].__name__,
+                error.text)
+    return txt
 
 def get_ast(gid, text, ast_classes, ast_tokens):
     cdef Grammar* grammar = load_grammar(gid)
@@ -302,17 +331,39 @@ def get_ast(gid, text, ast_classes, ast_tokens):
     cdef TokenStream tstream = tokens_to_stream(tokens)
     tstream.eof = python_data[gid][1].index(EOF)
     cdef Error error
+    error.reason = -1
     error.text = '(no error reported)'
     error.at = 0
     error.wanted = 0
     cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tstream, &error)
-    if tstream.at < tstream.num-1:
-        print "Didn't use all the tokens (%d out of %d)" % (error.at+1, tstream.num)
-        raise ParseError('Didn\'t use all the tokens: %s (failed on #%d "%s")' % (error.text, error.at, tstream.tokens[error.at].value), error.token.lineno, error.token.charno)
+    if tstream.at < tstream.num or (not tstream.num and error.reason != -1):
+        if error.reason == 1:
+            txt = "Ran out of tokens (expected %s)" % python_data[gid][1][error.wanted].__name__
+            error.token = get_last_token(&tstream)
+        elif error.reason == 4:
+            txt = "Ran out of tokens (expected '%s')" % error.text
+            error.token = get_last_token(&tstream)
+        else:
+            txt = format_parse_error(gid, &tstream, &error)
+        print "Didn't use all the tokens (%d out of %d)" % (tstream.at, tstream.num)
+        raise ParseError(txt, error.token.lineno, error.token.charno)
+    if ptree == NULL:
+        return None
     ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
     kill_ptree(ptree)
     kill_tokens(tokens)
     return ast
+
+cdef Token NO_TOKEN
+NO_TOKEN.lineno = 0
+NO_TOKEN.charno = 0
+NO_TOKEN.value = ''
+NO_TOKEN.which = 0
+
+cdef Token* get_last_token(TokenStream* tokens):
+    if not tokens.num:
+        return &NO_TOKEN
+    return &tokens.tokens[tokens.num-1]
 
 ### CONVERT STUFF ###
 
@@ -709,7 +760,7 @@ cdef void add_indent(TokenState* state, int ind):
 ### ASTTIZE ###
 
 cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_classes, object ast_tokens):
-    # print 'getting ast'
+    print 'getting ast'
     if node == NULL:
         return None
     if node.type == NTOKEN:
@@ -728,14 +779,14 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
 
     name = python_data[gid][0][node.rule]
     if attrs.pass_single:
-        # print 'pass single'
+        print 'pass single'
         child = start
         while child != NULL:
             if child.type != NTOKEN or child.token.which in ast_tokens:
                 return _get_ast(grammar, gid, child, ast_classes, ast_tokens)
             child = child.next
     elif not attrs.num:
-        # print 'pass multi'
+        print 'pass multi'
         res = []
         child = start
         while child != NULL:
@@ -747,21 +798,21 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
     obj = getattr(ast_classes, name)()
 
     for i from 0<=i<attrs.num:
-        # print 'attr num', i, 'of', attrs.num
+        print 'attr num', i, 'of', attrs.num
         child = start
         if attrs.attrs[i].single:
             cnum = 0
             stepnum = 0
-            # print 'stype'
+            print 'stype'
             while child != NULL:
-                # print 'looking', attrs.attrs[i].numtypes
-                # print attrs.attrs[i].types[0]
+                print 'looking', attrs.attrs[i].numtypes
+                print attrs.attrs[i].types[0]
                 if matches(child, attrs.attrs[i].types[0]):
-                    # print 'match!'
+                    print 'match!'
                     if stepnum == 0 and cnum >= attrs.attrs[i].start:
                         setattr(obj, attrs.attrs[i].name, _get_ast(grammar, gid, child, ast_classes, ast_tokens))
                         break
-                    # print '(but not gotten)'
+                    print '(but not gotten)'
                     cnum += 1
                     stepnum += 1
                     if stepnum == attrs.attrs[i].step:
@@ -773,21 +824,21 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
             kids = []
             setattr(obj, attrs.attrs[i].name, kids)
             cnum = 0
-            # print 'mtype'
+            print 'mtype'
             while child != NULL:
                 for m from 0<=m<attrs.attrs[i].numtypes:
                     if matches(child, attrs.attrs[i].types[m]):
-                        # print 'match!'
+                        print 'match!'
                         if cnum >= attrs.attrs[i].start and (attrs.attrs[i].end == 0 or cnum < attrs.attrs[i].end):
                             kids.append(_get_ast(grammar, gid, child, ast_classes, ast_tokens))
                         # else:
-                            # print '(but not gotten)'
+                            print '(but not gotten)'
                         cnum += 1
                         stepnum += 1
                         if stepnum == attrs.attrs[i].step:
                             stepnum = 0
                         break
                 child = child.next
-    # print 'got ast'
+    print 'got ast'
     return obj
 
