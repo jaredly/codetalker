@@ -5,11 +5,14 @@
 #include "stdio.h"
 #include "c/_speed_tokens.h"
 
-/* *
+/* * /
 #define LOG pind();printf
-/* */
+/*///
 #define LOG //log
 /**/
+
+char sentinel = 0;
+#define UNINITIALIZED ((void *)&sentinel)
 
 int matches(struct cParseNode* node, int which) {
     if (which < 0) {
@@ -132,7 +135,7 @@ struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct
 // clean
 struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error) {
     LOG("parsing children of %d (token at %d)\n", rule, tokens->at);
-    struct cParseNode* current = NULL;
+    struct cParseNode* current = UNINITIALIZED;
     unsigned int i = 0, m = 0;
     unsigned int at = 0;
     struct cParseNode* tmp = NULL;
@@ -280,6 +283,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
             LOG(">SPECIAL\n");
             tmp = check_special(rule, item->value.special, current, grammar, tokens, error);
             if (tmp == NULL) {
+                LOG("FAIL SPECIAL\n");
                 indent-=IND;
                 return NULL;
             }
@@ -293,10 +297,10 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
 struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, struct cParseNode* current, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error) {
     struct cParseNode* tmp;
     int at, i;
-    // log('special')
+    LOG("special\n");
     indent+=IND;
     if (special.type == STAR) {
-        // log('star!')
+        LOG("star!\n");
         while (tokens->at < tokens->num) {
             at = tokens->at;
             tmp = parse_children(rule, special.option, grammar, tokens, error);
@@ -306,16 +310,16 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
             }
             current = append_nodes(current, tmp);
         }
-        // log('awesome star')
+        LOG("awesome star\n");
         indent-=IND;
         return current;
     } else if (special.type == PLUS) {
-        // log('plus!')
+        LOG("plus!\n");
         at = tokens->at;
         tmp = parse_children(rule, special.option, grammar, tokens, error);
         if (tmp == NULL) {
             tokens->at = at;
-            // log('failed plus')
+            LOG("failed plus\n");
             indent-=IND;
             return NULL;
         }
@@ -329,35 +333,36 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
             }
             current = append_nodes(current, tmp);
         }
-        // log('good plus')
+        LOG("good plus\n");
         indent-=IND;
         return current;
     } else if (special.type == OR) {
-        // log('or!')
+        LOG("or!\n");
         at = tokens->at;
         for (i=0;i<special.option->num;i++) {
             tmp = parse_children(rule, special.option->items[i].value.special.option, grammar, tokens, error);
             if (tmp != NULL) {
-                // log('got or...')
+                LOG("got or...\n");
                 current = append_nodes(current, tmp);
                 indent-=IND;
                 return current;
             }
         }
-        // log('fail or')
+        LOG("fail or\n");
         indent-=IND;
         return NULL;
     } else if (special.type == QUESTION) {
-        // log('?maybe')
+        LOG("?maybe\n");
         at = tokens->at;
         tmp = parse_children(rule, special.option, grammar, tokens, error);
+        LOG("done maybe children\n");
         if (tmp == NULL) {
-            // log('not taking it')
+            LOG("not taking it\n");
             indent-=IND;
             return current;
         }
         current = append_nodes(current, tmp);
-        // log('got maybe')
+        LOG("got maybe\n");
         indent-=IND;
         return current;
     } else {
@@ -365,13 +370,13 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
         indent-=IND;
         return NULL;
     }
-    // log('umm shouldnt happen')
+    LOG("umm shouldnt happen");
     indent-=IND;
     return NULL;
 }
 
 struct cParseNode* append_nodes(struct cParseNode* one, struct cParseNode* two) {
-    if (one == NULL) {
+    if (one == UNINITIALIZED) {
         return two;
     }
     struct cParseNode* tmp = two;
