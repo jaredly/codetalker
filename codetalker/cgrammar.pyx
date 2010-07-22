@@ -241,54 +241,37 @@ def consume_grammar(rules, ignore, indent, idchars, rule_names, rule_funcs, toke
     return gid
 
 def get_tokens(gid, text):
-    cdef cTokenError error
-    error.text = ''
-
     cdef Token* tokens
-    cdef Grammar* grammar = load_grammar(gid)
-    if grammar.tokens.num != -1:
-        tokens = c_get_tokens(grammar, text, python_data[gid][2], &error)
-    else:
-        tokens = _get_tokens(gid, text, &error, grammar.idchars)
 
-    if tokens == NULL:
-        if len(error.text):
-            raise TokenError(error.text, error.lineno, error.charno)
+    try_get_tokens(gid, text, &tokens)
+
     pytokens = convert_back_tokens(gid, tokens)
     kill_tokens(tokens)
     return pytokens
 
-def get_parse_tree(gid, text):
+cdef object try_get_tokens(int gid, char* text, Token** tokens):
+    cdef cTokenError error
+    error.text = ''
     cdef Grammar* grammar = load_grammar(gid)
-    cdef cTokenError terror
-    terror.text = ''
-
-    cdef Token* tokens
     if grammar.tokens.num != -1:
-        tokens = c_get_tokens(grammar, text, python_data[gid][2], &terror)
+        tokens[0] = c_get_tokens(grammar, text, python_data[gid][2], &error)
     else:
-        tokens = _get_tokens(gid, text, &terror, grammar.idchars)
+        tokens[0] = _get_tokens(gid, text, &error, grammar.idchars)
 
-    if tokens == NULL:
-        if len(terror.text):
-            raise TokenError(terror.text, terror.lineno, terror.charno)
+    if tokens[0] == NULL:
+        if len(error.text):
+            raise TokenError(error.text, error.lineno, error.charno)
+
+def get_parse_tree(gid, text):
+    cdef Token* tokens
+
+    try_get_tokens(gid, text, &tokens)
+
     cdef TokenStream tstream = tokens_to_stream(tokens)
     tstream.eof = python_data[gid][1].index(EOF)
-    cdef Error error
-    error.reason = -1
-    error.text = '(no error)'
-    cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tstream, &error)
-    if tstream.at < tstream.num or (not tstream.num and error.reason != -1):
-        if error.reason == 1:
-            txt = "Ran out of tokens (expected %s)" % python_data[gid][1][error.wanted].__name__
-            error.token = get_last_token(&tstream)
-        elif error.reason == 4:
-            txt = "just ran out of tokens... (expected '%s')" % error.text
-            error.token = get_last_token(&tstream)
-        else:
-            txt = format_parse_error(gid, &tstream, &error)
-        # print "Didn't use all the tokens (%d out of %d)" % (tstream.at, tstream.num)
-        raise ParseError(txt, error.token.lineno, error.token.charno)
+
+    cdef cParseNode* ptree
+    try_get_parse_tree(gid, text, &tstream, &ptree)
     if ptree == NULL:
         return None
     pyptree = convert_back_ptree(gid, ptree)
@@ -296,10 +279,32 @@ def get_parse_tree(gid, text):
     kill_tokens(tokens)
     return pyptree
 
+cdef object try_get_parse_tree(gid, text, TokenStream* tstream, cParseNode** ptree):
+    cdef Grammar* grammar = load_grammar(gid)
+    cdef Error error
+    error.reason = -1
+    error.text = '(no error)'
+    error.at = 0
+    ptree[0] = _get_parse_tree(0, grammar, tstream, &error)
+    if tstream.at < tstream.num or (not tstream.num and error.reason != -1):
+        if error.reason == 1:
+            txt = "Ran out of tokens (expected %s)" % python_data[gid][1][error.wanted].__name__
+            error.token = get_last_token(tstream)
+        elif error.reason == 4:
+            txt = "just ran out of tokens... (expected '%s')" % error.text
+            error.token = get_last_token(tstream)
+        else:
+            txt = format_parse_error(gid, tstream, &error)
+        # print "Didn't use all the tokens (%d out of %d)" % (tstream.at, tstream.num)
+        raise ParseError(txt, error.token.lineno, error.token.charno)
+
 cdef char* format_parse_error(int gid, TokenStream* tstream, Error* error):
     txt = 'Unknown Error'
     rule_names, tokens, indent = python_data[gid]
-    if error.reason == 1:
+    if tstream.at > error.at:
+        txt = "Extra data (expected EOF)"
+        error.token = &tstream.tokens[tstream.at]
+    elif error.reason == 1:
         txt = "Ran out of tokens (expected %s)" % tokens[error.wanted]
     elif error.reason == 2:
         txt = "Failed while parsing rule '%s' (don't know what to do with '%s' <%s>)" % (rule_names[error.wanted], error.token.value, tokens[error.token.which].__name__)
@@ -316,39 +321,15 @@ cdef char* format_parse_error(int gid, TokenStream* tstream, Error* error):
 
 def get_ast(gid, text, ast_classes, ast_tokens):
     cdef Grammar* grammar = load_grammar(gid)
-    cdef cTokenError terror
-    terror.text = ''
-
     cdef Token* tokens
-    if grammar.tokens.num != -1:
-        tokens = c_get_tokens(grammar, text, python_data[gid][2], &terror)
-    else:
-        tokens = _get_tokens(gid, text, &terror, grammar.idchars)
 
-    if tokens == NULL:
-        if len(terror.text):
-            raise TokenError(terror.text, terror.lineno, terror.charno)
+    try_get_tokens(gid, text, &tokens)
+
     cdef TokenStream tstream = tokens_to_stream(tokens)
     tstream.eof = python_data[gid][1].index(EOF)
-    cdef Error error
-    error.reason = -1
-    error.text = '(no error reported)'
-    error.at = 0
-    error.wanted = 0
-    cdef cParseNode* ptree = _get_parse_tree(0, grammar, &tstream, &error)
-    if tstream.at < tstream.num or (not tstream.num and error.reason != -1):
-        if error.reason == 1:
-            txt = "Ran out of tokens (expected %s)" % python_data[gid][1][error.wanted].__name__
-            error.token = get_last_token(&tstream)
-            error.token.charno += 1
-        elif error.reason == 4:
-            txt = "Ran out of tokens (expected '%s')" % error.text
-            error.token = get_last_token(&tstream)
-            error.token.charno += 1
-        else:
-            txt = format_parse_error(gid, &tstream, &error)
-        # print "Didn't use all the tokens (%d out of %d)" % (tstream.at, tstream.num)
-        raise ParseError(txt, error.token.lineno, error.token.charno)
+
+    cdef cParseNode* ptree
+    try_get_parse_tree(gid, text, &tstream, &ptree)
     if ptree == NULL:
         return None
     ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
