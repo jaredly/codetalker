@@ -340,9 +340,11 @@ def get_ast(gid, text, ast_classes, ast_tokens):
         if error.reason == 1:
             txt = "Ran out of tokens (expected %s)" % python_data[gid][1][error.wanted].__name__
             error.token = get_last_token(&tstream)
+            error.token.charno += 1
         elif error.reason == 4:
             txt = "Ran out of tokens (expected '%s')" % error.text
             error.token = get_last_token(&tstream)
+            error.token.charno += 1
         else:
             txt = format_parse_error(gid, &tstream, &error)
         print "Didn't use all the tokens (%d out of %d)" % (tstream.at, tstream.num)
@@ -355,7 +357,7 @@ def get_ast(gid, text, ast_classes, ast_tokens):
     return ast
 
 cdef Token NO_TOKEN
-NO_TOKEN.lineno = 0
+NO_TOKEN.lineno = 1
 NO_TOKEN.charno = 0
 NO_TOKEN.value = ''
 NO_TOKEN.which = 0

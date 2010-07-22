@@ -5,9 +5,9 @@
 #include "stdio.h"
 #include "c/_speed_tokens.h"
 
-/* */
+/* * /
 #define LOG pind();printf
-/*///
+/*/
 #define LOG //log
 /**/
 
