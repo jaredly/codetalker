@@ -156,24 +156,14 @@ class Grammar:
     def get_ast(self, text):
         return get_ast(self.GID, text, self.ast_classes, self.ast_tokens)
 
-    def process(self, text, start=None, debug = False):
-        return get_parse_tree(self.GID, text)
+    def process(self, text): ## , start=None, debug = False):
         '''main entry point for parsing text.
 
             text: string - to parse
-            start: optional custom start function (for advanced parsing)
-            debug: boolean (default false) to output debug parse tracing
+            # start: optional custom start function (for advanced parsing)
+            # debug: boolean (default false) to output debug parse tracing
         '''
-        # get tokens
-        tokens = self.get_tokens(text)
-        # set starting rule
-        if start is not None:
-            start = self.rule_dict[start]
-        else:
-            start = 0
-        error = [0, None]
-        ignore = [self.tokens.index(tk) for tk in self.ignore]
-        return main.process(start, tokens, self.rules, ignore, self.tokens)
+        return get_parse_tree(self.GID, text)
     
     def which(self, obj):
         if isinstance(obj, Token):

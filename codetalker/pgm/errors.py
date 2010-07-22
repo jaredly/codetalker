@@ -6,6 +6,8 @@ class CodeTalkerException(Exception):
 class LineError(CodeTalkerException):
     def __init__(self, text, lineno, charno):
         Exception.__init__(self, text + ' at (%d, %d)' % (lineno, charno))
+        self.lineno = lineno
+        self.charno = charno
 
 class ParseError(LineError):
     pass
