@@ -170,12 +170,6 @@ int t_white(int at, char* text, int ln) {
     return i - at;
 }
 
-int t_newline(int at, char* text, int ln) {
-    if (text[at] == '\n')
-        return 1;
-    return 0;
-}
-
 int check_ctoken(ttype tid, int at, char* text, int ln, char* idchars) {
     switch (tid) {
         case tTSTRING:
@@ -197,7 +191,9 @@ int check_ctoken(ttype tid, int at, char* text, int ln, char* idchars) {
         case tWHITE:
             return t_white(at, text, ln);
         case tNEWLINE:
-            return t_newline(at, text, ln);
+            return text[at] == '\n';
+        case tANY:
+            return 1;
         default:
             return 0;
     }

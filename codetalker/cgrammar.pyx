@@ -56,6 +56,7 @@ cdef extern from "c/_speed_tokens.h":
         tPYCOMMENT# # blah\n
         tWHITE    # space | \t
         tNEWLINE  # \n
+        tANY      # any char
 
 cdef extern from "c/parser.h":
     struct Token
@@ -214,7 +215,10 @@ class WHITE(CToken):
     tid = tWHITE
 class NEWLINE(CToken):
     tid = tNEWLINE
-
+class ANY(CToken):
+    tid = tANY
+class ANYCHAR(CToken):
+    tid = tANY
 class CharToken(PyToken):
     _type = CHARTOKEN
     chars = ''

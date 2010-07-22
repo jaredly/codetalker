@@ -9,7 +9,8 @@ typedef enum {
     tCCOMMENT, // // blah\n or /** blah **/
     tPYCOMMENT,// # blah\n
     tWHITE,    // space | \t
-    tNEWLINE   // \n
+    tNEWLINE,  // \n
+    tANY       // any char
 } ttype;
 
 int check_ctoken(ttype tid, int at, char* text, int ln, char* idchars);

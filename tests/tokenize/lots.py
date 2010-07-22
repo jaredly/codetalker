@@ -1,19 +1,10 @@
 #!/usr/bin/env python
 
-from codetalker import pgm
-from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE
-from codetalker.pgm.special import star, plus, _or, expand
-from codetalker.pgm.grammar import ParseError
+from util import *
 
-def start(rule):
-    rule | 'what'
+tokenize = just_tokenize(STRING, ID, NUMBER, WHITE, NEWLINE)
 
-grammar = pgm.Grammar(start=start, tokens=[STRING, ID, NUMBER, WHITE, NEWLINE])
-
-def test_one():
-    text = '"a string" an_id 12 14.3\n"and\\"12" .3'
-    tokens = grammar.get_tokens(text)
-    assert len(tokens) == 11
-    assert ''.join(a.value for a in tokens) == text
+test_one = make_test(tokenize, '"a string" an_id 12 14.3\n"and\\" 4" .5',
+                    expected = [STRING, WHITE, ID, WHITE, NUMBER, WHITE, NUMBER, NEWLINE, STRING, WHITE, NUMBER])
 
 # vim: et sw=4 sts=4
