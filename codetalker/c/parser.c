@@ -5,7 +5,7 @@
 #include "stdio.h"
 #include "c/_speed_tokens.h"
 
-/* * /
+/* *
 #define LOG pind();printf
 /*/
 #define LOG //log
@@ -214,7 +214,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
             tmp = parse_rule(item->value.which, grammar, tokens, error);
             if (tmp == NULL) {
                 tokens->at = at;
-                if (tokens->at >= error->at) {
+                if (tokens->at >= error->at && error->reason!=1 && error->reason!=4) {
                     error->at = tokens->at;
                     error->reason = 2;
                     error->token = &tokens->tokens[tokens->at];
