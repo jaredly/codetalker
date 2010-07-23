@@ -827,7 +827,8 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
                         stepnum = 0
                 child = child.next
             else:
-                raise AstError('No child nodes match astAttr %s' % attrs.attrs[i].name)
+                setattr(obj, attrs.attrs[i].name, None)
+                # raise AstError('No child nodes match astAttr %s' % attrs.attrs[i].name)
         else:
             kids = []
             setattr(obj, attrs.attrs[i].name, kids)
