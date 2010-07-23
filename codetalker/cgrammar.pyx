@@ -275,7 +275,7 @@ cdef object try_get_tokens(int gid, char* text, Token** tokens):
         if len(error.text):
             raise TokenError(error.text, error.lineno, error.charno)
 
-def get_parse_tree(gid, text):
+def get_parse_tree(gid, text, start_i):
     cdef Token* tokens
 
     try_get_tokens(gid, text, &tokens)
@@ -284,7 +284,7 @@ def get_parse_tree(gid, text):
     tstream.eof = python_data[gid][1].index(EOF)
 
     cdef cParseNode* ptree
-    try_get_parse_tree(gid, text, &tstream, &ptree)
+    try_get_parse_tree(gid, text, start_i, &tstream, &ptree)
     if ptree == NULL:
         return None
     pyptree = convert_back_ptree(gid, ptree)
@@ -292,13 +292,13 @@ def get_parse_tree(gid, text):
     kill_tokens(tokens)
     return pyptree
 
-cdef object try_get_parse_tree(gid, text, TokenStream* tstream, cParseNode** ptree):
+cdef object try_get_parse_tree(int gid, char* text, int start, TokenStream* tstream, cParseNode** ptree):
     cdef Grammar* grammar = load_grammar(gid)
     cdef Error error
     error.reason = -1
     error.text = '(no error)'
     error.at = 0
-    ptree[0] = _get_parse_tree(0, grammar, tstream, &error)
+    ptree[0] = _get_parse_tree(start, grammar, tstream, &error)
     if tstream.at < tstream.num or (not tstream.num and error.reason != -1):
         if error.reason == 1:
             txt = "Ran out of tokens (expected %s)" % python_data[gid][1][error.wanted].__name__
@@ -332,7 +332,7 @@ cdef char* format_parse_error(int gid, TokenStream* tstream, Error* error):
                 error.text)
     return txt
 
-def get_ast(gid, text, ast_classes, ast_tokens):
+def get_ast(gid, text, start_i, ast_classes, ast_tokens):
     cdef Grammar* grammar = load_grammar(gid)
     cdef Token* tokens
 
@@ -342,7 +342,7 @@ def get_ast(gid, text, ast_classes, ast_tokens):
     tstream.eof = python_data[gid][1].index(EOF)
 
     cdef cParseNode* ptree
-    try_get_parse_tree(gid, text, &tstream, &ptree)
+    try_get_parse_tree(gid, text, start_i, &tstream, &ptree)
     if ptree == NULL:
         return None
     ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)

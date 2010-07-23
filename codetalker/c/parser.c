@@ -143,6 +143,7 @@ struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct
     struct cParseNode* tmp;
     int i;
     LOG("parsing rule %d (token at %d)\n", rule, tokens->at);
+    int at = tokens->at;
     // log('parsing rule', rule)
     indent+=IND;;
     for (i=0; i < grammar->rules.rules[rule].num; i++) {
@@ -158,6 +159,7 @@ struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct
     }
     LOG("failed rule %d\n", rule);
     indent-=IND;
+    tokens->at = at;
     return NULL;
 }
 
