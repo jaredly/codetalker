@@ -12,7 +12,7 @@
  */
 int t_tstring(int at, char* text, int ln) {
     int i = at;
-    if (ln <= at + 6 || (text[i] != '\'' && text[i] != '"')) {
+    if (ln < at + 6 || (text[i] != '\'' && text[i] != '"')) {
         return 0;
     }
     char which = text[i];
@@ -68,6 +68,8 @@ int t_string(int at, char* text, int ln) {
 
 #define num(what) (what >= '0' && what <= '9')
 
+#define hex(what) ((what >= '0' && what <= '9')||(what >= 'a' && what <= 'f')||(what >= 'A' && what <= 'F'))
+
 #define alphanum(what) (alpha_(what) || num(what))
 
 int t_id(int at, char* text, int ln, char* idchars) {
@@ -94,7 +96,6 @@ int t_number(int at, char* text, int ln) {
         while (i < ln && num(text[i])) {
             i++;
         }
-        return i - at;
     } else if (num(text[i])) {
         while (i < ln && num(text[i])) {
             i++;
@@ -105,9 +106,24 @@ int t_number(int at, char* text, int ln) {
         while (i < ln && num(text[i])) {
             i++;
         }
-        return i - at;
+    } else {
+        return 0;
     }
-    return 0;
+    int pre = i;
+    if (i < ln-2 && (text[i] == 'e' || text[i] == 'E')) {
+        i++;
+        if (text[i] == '+' || text[i] == '-') {
+            i++;
+        }
+        if (i >= ln || !num(text[i])) {
+            return pre - at;
+        }
+        i++;
+        while (i < ln && num(text[i])) {
+            i++;
+        }
+    }
+    return i - at;
 }
 
 int t_int(int at, char* text, int ln) {
@@ -119,6 +135,19 @@ int t_int(int at, char* text, int ln) {
         }
     }
     return i - at;
+}
+
+int t_hex(int at, char* text, int ln) {
+    int i = at;
+    if (text[i] == '0' && i < ln - 2 && (text[i+1] == 'x' || text[i+1] == 'X') && hex(text[i+2])) {
+        i += 3;
+        while (i < ln && hex(text[i])) {
+            i++;
+        }
+        return i - at;
+    } else {
+        return 0;
+    }
 }
 
 int t_ccomment(int at, char* text, int ln) {
@@ -184,6 +213,8 @@ int check_ctoken(ttype tid, int at, char* text, int ln, char* idchars) {
             return t_number(at, text, ln);
         case tINT:
             return t_int(at, text, ln);
+        case tHEX:
+            return t_hex(at, text, ln);
         case tCCOMMENT:
             return t_ccomment(at, text, ln);
         case tPYCOMMENT:

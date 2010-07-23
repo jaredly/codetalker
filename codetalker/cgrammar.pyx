@@ -51,6 +51,7 @@ cdef extern from "c/_speed_tokens.h":
         tSTRING   # normal (double-quoted) string
         tID       # [a-zA-Z_][a-zA-Z_0-9]*
         tNUMBER   # ([1-9]+(\.\d*))|(\.\d+)
+        tHEX      # 0xdeadb33f
         tINT      # [1-9][0-9]*
         tCCOMMENT # // blah\n or /** blah **/
         tPYCOMMENT# # blah\n
@@ -207,6 +208,8 @@ class NUMBER(CToken):
     tid = tNUMBER
 class INT(CToken):
     tid = tINT
+class HEX(CToken):
+    tid = tHEX
 class CCOMMENT(CToken):
     tid = tCCOMMENT
 class PYCOMMENT(CToken):

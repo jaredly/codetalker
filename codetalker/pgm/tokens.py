@@ -19,10 +19,10 @@ class INDENT(SpecialToken):
 class DEDENT(SpecialToken):
     '''used by the preprocessor to indicate the end of an indented block'''
 
-from codetalker.cgrammar import TSTRING, SSTRING, STRING, ID, NUMBER, INT, CCOMMENT, PYCOMMENT, WHITE, NEWLINE, ANY, CharToken, StringToken, IdToken
+from codetalker.cgrammar import TSTRING, SSTRING, STRING, ID, NUMBER, INT, HEX, CCOMMENT, PYCOMMENT, WHITE, NEWLINE, ANY, CharToken, StringToken, IdToken
 
 __all__ = ['Token', 'ReToken', 'CharToken', 'StringToken', 'IdToken',
-           'TSTRING', 'SSTRING', 'STRING', 'ID', 'NUMBER', 'INT', 'ANY',
+           'TSTRING', 'SSTRING', 'STRING', 'ID', 'NUMBER', 'INT', 'HEX', 'ANY',
            'CCOMMENT', 'PYCOMMENT', 'WHITE', 'NEWLINE', 'INDENT', 'DEDENT', 'EOF']
 
 # vim: et sw=4 sts=4

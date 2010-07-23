@@ -6,6 +6,7 @@ typedef enum {
     tID,       // [a-zA-Z_][a-zA-Z_0-9]*
     tNUMBER,   // ([1-9]+(\.\d*))|(\.\d+)
     tINT,      // [1-9][0-9]*
+    tHEX,      // 0xdeadb33f
     tCCOMMENT, // // blah\n or /** blah **/
     tPYCOMMENT,// # blah\n
     tWHITE,    // space | \t
