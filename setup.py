@@ -44,7 +44,7 @@ setup(
     ],
     options={
         'test':{
-            'test_dir':['tests/parse', 'tests/tokenize']
+            'test_dir':['tests/parse', 'tests/tokenize', 'tests/contrib']
         },
     },
     requires=['cython'],
