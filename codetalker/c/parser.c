@@ -173,25 +173,27 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
     indent+=IND;
     for (i=0;i<option->num;i++) {
         item = &option->items[i];
-        while (tokens->at < tokens->num) {
-            ignore = 0;
-            for (m=0;m<grammar->ignore.num;m++) {
-                if (tokens->tokens[tokens->at].which == grammar->ignore.tokens[m]) {
-                    ignore = 1;
+        if (!grammar->rules.rules[rule].dont_ignore) {
+            while (tokens->at < tokens->num) {
+                ignore = 0;
+                for (m=0;m<grammar->ignore.num;m++) {
+                    if (tokens->tokens[tokens->at].which == grammar->ignore.tokens[m]) {
+                        ignore = 1;
+                        break;
+                    }
+                }
+                if (ignore == 0) {
                     break;
                 }
+                LOG("ignoring white\n");
+                // log('ignoring white')
+                tmp = _new_parsenode(rule);
+                tmp->token = &tokens->tokens[tokens->at];
+                tmp->type = NTOKEN;
+                current = append_nodes(current, tmp);
+                LOG("inc token %d %d\n", tokens->at, tokens->at+1);
+                tokens->at += 1;
             }
-            if (ignore == 0) {
-                break;
-            }
-            LOG("ignoring white\n");
-            // log('ignoring white')
-            tmp = _new_parsenode(rule);
-            tmp->token = &tokens->tokens[tokens->at];
-            tmp->type = NTOKEN;
-            current = append_nodes(current, tmp);
-            LOG("inc token %d %d\n", tokens->at, tokens->at+1);
-            tokens->at += 1;
         }
         if (tokens->at < tokens->num) {
             LOG("At token %d '%s'\n", tokens->at, tokens->tokens[tokens->at].value);

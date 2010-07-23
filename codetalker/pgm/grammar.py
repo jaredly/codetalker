@@ -99,8 +99,6 @@ class Grammar:
         self.ast_attrs.append(())
         builder(rule)
         rule.builder = builder
-        if rule.dont_ignore:
-            self.dont_ignore.append(num)
         if not rule.options:
             raise Exception('no rule options specified in %r' % builder)
         attrs = []
@@ -138,16 +136,6 @@ class Grammar:
             ## TODO: convert name to TitleCase for class name?
             setattr(self.ast_classes, name, type(name, (AstNode,), {'__slots__':('_rule',) + tuple(rule.astAttrs.keys())}))
         return num
-
-    def load_token(self, builder):
-        if builder in self.token_dict:
-            return self.token_dict[builder]
-        num = len(self.token_rules)
-        name = getattr(builder, 'tokenName', builder.__name__)
-        rule = RuleLoader(self, token=True)
-        self.token_dict[builder] = num
-        self.token_rules.append(rule)
-        builder(rule)
 
     def get_tokens(self, text):
         return get_tokens(self.GID, text)
