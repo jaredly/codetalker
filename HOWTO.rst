@@ -13,14 +13,15 @@ Specifying Tokens
 
 - CTokens (built-in, c optimized)
 
- - STRING
- - SSTRING
- - TSTRING
- - CCOMMENT
- - PYCOMMENT
- - NUMBER
- - INT
- - ID
+ - STRING # normal " string
+ - SSTRING # single-quoted ' string
+ - TSTRING # triple-quoted ''' or """ pythonic string
+ - CCOMMENT # c-style comment /** \**/ //
+ - PYCOMMENT # python-style comment
+ - NUMBER # an integer or float
+ - INT # an integer
+ - ID # usually [a-zA-Z\_][a-zA-Z_0-9]*
+ - ANY # matches any single char
 
 - CharToken
 
@@ -30,6 +31,10 @@ Specifying Tokens
 - StringToken
 
  - matches 'one of the specified strings'
+
+- IdToken
+
+ - matches 'one of the specified strings' *followed by a non-id character*
  - example: RESERVED_WORDS
 
 - ReToken
@@ -56,7 +61,7 @@ Defining Rules
     - ``[optional, children, ...]``
     - ``star(zero, or_more)``
     - ``plus(one, or_more)``
-    - ``or_(one, of, these)``
+    - ``_or(one, of, these)``
     - ``TOKEN``
 
 Abstract Syntax Tree Attributes
@@ -101,8 +106,8 @@ The complex definition is a dictionary, where the ``type`` parameter follows
 the *simple* definition above.
 
 :type: atype | [atype] | [atype, anothertype]
-:start: (int) used for slicing (default: None)
-:end: (int) also for slicing (default: None
+:start: (int) used for slicing (default: 0)
+:end: (int) also for slicing (default: 0 [means no limit])
 :step: (int) (default: 1)
 
 As you can see, if you don't need slicing, you can just use the simple spec.
@@ -196,7 +201,7 @@ You get:
 
 .. code-block:: python
 
-    t = Translator(grammar)
+    t = Translator(grammar, bar=0)
 
     @t.translates(ast.Foo)
     def deal_with_foo(node, scope):
@@ -212,12 +217,22 @@ the way you'd expect.
 
 The ``scope`` variable that you saw me passing around is an anonymous object
 that is really useful if you need to maintain any kind of state while
-translating (local variables, etc.).
+translating (local variables, etc.). To "turn on" scope usage, pass some
+keyword arguments to the translator, which will populate the default
+attributes of the scope. example:
 
-Once you've populated your translator, you can call ``t.from_string(text,
-**args)`` to first turn the ``text`` into an AST, and then translate the AST.
+.. code-block:: python
 
-``args`` is a dictionary used to prepopulate the attributes of ``scope``.
+    t = Translator(grammar, variables={}, call_stack=[])
+
+The ``scope`` object that gets passed around will then have the attributes
+"variables" and "call_stack". For a good example of using the translation
+scope, look at `CleverCSS2 <http://jaredforsyth.com/projects/clevercss2/>`_.
+*If you don't "turn on" the scope, it doesn't get passed around -- your
+translator functions should only take one argument.*
+
+Once you've populated your translator, you can call ``t.from_string(text)`` to
+first turn the ``text`` into an AST, and then translate the AST.
 
 Here's a really simple example of a translator function (taken from the `json
 grammar
@@ -226,8 +241,8 @@ grammar
 .. code-block:: python
 
     @JSON.translates(ast.List)
-    def t_list(node, scope):
-        return list(JSON.translate(value, scope) for value in node.values)
+    def t_list(node):
+        return list(JSON.translate(value) for value in node.values)
 
 Now you're ready to look at the examples:
 
@@ -235,4 +250,10 @@ Now you're ready to look at the examples:
   <http://github.com/jabapyth/codetalker/blob/master/codetalker/contrib/json.py>`_
 - `math
   <http://github.com/jabapyth/codetalker/blob/master/codetalker/contrib/math.py>`_
+- `CleverCSS2
+  <http://github.com/jabapyth/clevercss2/blob/master/clevercss/grammar.py>`_
+- `python-css <http://github.com/jabapyth/css/blob/master/css/grammar.py>`_
+
+If you have any suggestion as to how to improve this document, feel free to
+let me know at jared@jaredforsyth.com
 
