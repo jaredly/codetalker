@@ -44,6 +44,7 @@ cdef extern from "c/_speed_tokens.h":
     int check_chartoken(char* chars, int num, int at, char* text, int ln)
     int check_stringtoken(char** strings, int num, int at, char* text, int ln)
     int check_idtoken(char** strings, int num, int at, char* text, int ln, char* idchars)
+    int check_iidtoken(char** strings, int num, int at, char* text, int ln, char* idchars)
     int t_white(int at, char* text, int ln)
     enum ttype:
         tTSTRING  # triple string
@@ -71,6 +72,7 @@ cdef extern from "c/parser.h":
         STRTOKEN
         RETOKEN
         IDTOKEN
+        IIDTOKEN
 
     union PTokenValue:
         char** strings
@@ -232,6 +234,10 @@ class StringToken(PyToken):
 
 class IdToken(PyToken):
     _type = IDTOKEN
+    strings = []
+
+class IIdToken(PyToken):
+    _type = IIDTOKEN
     strings = []
 
 python_data = {}
@@ -517,6 +523,12 @@ cdef PTokens convert_ptokens(object tokens):
             ptokens.tokens[i].value.strings = <char**>malloc(sizeof(char*)*ptokens.tokens[i].num)
             for m from 0<=m<ptokens.tokens[i].num:
                 ptokens.tokens[i].value.strings[m] = tokens[i].strings[m]
+        elif issubclass(tokens[i], IIdToken):
+            ptokens.tokens[i].type = IIDTOKEN
+            ptokens.tokens[i].num = len(tokens[i].strings)
+            ptokens.tokens[i].value.strings = <char**>malloc(sizeof(char*)*ptokens.tokens[i].num)
+            for m from 0<=m<ptokens.tokens[i].num:
+                ptokens.tokens[i].value.strings[m] = tokens[i].strings[m]
         else:
             ptokens.num = -1
             print 'failed'
@@ -647,6 +659,12 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
                 for m from 0<=m<num:
                     strings[m] = tokens[i].strings[m]
                 res = check_idtoken(strings, num, state.at, state.text, state.ln, idchars)
+            elif tokens[i]._type == IIDTOKEN:
+                num = len(tokens[i].strings)
+                strings = <char**>malloc(sizeof(char*)*num)
+                for m from 0<=m<num:
+                    strings[m] = tokens[i].strings[m]
+                res = check_iidtoken(strings, num, state.at, state.text, state.ln, idchars)
             elif tokens[i]._type == RETOKEN:
                 res = tokens[i].check(state.text[state.at:])
             else:

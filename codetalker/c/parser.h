@@ -9,7 +9,8 @@ typedef enum {
     CHARTOKEN,
     STRTOKEN,
     RETOKEN,
-    IDTOKEN
+    IDTOKEN,
+    IIDTOKEN
 } t_type;
 
 union PTokenValue {

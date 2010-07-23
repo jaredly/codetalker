@@ -481,6 +481,9 @@ struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, stru
                 case IDTOKEN:
                     res = check_idtoken(ptoken.value.strings, ptoken.num, state.at, text, state.ln, grammar->idchars);
                     break;
+                case IIDTOKEN:
+                    res = check_iidtoken(ptoken.value.strings, ptoken.num, state.at, text, state.ln, grammar->idchars);
+                    break;
                 default:
                     res = 0;
             }
