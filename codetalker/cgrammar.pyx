@@ -832,3 +832,41 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
     # print 'got ast'
     return obj
 
+cdef object get_ast_children(cParseNode* child, object ast_tokens, AstAttr* attr, Grammar* grammar, int* cnum, int* stepnum, int gid, object ast_classes):
+
+    if attr.single:
+        while child != NULL:
+            if child.type == NNODE and not grammar.ast_attrs.attrs[child.rule].attrs.num:
+                sub_children = get_ast_children(child.child, ast_tokens, attr, grammar, cnum, stepnum, gid, ast_classes)
+                if len(sub_children):
+                    return [sub_children[0]]
+            elif matches(child, attr.types[0]):
+                if stepnum[0] == 0 and cnum[0] >= attr.start and (attr.end == 0 or cnum[0] < attr.end):
+                    return [_get_ast(grammar, gid, child, ast_classes, ast_tokens)]
+                cnum[0] += 1
+                stepnum[0] += 1
+                if stepnum[0] == attr.step:
+                    stepnum[0] = 0
+            child = child.next
+        return []
+    else:
+        children = []
+        while child != NULL:
+            if child.type == NNODE and not grammar.ast_attrs.attrs[child.rule].attrs.num:
+                sub_children = get_ast_children(child.child, ast_tokens, attr, grammar, cnum, stepnum, gid, ast_classes)
+                if len(sub_children):
+                    children += sub_children
+            else:
+                for m from 0 <= m < attr.numtypes:
+                    if matches(child, attr.types[m]):
+                        if stepnum[0] == 0 and cnum[0] >= attr.start and (attr.end == 0 or cnum[0] < attr.end):
+                            children.append(_get_ast(grammar, gid, child, ast_classes, ast_tokens))
+                        cnum[0] += 1
+                        stepnum[0] += 1
+                        if stepnum[0] == attr.step:
+                            stepnum[0] = 0
+                        break
+            child = child.next
+        return children
+
+
