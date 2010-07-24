@@ -21,7 +21,7 @@ class DEDENT(SpecialToken):
 
 from codetalker.cgrammar import TSTRING, SSTRING, STRING, ID, NUMBER, INT, HEX, CCOMMENT, CMCOMMENT, PYCOMMENT, WHITE, NEWLINE, ANY, CharToken, StringToken, IdToken, IIdToken
 
-__all__ = ['Token', 'ReToken', 'CharToken', 'StringToken', 'IdToken',
+__all__ = ['Token', 'ReToken', 'CharToken', 'StringToken', 'IdToken', 'IIdToken',
            'TSTRING', 'SSTRING', 'STRING', 'ID', 'NUMBER', 'INT', 'HEX', 'ANY',
            'CCOMMENT', 'CMCOMMENT', 'PYCOMMENT', 'WHITE', 'NEWLINE', 'INDENT', 'DEDENT', 'EOF']
 
