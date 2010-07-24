@@ -26,6 +26,8 @@ class Translator:
         return meta
 
     def translate(self, tree, scope=None):
+        if isinstance(tree, Token) and tree.__class__ not in self.register:
+            return tree.value
         if self.scope:
             return self.register[tree.__class__](tree, scope)
         else:
