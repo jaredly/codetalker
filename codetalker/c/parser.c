@@ -154,7 +154,9 @@ struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct
         if (tmp != NULL) {
             LOG("CHild success! %d\n", i);
             // log('child success!', i)
-            node->child = tmp;
+            if (tmp != UNINITIALIZED) {
+                node->child = tmp;
+            }
             indent-=IND;
             return node;
         }

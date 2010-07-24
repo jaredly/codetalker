@@ -21,7 +21,7 @@ from codetalker import testing
 
 parse_rule = testing.parse_rule(__name__, g)
 
-parse_rule(at, (
+parse_rule(many, (
     '{@one "hi";}',
     '{@two "ho" ;}',
     '{@three lots of stuff;}',
