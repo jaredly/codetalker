@@ -37,6 +37,7 @@ everythin else is in here.
 
 cdef extern from "stdlib.h" nogil:
     char* strncpy(char* dest, char* src, int num)
+    char* strcpy(char* dest, char* src)
     int strncmp(char* dest, char* src, int num)
 
 cdef extern from "c/_speed_tokens.h":
@@ -515,6 +516,8 @@ cdef PTokens convert_ptokens(object tokens):
             ptokens.tokens[i].type = STRTOKEN
             ptokens.tokens[i].num = len(tokens[i].strings)
             ptokens.tokens[i].value.strings = <char**>malloc(sizeof(char*)*ptokens.tokens[i].num)
+            # cache = ''.join(st[0] for st in tokens[i].strings)
+            # ptokens.tokens[i].cache = cache
             for m from 0<=m<ptokens.tokens[i].num:
                 ptokens.tokens[i].value.strings[m] = tokens[i].strings[m]
         elif issubclass(tokens[i], CharToken):
@@ -525,12 +528,16 @@ cdef PTokens convert_ptokens(object tokens):
             ptokens.tokens[i].type = IDTOKEN
             ptokens.tokens[i].num = len(tokens[i].strings)
             ptokens.tokens[i].value.strings = <char**>malloc(sizeof(char*)*ptokens.tokens[i].num)
+            # cache = ''.join(st[0] for st in tokens[i].strings)
+            # ptokens.tokens[i].cache = cache
             for m from 0<=m<ptokens.tokens[i].num:
                 ptokens.tokens[i].value.strings[m] = tokens[i].strings[m]
         elif issubclass(tokens[i], IIdToken):
             ptokens.tokens[i].type = IIDTOKEN
             ptokens.tokens[i].num = len(tokens[i].strings)
             ptokens.tokens[i].value.strings = <char**>malloc(sizeof(char*)*ptokens.tokens[i].num)
+            # cache = ''.join(st[0] for st in tokens[i].strings)
+            # ptokens.tokens[i].cache = cache
             for m from 0<=m<ptokens.tokens[i].num:
                 ptokens.tokens[i].value.strings[m] = tokens[i].strings[m]
         else:
@@ -610,6 +617,10 @@ cdef struct TokenState:
     int num_indents
     int max_indents
 
+cdef struct cache_one:
+    char** strings
+    int num
+
 cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
     tokens = python_data[gid][1]
     cdef:
@@ -622,13 +633,12 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
         int res = 0
         int num = 0
         int ntokens = len(tokens) - 3 # ignore INDENT, DEDENT, EOF
-        char** strings = NULL
+        # char** strings = NULL
         bint indent = python_data[gid][2]
 
     state.at = 0
     state.text = text
     state.ln = len(text)
-    # print "tokenizing '%s' (length %d)'" % (str(text).encode('string_escape'), state.ln)
     state.lineno = 1
     state.charno = 1
 
@@ -640,34 +650,45 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
     ID_t = tokens.index(INDENT)
     DD_t = tokens.index(DEDENT)
 
+    ## a bit of JIT caching -- should be moved out of here,
+    ## but this is good enough for now
+    cdef int nstrs = 0
+    for i from 0<=i<ntokens:
+        if tokens[i]._type in (STRTOKEN, IDTOKEN, IIDTOKEN):
+            nstrs += 1
+
+    cdef cache_one* str_cache
+    str_cache = <cache_one*>malloc(sizeof(cache_one)*nstrs);
+    cdef int at = 0
+    for i from 0<=i<ntokens:
+        if tokens[i]._type in (STRTOKEN, IDTOKEN, IIDTOKEN):
+            tokens[i]._str_cid = at
+            num = len(tokens[i].strings)
+            str_cache[at].num = num
+            str_cache[at].strings = <char**>malloc(sizeof(char*)*num)
+            for m from 0<=m<num:
+                str_cache[at].strings[m] = tokens[i].strings[m]
+                # <char*>malloc(sizeof(char)*(len(tokens[i].strings[m])+1))
+                # strcpy(str_cache[at].strings[m], tokens[i].strings[m])
+                # str_cache[at].strings[m][len(tokens[i].strings[m])] = '\0'
+            at += 1
+
     while state.at < state.ln:
-        # print 'at',state.at
         for i from 0<=i<ntokens:
-            # print 'for token', tokens[i]
+            # print 'checking token', tokens[i]
             if tokens[i]._type == CTOKEN:
                 res = check_ctoken(tokens[i].tid, state.at, state.text, state.ln, idchars)
             elif tokens[i]._type == CHARTOKEN:
-                # print 'chartoken', tokens[i].chars, tokens[i].num
                 res = check_chartoken(tokens[i].chars, len(tokens[i].chars), state.at, state.text, state.ln)
             elif tokens[i]._type == STRTOKEN:
-                # print 'stringtoken', tokens[i].strings
-                num = len(tokens[i].strings)
-                strings = <char**>malloc(sizeof(char*)*num)
-                for m from 0<=m<num:
-                    strings[m] = tokens[i].strings[m]
-                res = check_stringtoken(strings, num, state.at, state.text, state.ln)
+                res = check_stringtoken(str_cache[tokens[i]._str_cid].strings,
+                        str_cache[tokens[i]._str_cid].num, state.at, state.text, state.ln)
             elif tokens[i]._type == IDTOKEN:
-                num = len(tokens[i].strings)
-                strings = <char**>malloc(sizeof(char*)*num)
-                for m from 0<=m<num:
-                    strings[m] = tokens[i].strings[m]
-                res = check_idtoken(strings, num, state.at, state.text, state.ln, idchars)
+                res = check_idtoken(str_cache[tokens[i]._str_cid].strings,
+                        str_cache[tokens[i]._str_cid].num, state.at, state.text, state.ln, idchars)
             elif tokens[i]._type == IIDTOKEN:
-                num = len(tokens[i].strings)
-                strings = <char**>malloc(sizeof(char*)*num)
-                for m from 0<=m<num:
-                    strings[m] = tokens[i].strings[m]
-                res = check_iidtoken(strings, num, state.at, state.text, state.ln, idchars)
+                res = check_iidtoken(str_cache[tokens[i]._str_cid].strings,
+                        str_cache[tokens[i]._str_cid].num, state.at, state.text, state.ln, idchars)
             elif tokens[i]._type == RETOKEN:
                 res = tokens[i].check(state.text[state.at:])
             else:

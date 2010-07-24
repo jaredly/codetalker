@@ -23,6 +23,7 @@ struct PToken {
     unsigned int which;
     t_type type;
     union PTokenValue value;
+    char* cache;
     int num;
 };
 

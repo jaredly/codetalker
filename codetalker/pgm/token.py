@@ -2,7 +2,7 @@
 
 class Token(object):
     '''Base token class'''
-    __slots__ = ('lineno', 'charno', 'value', 'special')
+    # __slots__ = ('lineno', 'charno', 'value', 'special')
     def __init__(self, value, lineno=-1, charno=-1):
         self.lineno = lineno
         self.charno = charno
