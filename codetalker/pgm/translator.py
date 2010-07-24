@@ -23,11 +23,24 @@ class Translator:
     def translates(self, what):
         def meta(func):
             self.register[what] = func
+            def beta(node, scope=None):
+                if node is None:
+                    return None
+                if self.scope:
+                    return func(node, scope)
+                else:
+                    return func(node)
+            return beta
         return meta
 
     def translate(self, tree, scope=None):
-        if isinstance(tree, Token) and tree.__class__ not in self.register:
-            return tree.value
+        if tree is None:
+            return None
+        if tree.__class__ not in self.register:
+            if isinstance(tree, Token):
+                return tree.value
+            raise TranslatorException('no rule to translate %s' % tree.__class__.__name__)
+
         if self.scope:
             return self.register[tree.__class__](tree, scope)
         else:

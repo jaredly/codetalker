@@ -794,6 +794,7 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
             if child.type != NTOKEN or child.token.which in ast_tokens:
                 return _get_ast(grammar, gid, child, ast_classes, ast_tokens)
             child = child.next
+        return None
     elif not attrs.num:
         # print 'pass multi'
         res = []
