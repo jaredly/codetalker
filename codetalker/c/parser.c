@@ -104,6 +104,7 @@ struct cParseNode* _get_parse_tree(int start, struct Grammar* grammar, struct To
     struct cParseNode* tmp;
     int m, ignore;
     int rule = start;
+    LOG("ignore any trailing ignores\n");
     while (tokens->at < tokens->num) {
         ignore = 0;
         for (m=0;m<grammar->ignore.num;m++) {
@@ -148,6 +149,7 @@ struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct
     indent+=IND;;
     for (i=0; i < grammar->rules.rules[rule].num; i++) {
         // log('child rule:', i)
+        tokens->at = at;
         tmp = parse_children(rule, &(grammar->rules.rules[rule].options[i]), grammar, tokens, error);
         if (tmp != NULL) {
             LOG("CHild success! %d\n", i);
@@ -341,6 +343,9 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
                 break;
             }
             current = append_nodes(current, tmp);
+            if (at == tokens->at) {
+                break;
+            }
         }
         LOG("awesome star\n");
         indent-=IND;
@@ -356,6 +361,9 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
             return NULL;
         }
         current = append_nodes(current, tmp);
+        if (at == tokens->at) {
+            return current;
+        }
         while (tokens->at < tokens->num) {
             at = tokens->at;
             tmp = parse_children(rule, special.option, grammar, tokens, error);
@@ -364,6 +372,9 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
                 break;
             }
             current = append_nodes(current, tmp);
+            if (at == tokens->at) {
+                break;
+            }
         }
         LOG("good plus\n");
         indent-=IND;
@@ -415,6 +426,30 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
         LOG("ignore success! back to %d %d", grammar->rules.rules[rule].dont_ignore, before_ignore);
         indent-=IND;
         return current;
+    } else if (special.type == NOT) {
+        LOG("NOT\n");
+        at = tokens->at;
+        tmp = parse_children(rule, special.option, grammar, tokens, error);
+        if (tmp == NULL) {
+            if (tokens->at < tokens->num) {
+                tmp = _new_parsenode(rule);
+                tmp->token = &tokens->tokens[tokens->at];
+                tmp->type = NTOKEN;
+                tokens->at += 1;
+                current = append_nodes(current, tmp);
+                LOG("awesome. eating token\n");
+            } else {
+                LOG("not enough tokens to eat\n");
+                at = tokens->at;
+                return NULL;
+            }
+            indent-=IND;
+            return current;
+        }
+        LOG("nope, it passed\n");
+        tokens->at = at;
+        indent-=IND;
+        return NULL;
     } else {
         // print 'unknown special type:', special.type;
         indent-=IND;
@@ -426,15 +461,27 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
 }
 
 struct cParseNode* append_nodes(struct cParseNode* one, struct cParseNode* two) {
+    LOG("appending nodes; %d to %d\n", (int)one, (int)two);
     if (one == UNINITIALIZED) {
+        LOG("good (noone)\n");
         return two;
+    } else if (one == NULL) {
+        return two;
+    } else if (two == NULL) {
+        return one;
+    } else if (two == UNINITIALIZED) {
+        return one;
     }
     struct cParseNode* tmp = two;
+    LOG("getting prev\n");
     while (tmp->prev != NULL) {
         tmp = tmp->prev;
     }
+    LOG("got prev\n");
     one->next = tmp;
+    LOG("mid\n");
     tmp->prev = one;
+    LOG("good\n");
     return two;
 }
 
