@@ -486,15 +486,12 @@ cdef object convert_ast_attr(char* name, object ast_attr, object rules, object t
     if type(ast_attr) != dict:
         ast_attr = {'type':ast_attr}
     attr.single = ast_attr.get('single', type(ast_attr.get('type')) not in (list, tuple))
-    if attr.single:
-        attr.numtypes = 1
-        attr.types = <int*>malloc(sizeof(int))
-        attr.types[0] = which_rt(ast_attr['type'], rules, tokens)
-    else:
-        attr.numtypes = len(ast_attr['type'])
-        attr.types = <int*>malloc(sizeof(int)*attr.numtypes)
-        for i from 0<=i<attr.numtypes:
-            attr.types[i] = which_rt(ast_attr['type'][i], rules, tokens)
+    if type(ast_attr.get('type')) not in (tuple, list):
+        ast_attr['type'] = [ast_attr['type']]
+    attr.numtypes = len(ast_attr['type'])
+    attr.types = <int*>malloc(sizeof(int)*attr.numtypes)
+    for i from 0<=i<attr.numtypes:
+        attr.types[i] = which_rt(ast_attr['type'][i], rules, tokens)
 
     attr.start = ast_attr.get('start', 0)
     attr.end = ast_attr.get('end', 0)
@@ -820,17 +817,21 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
             while child != NULL:
                 # print 'looking', attrs.attrs[i].numtypes
                 # print attrs.attrs[i].types[0]
-                if matches(child, attrs.attrs[i].types[0]):
-                    # print 'match!'
-                    if stepnum == 0 and cnum >= attrs.attrs[i].start:
-                        setattr(obj, attrs.attrs[i].name, _get_ast(grammar, gid, child, ast_classes, ast_tokens))
-                        break
-                    # print '(but not gotten)'
-                    cnum += 1
-                    stepnum += 1
-                    if stepnum == attrs.attrs[i].step:
-                        stepnum = 0
-                child = child.next
+                for m from 0<=m<attrs.attrs[i].numtypes:
+                    if matches(child, attrs.attrs[i].types[m]):
+                        # print 'match!'
+                        if stepnum == 0 and cnum >= attrs.attrs[i].start:
+                            setattr(obj, attrs.attrs[i].name, _get_ast(grammar, gid, child, ast_classes, ast_tokens))
+                            break
+                        # print '(but not gotten)'
+                        cnum += 1
+                        stepnum += 1
+                        if stepnum == attrs.attrs[i].step:
+                            stepnum = 0
+                else:
+                    child = child.next
+                    continue
+                break
             else:
                 setattr(obj, attrs.attrs[i].name, None)
                 # raise AstError('No child nodes match astAttr %s' % attrs.attrs[i].name)

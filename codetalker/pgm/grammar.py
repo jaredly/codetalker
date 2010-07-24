@@ -151,9 +151,7 @@ class Grammar:
         self.tokens = tuple(self.tokens) + self.special_tokens
         for rule in self.rules:
             for option in rule.options:
-                print 'option', option
                 self.replace_ind(option)
-                print 'converted', option
 
     def replace_ind(self, option):
         for i,item in enumerate(option):

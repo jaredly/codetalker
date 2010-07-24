@@ -32,7 +32,7 @@ def list_(rule):
 list_.astName = 'List'
 
 grammar = Grammar(start=value,
-                  tokens=[STRING, NUMBER, NEWLINE, WHITE, SYMBOL, TFN],
+                  tokens=[SYMBOL],
                   ignore=[WHITE, NEWLINE],
                   ast_tokens=[STRING, TFN, NUMBER])
 
