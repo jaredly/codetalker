@@ -62,7 +62,7 @@ enum RuleItemType {
 };
 
 enum RuleSpecialType {
-    STAR, PLUS, QUESTION, OR, STRAIGHT
+    STAR, PLUS, QUESTION, OR, STRAIGHT, NOT, NOIGNORE
 };
 
 struct RuleSpecial {

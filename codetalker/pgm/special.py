@@ -15,6 +15,13 @@ class qstart(Special):
     char = '*?'
 class qplus(Special):
     char = '+?'
+class no_ignore(Special):
+    char = 'i'
+
+''' not implemented yet:
+class _not(Special):
+    char = '!'
+'''
 
 import string
 def expand(crange):

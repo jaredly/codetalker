@@ -116,7 +116,7 @@ cdef extern from "c/parser.h":
         LITERAL, RULE, TOKEN, SPECIAL
 
     enum RuleSpecialType:
-        STAR, PLUS, QUESTION, OR, STRAIGHT
+        STAR, PLUS, QUESTION, OR, STRAIGHT, NOIGNORE, NOT
 
     struct RuleSpecial:
         RuleSpecialType type
@@ -438,6 +438,10 @@ cdef RuleItem convert_item(object item, bint from_or=False):
             to_or = True
         elif item[0] == '?':
             citem.value.special.type = QUESTION
+        elif item[0] == '!':
+            citem.value.special.type = NOT
+        elif item[0] == 'i':
+            citem.value.special.type = NOIGNORE
 
         citem.value.special.option[0] = convert_option(item[1:], to_or)
     return citem

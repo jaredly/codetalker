@@ -21,8 +21,10 @@ def parse_rule(name, grammar):
             return meta
         for i, string in enumerate(passing):
             fn = _pass(string)
+            print 'making pass',i
             mod.__dict__['test_pass_rule_%s #%d' % (rule.__name__, i)] = fn
         for i, string in enumerate(failing):
+            print 'making fail',i
             fn = _fail(string)
             mod.__dict__['test_fail_rule_%s #%d' % (rule.__name__, i)] = fn
     return meta

@@ -398,6 +398,23 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
         LOG("got maybe\n");
         indent-=IND;
         return current;
+    } else if (special.type == NOIGNORE) {
+        LOG("no ignore (initial %d)\n", grammar->rules.rules[rule].dont_ignore);
+        int before_ignore = grammar->rules.rules[rule].dont_ignore;
+        at = tokens->at;
+        grammar->rules.rules[rule].dont_ignore = 1;
+        tmp = parse_children(rule, special.option, grammar, tokens, error);
+        grammar->rules.rules[rule].dont_ignore = before_ignore;
+        if (tmp == NULL) {
+            tokens->at = at;
+            LOG("failed ignore\n");
+            indent-=IND;
+            return NULL;
+        }
+        current = append_nodes(current, tmp);
+        LOG("ignore success! back to %d %d", grammar->rules.rules[rule].dont_ignore, before_ignore);
+        indent-=IND;
+        return current;
     } else {
         // print 'unknown special type:', special.type;
         indent-=IND;
