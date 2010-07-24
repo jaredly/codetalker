@@ -249,7 +249,7 @@ def consume_grammar(rules, ignore, indent, idchars, rule_names, rule_funcs, toke
     cdef Grammar grammar
     grammar.rules = convert_rules(rules)
     grammar.ignore = convert_ignore(ignore, tokens)
-    grammar.ast_attrs = convert_ast_attrs(ast_attrs, rule_funcs, tokens)
+    convert_ast_attrs(ast_attrs, rule_funcs, tokens, &grammar.ast_attrs)
     grammar.tokens = convert_ptokens(tokens)
     grammar.idchars = idchars
     cdef int gid = store_grammar(grammar)
@@ -454,8 +454,9 @@ cdef IgnoreTokens convert_ignore(object ignore, object tokens):
         itokens.tokens[i] = tokens.index(ignore[i])
     return itokens
 
-cdef AstAttrs* convert_ast_attrs(object ast_attrs, object rules, object tokens):
+cdef object convert_ast_attrs(object ast_attrs, object rules, object tokens, AstAttrs** attrs):
     cdef AstAttrs* result = <AstAttrs*>malloc(sizeof(AstAttrs)*len(ast_attrs))
+    attrs[0] = result
     for i from 0<=i<len(ast_attrs):
         # print ast_attrs[i],i
         if ast_attrs[i]['pass_single']:
@@ -471,8 +472,7 @@ cdef AstAttrs* convert_ast_attrs(object ast_attrs, object rules, object tokens):
             result[i].attrs = NULL
 
         for m from 0<=m<result[i].num:
-            result[i].attrs[m] = convert_ast_attr(keys[m], ast_attrs[i]['attrs'][keys[m]], rules, tokens)
-    return result
+             convert_ast_attr(keys[m], ast_attrs[i]['attrs'][keys[m]], rules, tokens, &result[i].attrs[m])
 
 cdef object which_rt(object it, object rules, object tokens):
     if it in rules:
@@ -481,8 +481,7 @@ cdef object which_rt(object it, object rules, object tokens):
         return -(1 + tokens.index(it))
     raise Exception('invalid AST type: %s' % (it,))
 
-cdef AstAttr convert_ast_attr(char* name, object ast_attr, object rules, object tokens):
-    cdef AstAttr attr
+cdef object convert_ast_attr(char* name, object ast_attr, object rules, object tokens, AstAttr* attr):
     attr.name = name
     if type(ast_attr) != dict:
         ast_attr = {'type':ast_attr}
@@ -500,8 +499,6 @@ cdef AstAttr convert_ast_attr(char* name, object ast_attr, object rules, object 
     attr.start = ast_attr.get('start', 0)
     attr.end = ast_attr.get('end', 0)
     attr.step = ast_attr.get('step', 1)
-
-    return attr
 
 cdef PTokens convert_ptokens(object tokens):
     cdef PTokens ptokens
