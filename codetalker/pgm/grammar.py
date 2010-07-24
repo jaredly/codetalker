@@ -182,6 +182,8 @@ class Grammar:
         '''
         if start is None:
             start = self.start
+        if start not in self.rule_dict:
+            raise KeyError("Invalid start rule", start, self.rule_dict.keys())
         start_i = self.rule_dict[start]
         return get_parse_tree(self.GID, text, start_i)
     process = get_parse_tree
