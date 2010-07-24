@@ -27,7 +27,7 @@ class Grammar:
     text, it gives you back a ParseTree (tokenizes and parses)
     '''
     special_tokens = (INDENT, DEDENT, EOF)
-    def __init__(self, start, tokens, ignore=(), idchars='', indent=False, ast_tokens=()):
+    def __init__(self, start, tokens=(), ignore=(), idchars='', indent=False, ast_tokens=()):
         '''Grammar constructor
 
             start: the start rule [function]
@@ -38,8 +38,14 @@ class Grammar:
                     sensitive languages such as python) self.start = start
         '''
         self.start = start
-        self.tokens = tuple(tokens) + self.special_tokens
+        self.tokens = list(tokens) # + self.special_tokens
         self.ignore = tuple(ignore)
+        for i in ignore:
+            if i not in self.tokens and i not in self.special_tokens:
+                self.tokens.append(i)
+        for i in ast_tokens:
+            if i not in self.tokens and i not in self.special_tokens:
+                self.tokens.append(i)
         self.ast_tokens = tuple(self.tokens.index(tok) for tok in ast_tokens)
         self.indent = indent
         self.idchars = idchars
@@ -56,6 +62,7 @@ class Grammar:
         self.ast_classes = type('ClassHolder', (), {})
 
         self.load_rule(self.start)
+        self.replace_tokens()
 
         ## cache the grammar definition
         self.GID = consume_grammar(self.rules, self.ignore, self.indent,
@@ -114,6 +121,8 @@ class Grammar:
                 if inspect.isclass(typ):
                     if not issubclass(typ, Token):
                         raise AstError('invalid ast "type": %s (must be a token or rule)' % typ)
+                    elif typ not in self.tokens:
+                        self.tokens.append(typ)
                 elif inspect.isfunction(typ):
                     if typ not in self.rule_dict:
                         raise AstError('invalid ast "type": %s (must be a token or rule)' % typ)
@@ -137,6 +146,24 @@ class Grammar:
             ## TODO: convert name to TitleCase for class name?
             setattr(self.ast_classes, name, type(name, (AstNode,), {'__slots__':('_rule',) + tuple(rule.astAttrs.keys())}))
         return num
+
+    def replace_tokens(self):
+        self.tokens = tuple(self.tokens) + self.special_tokens
+        for rule in self.rules:
+            for option in rule.options:
+                print 'option', option
+                self.replace_ind(option)
+                print 'converted', option
+
+    def replace_ind(self, option):
+        for i,item in enumerate(option):
+            if inspect.isclass(item) and issubclass(item, Token):
+                option[i] = -(1 + self.tokens.index(item))
+            elif type(item) in (tuple, list):
+                t = type(item)
+                tmp = list(item)
+                self.replace_ind(tmp)
+                option[i] = t(tmp)
 
     def get_tokens(self, text):
         return get_tokens(self.GID, text)

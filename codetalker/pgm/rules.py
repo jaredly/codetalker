@@ -2,6 +2,7 @@
 
 from errors import *
 import tokens
+from tokens import Token
 import types
 from special import Special
 import inspect
@@ -26,8 +27,12 @@ class RuleLoader(object):
     def process(self, what):
         if type(what) == str:
             return [what]
-        elif not self.token and what in self.grammar.tokens:
-            return [-(self.grammar.tokens.index(what) + 1)]
+        elif inspect.isclass(what) and issubclass(what, Token):
+            if what not in self.grammar.tokens and what not in self.grammar.special_tokens:
+                print 'adding', what
+                self.grammar.tokens.append(what)
+            return [what]
+            # return [-(self.grammar.tokens.index(what) + 1)]
         elif type(what) == tuple:
             options = []
             for item in what:
@@ -47,10 +52,7 @@ class RuleLoader(object):
                     options += self.process(item)
             return [(what.char,) + tuple(options)]
         elif type(what) == types.FunctionType:
-            if self.token:
-                return [self.grammar.load_token(what)]
-            else:
-                return [self.grammar.load_rule(what)]
+            return [self.grammar.load_rule(what)]
         else:
             raise RuleError('invalid rule item found: %s' % what)
 

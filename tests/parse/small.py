@@ -2,7 +2,7 @@
 
 from codetalker import pgm
 from codetalker.pgm.tokens import STRING, ID, NUMBER, WHITE, NEWLINE
-from codetalker.pgm.special import star, plus, _or, expand
+from codetalker.pgm.special import star, plus, _or
 from codetalker.pgm.grammar import ParseError
 
 def start(rule):
