@@ -11,20 +11,18 @@ class plus(Special):
     char = '+'
 class _or(Special):
     char = '|'
-    def __inir__(self, *items):
+    def __init__(self, *items):
         if len(items) == 1 and type(items[0]) in (tuple, list):
-            self.items = list(items[0])
+            items = list(items[0])
+        self.items = items
 class qstart(Special):
     char = '*?'
 class qplus(Special):
     char = '+?'
 class no_ignore(Special):
     char = 'i'
-
-''' not implemented yet:
 class _not(Special):
     char = '!'
-'''
 
 import string
 

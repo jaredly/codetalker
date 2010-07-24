@@ -276,7 +276,7 @@ cdef object try_get_tokens(int gid, char* text, Token** tokens):
 
     if tokens[0] == NULL:
         if len(error.text):
-            raise TokenError(error.text, error.lineno, error.charno)
+            raise TokenError(error.text, text, error.lineno, error.charno)
 
 def get_parse_tree(gid, text, start_i):
     cdef Token* tokens
@@ -533,7 +533,6 @@ cdef PTokens convert_ptokens(object tokens):
                 ptokens.tokens[i].value.strings[m] = tokens[i].strings[m]
         else:
             ptokens.num = -1
-            print 'failed'
             return ptokens
     return ptokens
 
