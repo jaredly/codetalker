@@ -5,11 +5,11 @@
 #include "stdio.h"
 #include "c/_speed_tokens.h"
 
-/* *
+#ifdef DEBUG
 #define LOG pind();printf
-/*/
-#define LOG //log
-/**/
+#else
+#define LOG // LOG
+#endif
 
 char sentinel = 0;
 #define UNINITIALIZED ((void *)&sentinel)
@@ -142,7 +142,7 @@ struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct
     struct cParseNode* node = _new_parsenode(rule);
     struct cParseNode* tmp;
     int i;
-    LOG("parsing rule %d (token at %d)\n", rule, tokens->at);
+    LOG("parsing rule #%d %s (token at %d)\n", rule, grammar->rules.rules[rule].name, tokens->at);
     int at = tokens->at;
     // log('parsing rule', rule)
     indent+=IND;;

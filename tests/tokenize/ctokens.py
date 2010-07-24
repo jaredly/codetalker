@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from util import just_tokenize, make_tests, make_fails, TSTRING, STRING, SSTRING, ID, WHITE, NUMBER, INT, HEX, CCOMMENT, PYCOMMENT, NEWLINE, ANY
+from util import just_tokenize, make_tests, make_fails, TSTRING, STRING, SSTRING, ID, WHITE, NUMBER, INT, HEX, CCOMMENT, CMCOMMENT, PYCOMMENT, NEWLINE, ANY
 
 def make_single(tok, *tests):
     fn = just_tokenize(tok, WHITE)
@@ -122,15 +122,20 @@ fail_single(HEX,
 make_single(CCOMMENT,
         ('', 0),
         ('// hello!', 1),
+        ('// one\n', 1),
+        ('// one\n// two', 2))
+
+# CMCOMMENT
+
+make_single(CMCOMMENT,
+        ('', 0),
         ('/**/', 1),
         ('/** //*/', 1),
         ('/*/*/', 1),
         ('/* // *//**/', 2),
-        ('// one\n', 1),
-        ('// one\n// two', 2),
         ('/** multi\n// line**/', 1))
 
-fail_single(CCOMMENT,
+fail_single(CMCOMMENT,
         '/*/',
         '/',
         '/*',

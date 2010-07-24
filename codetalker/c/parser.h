@@ -91,6 +91,7 @@ struct Rule {
     unsigned int num;
     int dont_ignore;
     unsigned int which;
+    char* name;
 };
 
 struct Rules {
@@ -133,7 +134,6 @@ struct Grammar {
     struct AstAttrs* ast_attrs;
     struct PTokens tokens;
     char* idchars;
-    char** rule_names;
 };
 
 struct Error {

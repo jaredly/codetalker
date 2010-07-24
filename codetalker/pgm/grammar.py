@@ -91,6 +91,7 @@ class Grammar:
             name = camelCase(builder.__name__)
         
         rule = RuleLoader(self)
+        rule.name = name
 
         self.rule_dict[builder] = num
         self.rules.append(rule)

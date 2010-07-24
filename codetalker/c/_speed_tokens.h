@@ -7,7 +7,8 @@ typedef enum {
     tNUMBER,   // ([1-9]+(\.\d*))|(\.\d+)
     tINT,      // [1-9][0-9]*
     tHEX,      // 0xdeadb33f
-    tCCOMMENT, // // blah\n or /** blah **/
+    tCCOMMENT, // // blah\n
+    tCMCOMMENT,// /** blah **/
     tPYCOMMENT,// # blah\n
     tWHITE,    // space | \t
     tNEWLINE,  // \n

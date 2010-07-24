@@ -164,7 +164,16 @@ int t_ccomment(int at, char* text, int ln) {
             }
         }
         return i - at;
-    } else if (text[i+1] == '*') { /* this kind */
+    }
+    return 0;
+}
+
+int t_cmcomment(int at, char* text, int ln) {
+    int i = at;
+    if (text[i] != '/' || ln-1 == at) {
+        return 0;
+    }
+    if (text[i+1] == '*') { /* this kind */
         i += 2;
         for (;i<ln-1;i++) {
             if (text[i] == '\\') i++;
@@ -217,6 +226,8 @@ int check_ctoken(ttype tid, int at, char* text, int ln, char* idchars) {
             return t_hex(at, text, ln);
         case tCCOMMENT:
             return t_ccomment(at, text, ln);
+        case tCMCOMMENT:
+            return t_cmcomment(at, text, ln);
         case tPYCOMMENT:
             return t_pycomment(at, text, ln);
         case tWHITE:

@@ -54,7 +54,8 @@ cdef extern from "c/_speed_tokens.h":
         tNUMBER   # ([1-9]+(\.\d*))|(\.\d+)
         tHEX      # 0xdeadb33f
         tINT      # [1-9][0-9]*
-        tCCOMMENT # // blah\n or /** blah **/
+        tCCOMMENT # // blah\n
+        tCMCOMMENT# /** blah **/
         tPYCOMMENT# # blah\n
         tWHITE    # space | \t
         tNEWLINE  # \n
@@ -139,6 +140,7 @@ cdef extern from "c/parser.h":
         unsigned int num
         bint dont_ignore
         unsigned int which
+        char* name
 
     struct Rules:
         unsigned int num
@@ -175,7 +177,6 @@ cdef extern from "c/parser.h":
         AstAttrs* ast_attrs
         PTokens tokens
         char* idchars
-        char** rule_names
 
     struct Error:
         int at
@@ -214,6 +215,8 @@ class HEX(CToken):
     tid = tHEX
 class CCOMMENT(CToken):
     tid = tCCOMMENT
+class CMCOMMENT(CToken):
+    tid = tCMCOMMENT
 class PYCOMMENT(CToken):
     tid = tPYCOMMENT
 class WHITE(CToken):
@@ -391,6 +394,7 @@ cdef Rule convert_rule(object rule, unsigned int i):
     crule.dont_ignore = rule.dont_ignore
     crule.num = len(rule.options)
     crule.options = <RuleOption*>malloc(sizeof(RuleOption)*crule.num)
+    crule.name = rule.name
     for i from 0<=i<crule.num:
         crule.options[i] = convert_option(rule.options[i])
     return crule

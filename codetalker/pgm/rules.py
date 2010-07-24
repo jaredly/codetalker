@@ -7,7 +7,7 @@ from special import Special
 import inspect
 
 class RuleLoader(object):
-    __slots__ = ('grammar', 'options', 'token', 'dont_ignore', 'astAttrs', 'pass_single', 'builder')
+    __slots__ = ('grammar', 'options', 'token', 'dont_ignore', 'astAttrs', 'pass_single', 'builder', 'name')
     def __init__(self, grammar, token=False):
         self.grammar = grammar
         self.options = []
