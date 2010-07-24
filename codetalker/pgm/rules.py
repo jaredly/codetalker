@@ -8,7 +8,7 @@ from special import Special
 import inspect
 
 class RuleLoader(object):
-    __slots__ = ('grammar', 'options', 'token', 'dont_ignore', 'astAttrs', 'pass_single', 'builder', 'name')
+    __slots__ = ('grammar', 'options', 'token', 'dont_ignore', 'astAttrs', 'pass_single', 'builder', 'name', 'keep_tree')
     def __init__(self, grammar, token=False):
         self.grammar = grammar
         self.options = []
@@ -16,6 +16,7 @@ class RuleLoader(object):
         self.dont_ignore = False
         self.astAttrs = {}
         self.pass_single = False # single or multi
+        self.keep_tree = False
 
     def __or__(self, other):
         self.options.append(self.process(other))

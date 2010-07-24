@@ -144,7 +144,7 @@ class Grammar:
         self.ast_attrs[num] = {'attrs':rule.astAttrs, 'pass_single':getattr(rule, 'pass_single', False)}
         if len(rule.astAttrs):
             ## TODO: convert name to TitleCase for class name?
-            setattr(self.ast_classes, name, type(name, (AstNode,), {'__slots__':('_rule',) + tuple(rule.astAttrs.keys())}))
+            setattr(self.ast_classes, name, type(name, (AstNode,), {'__slots__':('_tree',) + tuple(rule.astAttrs.keys())}))
         return num
 
     def replace_tokens(self):

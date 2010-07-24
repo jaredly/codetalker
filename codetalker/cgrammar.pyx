@@ -141,6 +141,7 @@ cdef extern from "c/parser.h":
         bint dont_ignore
         unsigned int which
         char* name
+        int keep_tree
 
     struct Rules:
         unsigned int num
@@ -395,6 +396,7 @@ cdef Rule convert_rule(object rule, unsigned int i):
     crule.num = len(rule.options)
     crule.options = <RuleOption*>malloc(sizeof(RuleOption)*crule.num)
     crule.name = rule.name
+    crule.keep_tree = rule.keep_tree
     for i from 0<=i<crule.num:
         crule.options[i] = convert_option(rule.options[i])
     return crule
@@ -806,6 +808,8 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
         return res
 
     obj = getattr(ast_classes, name)()
+    if grammar.rules.rules[node.rule].keep_tree:
+        obj._tree = convert_back_ptree(gid, node)
 
     for i from 0<=i<attrs.num:
         # print 'attr num', i, 'of', attrs.num

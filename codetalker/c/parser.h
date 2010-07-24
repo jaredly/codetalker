@@ -92,6 +92,7 @@ struct Rule {
     int dont_ignore;
     unsigned int which;
     char* name;
+    int keep_tree;
 };
 
 struct Rules {
