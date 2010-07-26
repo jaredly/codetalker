@@ -38,7 +38,14 @@ everythin else is in here.
 cdef extern from "stdlib.h" nogil:
     char* strncpy(char* dest, char* src, int num)
     char* strcpy(char* dest, char* src)
+    char* strchr(char* dest, char needle)
     int strncmp(char* dest, char* src, int num)
+    int tolower(char what)
+    int toupper(char what)
+
+cdef inline int strichr(char* dest, char needle):
+    return strchr(dest, tolower(needle))!=NULL or strchr(dest, toupper(needle))!=NULL
+
 
 cdef extern from "c/_speed_tokens.h":
     int check_ctoken(int tid, int at, char* text, int ln, char* idchars)
@@ -618,6 +625,7 @@ cdef struct TokenState:
     int max_indents
 
 cdef struct cache_one:
+    char* cache
     char** strings
     int num
 
@@ -666,11 +674,15 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
             num = len(tokens[i].strings)
             str_cache[at].num = num
             str_cache[at].strings = <char**>malloc(sizeof(char*)*num)
+            singles = ''
             for m from 0<=m<num:
+                if tokens[i].strings[m][0] not in singles:
+                    singles += tokens[i].strings[m][0]
                 str_cache[at].strings[m] = tokens[i].strings[m]
                 # <char*>malloc(sizeof(char)*(len(tokens[i].strings[m])+1))
                 # strcpy(str_cache[at].strings[m], tokens[i].strings[m])
                 # str_cache[at].strings[m][len(tokens[i].strings[m])] = '\0'
+            str_cache[at].cache = singles
             at += 1
 
     while state.at < state.ln:
@@ -681,13 +693,22 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
             elif tokens[i]._type == CHARTOKEN:
                 res = check_chartoken(tokens[i].chars, len(tokens[i].chars), state.at, state.text, state.ln)
             elif tokens[i]._type == STRTOKEN:
-                res = check_stringtoken(str_cache[tokens[i]._str_cid].strings,
+                if strchr(str_cache[tokens[i]._str_cid].cache, state.text[state.at])==NULL:
+                    res = 0
+                else:
+                    res = check_stringtoken(str_cache[tokens[i]._str_cid].strings,
                         str_cache[tokens[i]._str_cid].num, state.at, state.text, state.ln)
             elif tokens[i]._type == IDTOKEN:
-                res = check_idtoken(str_cache[tokens[i]._str_cid].strings,
+                if strchr(str_cache[tokens[i]._str_cid].cache, state.text[state.at])==NULL:
+                    res = 0
+                else:
+                    res = check_idtoken(str_cache[tokens[i]._str_cid].strings,
                         str_cache[tokens[i]._str_cid].num, state.at, state.text, state.ln, idchars)
             elif tokens[i]._type == IIDTOKEN:
-                res = check_iidtoken(str_cache[tokens[i]._str_cid].strings,
+                if not strichr(str_cache[tokens[i]._str_cid].cache, state.text[state.at]):
+                    res = 0
+                else:
+                    res = check_iidtoken(str_cache[tokens[i]._str_cid].strings,
                         str_cache[tokens[i]._str_cid].num, state.at, state.text, state.ln, idchars)
             elif tokens[i]._type == RETOKEN:
                 res = tokens[i].check(state.text[state.at:])
