@@ -33,7 +33,7 @@ setup(
     name='CodeTalker',
     author='Jared Forsyth',
     author_email='jared@jaredforsyth.com',
-    version='0.5',
+    version='1.0',
     url='http://jaredforsyth.com/projects/codetalker/',
     download_url='http://github.com/jabapyth/codetalker/tree',
     description='a module for dynamic, pythonic language parsing',
