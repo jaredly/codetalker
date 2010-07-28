@@ -6,9 +6,9 @@
 #include "c/_speed_tokens.h"
 
 #ifdef DEBUG
-#define LOG pind();printf
+#define LOG(...) pind();printf(__VA_ARGS__)
 #else
-#define LOG // LOG
+#define LOG(...) // LOG
 #endif
 
 char sentinel = 0;
