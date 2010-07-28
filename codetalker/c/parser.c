@@ -6,9 +6,9 @@
 #include "c/_speed_tokens.h"
 
 #ifdef DEBUG
-#define LOG pind();printf
+#define LOG(...) pind();printf(__VA_ARGS__)
 #else
-#define LOG // LOG
+#define LOG(...) // LOG
 #endif
 
 char sentinel = 0;
@@ -524,7 +524,6 @@ struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, stru
     int DD_t = grammar->tokens.num+1;
 
     int res = 0;
-    int num = 0;
 
     int dirty;
 
