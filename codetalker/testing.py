@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from codetalker.pgm.errors import ParseError
+from codetalker.pgm.errors import ParseError, TokenError
 
 def parse_rule(name, grammar):
     parts = name.split('.')
@@ -14,7 +14,7 @@ def parse_rule(name, grammar):
             def meta():
                 try:
                     res = grammar.get_parse_tree(string, start=rule)
-                except ParseError, e:
+                except (ParseError, TokenError), e:
                     pass
                 else:
                     raise AssertionError('parsing was supposed to fail for', string, res)
