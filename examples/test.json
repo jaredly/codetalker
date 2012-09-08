@@ -1,0 +1,11 @@
+{ "one": "string",
+    "number": 5,
+    "or": "escape\"this!",
+    "list": [1, 2, 3, 4, 5],
+    "dict": {
+        "qwe": 3,
+        "gfd": 54
+    },
+    "empty": [],
+    "emdict": {}
+}

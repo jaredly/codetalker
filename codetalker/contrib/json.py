@@ -56,7 +56,7 @@ def t_string(node):
 
 @JSON.translates(NUMBER)
 def t_number(node):
-    if '.' in node.value:
+    if '.' in node.value or 'e' in node.value.lower():
         return float(node.value)
     return int(node.value)
 

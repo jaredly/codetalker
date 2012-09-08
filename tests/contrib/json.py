@@ -14,7 +14,15 @@ parse_rule = testing.parse_rule(__name__, json.grammar)
 def make_parse(fname):
     text = open(fname).read()
     def meta():
-        res = json.loads(text)
+        if os.path.basename(fname).startswith('fail'):
+            try:
+                res = json.loads(text)
+            except:
+                pass
+            else:
+                raise Exception('JSON parsing of %s should have failed: %s' % (fname, text))
+        else:
+            res = json.loads(text)
     return meta
 
 for fname in files:
