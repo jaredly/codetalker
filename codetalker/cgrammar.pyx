@@ -375,8 +375,8 @@ cdef char* format_parse_error(int gid, TokenStream* tstream, Error* error):
     txt = 'Unknown Error'
     rule_names, tokens, indent = python_data[gid]
     if tstream.at > error.at:
-        txt = "Extra data (expected EOF)"
         error.token = &tstream.tokens[tstream.at]
+        txt = "Extra data (expected EOF) %s '%s'" % (tokens[error.token.which].__name__, error.token.value)
     elif error.reason == 1:
         txt = "Ran out of tokens (expected %s)" % tokens[error.wanted]
     elif error.reason == 2:

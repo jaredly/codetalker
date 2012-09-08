@@ -59,12 +59,17 @@ class Translator:
 
     def from_ast(self, tree, **args):
         if self.scope:
-            stuff = copy.deepcopy(self.defaults)
-            stuff.update(args)
-            Scope = type('Scope', (), {})
-            scope = Scope()
-            for k,v in stuff.iteritems():
-                setattr(scope, k, v)
+            if self.defaults.keys() == ['scope']:
+                scope = self.defaults['scope']
+                for k, v in args.items():
+                    setattr(scope, k, v)
+            else:
+                stuff = copy.deepcopy(self.defaults)
+                stuff.update(args)
+                Scope = type('Scope', (), {})
+                scope = Scope()
+                for k,v in stuff.iteritems():
+                    setattr(scope, k, v)
             return self.translate(tree, scope)
         elif args:
             raise Exception('no scope -- cannot define variables: %s' % (args,))
