@@ -6,8 +6,10 @@ class Special:
         self.items = items
 
 class star(Special):
+    '''Greedy zero-or-more'''
     char = '*'
 class plus(Special):
+    '''Greedy one-or-more'''
     char = '+'
 class _or(Special):
     char = '|'
@@ -15,9 +17,11 @@ class _or(Special):
         if len(items) == 1 and type(items[0]) in (tuple, list):
             items = list(items[0])
         self.items = items
-class qstart(Special):
+class qstar(Special):
+    '''Non-greedy zero-or-more'''
     char = '*?'
 class qplus(Special):
+    '''Non-greedy one-or-more'''
     char = '+?'
 class no_ignore(Special):
     char = 'i'
