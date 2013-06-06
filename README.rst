@@ -1,6 +1,9 @@
 CodeTalker
 ==========
 
+.. image:: https://travis-ci.org/jabapyth/codetalker.png?branch=master
+   :target: https://travis-ci.org/jabapyth/codetalker
+
 Codetalker has just undergone major revision! :D
 
 The goal of code talker is to allow for speedy development of parsers +
