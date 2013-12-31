@@ -866,6 +866,12 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
             error.charno = state.charno
             return NULL
     # print 'done tokenizing'
+    
+    for i from 0<=i<nstrs:
+        free(str_cache[i].strings)
+        free(str_cache[i].cache)    
+    free(str_cache)
+    free(state.indents)
     return start
 
 cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int ID_t, int DD_t, cTokenError* error):
