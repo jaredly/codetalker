@@ -30,7 +30,7 @@ class RuleLoader(object):
             return [what]
         elif inspect.isclass(what) and issubclass(what, Token):
             if what not in self.grammar.tokens and what not in self.grammar.special_tokens:
-                print 'adding', what
+                # print 'adding', what
                 self.grammar.tokens.append(what)
             return [what]
             # return [-(self.grammar.tokens.index(what) + 1)]
