@@ -370,7 +370,7 @@ cdef object try_get_parse_tree(int gid, char* text, int start, TokenStream* tstr
         raise ParseError(txt, error.token.lineno, error.token.charno)
 
 #TODO use an ENUM for the error types...
-cdef char* format_parse_error(int gid, TokenStream* tstream, Error* error):
+cdef object format_parse_error(int gid, TokenStream* tstream, Error* error):
     '''Format a c Error struct into a friendly error message'''
     txt = 'Unknown Error'
     rule_names, tokens, indent = python_data[gid]
@@ -799,7 +799,8 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
                 # <char*>malloc(sizeof(char)*(len(tokens[i].strings[m])+1))
                 # strcpy(str_cache[at].strings[m], tokens[i].strings[m])
                 # str_cache[at].strings[m][len(tokens[i].strings[m])] = '\0'
-            str_cache[at].cache = singles
+            str_cache[at].cache = <char*>malloc(sizeof(char)*(len(singles)+1))
+            strcpy(str_cache[at].cache, singles)
             at += 1
 
     while state.at < state.ln:
@@ -865,6 +866,12 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
             error.charno = state.charno
             return NULL
     # print 'done tokenizing'
+    
+    for i from 0<=i<nstrs:
+        free(str_cache[i].strings)
+        free(str_cache[i].cache)    
+    free(str_cache)
+    free(state.indents)
     return start
 
 cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int ID_t, int DD_t, cTokenError* error):
