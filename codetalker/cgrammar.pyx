@@ -337,6 +337,7 @@ def get_parse_tree(gid, text, start_i):
     pyptree = convert_back_ptree(gid, ptree)
     kill_ptree(ptree)
     kill_tokens(tokens)
+    free(tstream.tokens)
     return pyptree
 
 cdef object try_get_parse_tree(int gid, char* text, int start, TokenStream* tstream, cParseNode** ptree):
@@ -398,20 +399,28 @@ def get_ast(gid, text, start_i, ast_classes, ast_tokens):
 
     cdef Grammar* grammar = load_grammar(gid)
     cdef Token* tokens
-
-    try_get_tokens(gid, text, &tokens)
-
-    cdef TokenStream tstream = tokens_to_stream(tokens)
-    tstream.eof = python_data[gid][1].index(EOF)
-
+    cdef TokenStream tstream
     cdef cParseNode* ptree
-    try_get_parse_tree(gid, text, start_i, &tstream, &ptree)
-    if ptree == NULL:
-        return None
-    ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
-    kill_ptree(ptree)
-    kill_tokens(tokens)
-    return ast
+
+    try:
+        try_get_tokens(gid, text, &tokens)
+
+        tstream = tokens_to_stream(tokens)
+        tstream.eof = python_data[gid][1].index(EOF)
+
+        try:
+            try_get_parse_tree(gid, text, start_i, &tstream, &ptree)
+            if ptree == NULL:
+                return None
+            try:
+                ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
+                return ast
+            finally:
+                kill_ptree(ptree)
+        finally:
+            free(tstream.tokens)
+    finally:
+        kill_tokens(tokens)
 
 cdef Token NO_TOKEN
 NO_TOKEN.lineno = 1
@@ -874,7 +883,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
     
     for i from 0<=i<nstrs:
         free(str_cache[i].strings)
-        free(str_cache[i].cache)    
+        free(str_cache[i].cache)
     free(str_cache)
     free(state.indents)
     return start
