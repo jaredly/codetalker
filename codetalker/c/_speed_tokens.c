@@ -223,7 +223,7 @@ int t_ccomment(int at, char* text, int ln) {
 }
 
 /**
- * A c-style multiline comment; begins with '/*' and ends with '*' + '/'
+ * A c-style multiline comment; begins with '/' + '*' and ends with '*' + '/'
  *
  * Returns the number of characters consumed (0 for invalid)
  */

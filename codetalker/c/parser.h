@@ -28,7 +28,7 @@ struct PToken {
 };
 
 struct PTokens {
-    unsigned int num;
+    int num;
     struct PToken* tokens;
 };
 

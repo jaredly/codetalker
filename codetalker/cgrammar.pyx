@@ -1,5 +1,5 @@
 # cython: profile=True
-from stdlib cimport malloc, free
+from libc.stdlib cimport malloc, free
 
 from codetalker.pgm.tokens import INDENT, DEDENT, EOF, Token as PyToken, ReToken
 from codetalker.pgm.errors import ParseError, TokenError, AstError
@@ -54,7 +54,7 @@ cdef extern from "c/_speed_tokens.h":
     int check_idtoken(char** strings, int num, int at, char* text, int ln, char* idchars)
     int check_iidtoken(char** strings, int num, int at, char* text, int ln, char* idchars)
     int t_white(int at, char* text, int ln)
-    enum ttype:
+    ctypedef enum ttype:
         tTSTRING  # triple string
         tSSTRING  # single-quoted string
         tSTRING   # normal (double-quoted) string
@@ -75,7 +75,7 @@ cdef extern from "c/parser.h":
     struct RuleSpecial
     struct RuleOption
 
-    enum t_type:
+    ctypedef enum t_type:
         CTOKEN
         CHARTOKEN
         STRTOKEN
@@ -95,7 +95,7 @@ cdef extern from "c/parser.h":
         int num
 
     struct PTokens:
-        unsigned int num
+        int num
         PToken* tokens
 
     struct cTokenError:
@@ -1004,9 +1004,9 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
     for i from 0<=i<attrs.num:
         # print 'attr num', i, 'of', attrs.num
         child = start
+        cnum = 0
+        stepnum = 0
         if attrs.attrs[i].single:
-            cnum = 0
-            stepnum = 0
             # print 'stype'
             while child != NULL:
                 # print 'looking', attrs.attrs[i].numtypes
@@ -1032,7 +1032,6 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
         else:
             kids = []
             setattr(obj, attrs.attrs[i].name, kids)
-            cnum = 0
             # print 'mtype'
             while child != NULL:
                 for m from 0<=m<attrs.attrs[i].numtypes:
