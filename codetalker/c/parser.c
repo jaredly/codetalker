@@ -6,6 +6,7 @@
 #include "c/_speed_tokens.h"
 
 #ifdef DEBUG
+void pind(void);
 #define LOG(...) pind();printf(__VA_ARGS__)
 #define INDENT() indent += IND
 #define DEDENT() indent -= IND
@@ -34,16 +35,17 @@ int matches(struct cParseNode* node, int which) {
 }
 
 void _kill_ptree(struct cParseNode* node) {
-    if (node->type == NTOKEN) {
+    if (node == UNINITIALIZED) {
+        return;
+    }
+    
+    struct cParseNode* tmp;
+    while (node != NULL) {
+        _kill_ptree(node->child);
+        tmp = node->prev;
+        LOG("Freeing node %p\n", node);
         free(node);
-    } else {
-        struct cParseNode* child = node->child;
-        free(node);
-        while (child != NULL) {
-            node = child;
-            child = child->prev;
-            _kill_ptree(node);
-        }
+        node = tmp;
     }
 }
 
@@ -128,12 +130,14 @@ struct cParseNode* _get_parse_tree(int start, struct Grammar* grammar, struct To
         LOG("inc token %d %d\n", tokens->at, tokens->at+1);
         tokens->at += 1;
     }
+    LOG("Node %p adopts node %p\n", parent, current);
     parent->child = current;
     return parent;
 }
 
 struct cParseNode* _new_parsenode(unsigned int rule) {
     struct cParseNode* node = (struct cParseNode*)malloc(sizeof(struct cParseNode));
+    LOG("Allocated node %p\n", node);
     node->rule = rule;
     node->next = NULL;
     node->prev = NULL;
@@ -144,7 +148,7 @@ struct cParseNode* _new_parsenode(unsigned int rule) {
 }
 
 struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct TokenStream* tokens, struct Error* error) {
-    struct cParseNode* node = _new_parsenode(rule);
+    struct cParseNode* node;
     struct cParseNode* tmp;
     int i;
     LOG("parsing rule #%d %s (token at %d)\n", rule, grammar->rules.rules[rule].name, tokens->at);
@@ -154,8 +158,10 @@ struct cParseNode* parse_rule(unsigned int rule, struct Grammar* grammar, struct
         tokens->at = at;
         tmp = parse_children(rule, &(grammar->rules.rules[rule].options[i]), grammar, tokens, error);
         if (tmp != NULL) {
-            LOG("CHild success! %d\n", i);
+            node = _new_parsenode(rule);
+            LOG("Child success! %d\n", i);
             if (tmp != UNINITIALIZED) {
+                LOG("Node %p adopts node %p\n", node, tmp);
                 node->child = tmp;
             }
             DEDENT();
@@ -214,6 +220,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                 error->text = "ran out";
                 // error[1] = ['ran out', rule, i, item->value.which];
                 // log('not enough tokens')
+                _kill_ptree(current);
                 DEDENT();
                 return NULL;
             }
@@ -221,6 +228,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
             at = tokens->at;
             tmp = parse_rule(item->value.which, grammar, tokens, error);
             if (tmp == NULL) {
+                LOG("Null result from parse_rule\n");
                 tokens->at = at;
                 if (tokens->at >= error->at && error->reason!=1 && error->reason!=4) {
                     error->at = tokens->at;
@@ -229,6 +237,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                     error->text = "rule failed";
                     error->wanted = item->value.which;
                 }
+                _kill_ptree(current);
                 DEDENT();
                 return NULL;
             }
@@ -242,6 +251,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                     tmp = _new_parsenode(rule);
                     tmp->token = (struct Token*)malloc(sizeof(struct Token));
                     tmp->token->value = NULL;
+                    tmp->token->allocated = 0;
                     tmp->token->which = tokens->eof;
                     tmp->token->lineno = -1;
                     tmp->token->charno = -1;
@@ -255,6 +265,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                 error->token = NULL;
                 error->text = "ran out";
                 error->wanted = item->value.which;
+                _kill_ptree(current);
                 DEDENT();
                 return NULL;
             }
@@ -277,16 +288,19 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                 }
                 LOG("token failed (wanted %d, got %d)\n",
                         item->value.which, tokens->tokens[tokens->at].which);
+                _kill_ptree(current);
                 DEDENT();
                 return NULL;
             }
         } else if (item->type == LITERAL) {
             LOG(">LITERAL\n");
             if (tokens->at >= tokens->num) {
+                LOG("Out of tokens\n");
                 error->at = tokens->at;
                 error->reason = 4;
                 error->token = NULL;
                 error->text = item->value.text;
+                _kill_ptree(current);
                 DEDENT();
                 return NULL;
             }
@@ -307,6 +321,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                     error->text = item->value.text;
                 }
                 LOG("failed....literally: %s\n", item->value.text);
+                _kill_ptree(current);
                 DEDENT();
                 return NULL;
             }
@@ -315,12 +330,14 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
             tmp = check_special(rule, item->value.special, current, grammar, tokens, error);
             if (tmp == NULL) {
                 LOG("FAIL SPECIAL\n");
+                /* check_special is responsible for killing current */
                 DEDENT();
                 return NULL;
             }
             current = tmp;
         }
     }
+    LOG("Returning node %p\n", current);
     DEDENT();
     return current;
 }
@@ -354,6 +371,7 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
         if (tmp == NULL) {
             tokens->at = at;
             LOG("failed plus\n");
+            _kill_ptree(current);
             DEDENT();
             return NULL;
         }
@@ -391,6 +409,7 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
             }
         }
         LOG("fail or\n");
+        _kill_ptree(current);
         DEDENT();
         return NULL;
     } else if (special.type == QUESTION) {
@@ -418,6 +437,7 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
         if (tmp == NULL) {
             tokens->at = at;
             LOG("failed ignore\n");
+            _kill_ptree(current);
             DEDENT();
             return NULL;
         }
@@ -439,6 +459,7 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
                 LOG("awesome. eating token\n");
             } else {
                 LOG("not enough tokens to eat\n");
+                _kill_ptree(current);
                 at = tokens->at;
                 return NULL;
             }
@@ -447,20 +468,23 @@ struct cParseNode* check_special(unsigned int rule, struct RuleSpecial special, 
         }
         LOG("nope, it passed\n");
         tokens->at = at;
+        _kill_ptree(current);
         DEDENT();
         return NULL;
     } else {
-        LOG("unknown special type: %s\n", special.type);
+        LOG("unknown special type: %d\n", special.type);
+        _kill_ptree(current);
         DEDENT();
         return NULL;
     }
     LOG("umm shouldnt happen");
+    _kill_ptree(current);
     DEDENT();
     return NULL;
 }
 
 struct cParseNode* append_nodes(struct cParseNode* one, struct cParseNode* two) {
-    LOG("appending nodes; %d to %d\n", (int)one, (int)two);
+    LOG("appending nodes; %p to %p\n", one, two);
     if (one == UNINITIALIZED) {
         LOG("good (noone)\n");
         return two;
@@ -556,6 +580,7 @@ struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, stru
                 tmp->value = (char*)malloc(sizeof(char)*(res+1));
                 strncpy(tmp->value, text + state.at, res);
                 tmp->value[res] = '\0';
+                tmp->allocated = 1;
                 // printf("got token! %d (%s)\n", res, tmp->value);
                 tmp->which = ptoken.which;
                 tmp->next = NULL;
@@ -620,6 +645,7 @@ struct Token* advance_token(int res, struct Token* current, int indent, struct T
         add_indent(state, ind);
         tmp = (struct Token*)malloc(sizeof(struct Token));
         tmp->value = "";
+        tmp->allocated = 0;
         tmp->which = ID_t;
         tmp->next = NULL;
         tmp->lineno = state->lineno;
@@ -631,6 +657,7 @@ struct Token* advance_token(int res, struct Token* current, int indent, struct T
             state->num_indents -= 1;
             tmp = (struct Token*)malloc(sizeof(struct Token));
             tmp->value = "";
+            tmp->allocated = 0;
             tmp->which = DD_t;
             tmp->next = NULL;
             tmp->lineno = state->lineno;

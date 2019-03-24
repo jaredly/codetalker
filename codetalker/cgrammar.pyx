@@ -1,5 +1,5 @@
 # cython: profile=True
-from stdlib cimport malloc, free
+from libc.stdlib cimport malloc, free
 
 from codetalker.pgm.tokens import INDENT, DEDENT, EOF, Token as PyToken, ReToken
 from codetalker.pgm.errors import ParseError, TokenError, AstError
@@ -54,7 +54,7 @@ cdef extern from "c/_speed_tokens.h":
     int check_idtoken(char** strings, int num, int at, char* text, int ln, char* idchars)
     int check_iidtoken(char** strings, int num, int at, char* text, int ln, char* idchars)
     int t_white(int at, char* text, int ln)
-    enum ttype:
+    ctypedef enum ttype:
         tTSTRING  # triple string
         tSSTRING  # single-quoted string
         tSTRING   # normal (double-quoted) string
@@ -75,7 +75,7 @@ cdef extern from "c/parser.h":
     struct RuleSpecial
     struct RuleOption
 
-    enum t_type:
+    ctypedef enum t_type:
         CTOKEN
         CHARTOKEN
         STRTOKEN
@@ -95,7 +95,7 @@ cdef extern from "c/parser.h":
         int num
 
     struct PTokens:
-        unsigned int num
+        int num
         PToken* tokens
 
     struct cTokenError:
@@ -107,6 +107,7 @@ cdef extern from "c/parser.h":
         unsigned int which
         unsigned int lineno
         unsigned int charno
+        unsigned int allocated
         char* value
         Token* next
 
@@ -336,6 +337,7 @@ def get_parse_tree(gid, text, start_i):
     pyptree = convert_back_ptree(gid, ptree)
     kill_ptree(ptree)
     kill_tokens(tokens)
+    free(tstream.tokens)
     return pyptree
 
 cdef object try_get_parse_tree(int gid, char* text, int start, TokenStream* tstream, cParseNode** ptree):
@@ -397,25 +399,33 @@ def get_ast(gid, text, start_i, ast_classes, ast_tokens):
 
     cdef Grammar* grammar = load_grammar(gid)
     cdef Token* tokens
-
-    try_get_tokens(gid, text, &tokens)
-
-    cdef TokenStream tstream = tokens_to_stream(tokens)
-    tstream.eof = python_data[gid][1].index(EOF)
-
+    cdef TokenStream tstream
     cdef cParseNode* ptree
-    try_get_parse_tree(gid, text, start_i, &tstream, &ptree)
-    if ptree == NULL:
-        return None
-    ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
-    kill_ptree(ptree)
-    kill_tokens(tokens)
-    return ast
+
+    try:
+        try_get_tokens(gid, text, &tokens)
+
+        tstream = tokens_to_stream(tokens)
+        tstream.eof = python_data[gid][1].index(EOF)
+
+        try:
+            try_get_parse_tree(gid, text, start_i, &tstream, &ptree)
+            if ptree == NULL:
+                return None
+            ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
+            return ast
+        finally:
+            if ptree != NULL:
+                kill_ptree(ptree)
+            free(tstream.tokens)
+    finally:
+        kill_tokens(tokens)
 
 cdef Token NO_TOKEN
 NO_TOKEN.lineno = 1
 NO_TOKEN.charno = 0
 NO_TOKEN.value = ''
+NO_TOKEN.allocated = 0
 NO_TOKEN.which = 0
 
 cdef Token* get_last_token(TokenStream* tokens):
@@ -706,6 +716,8 @@ cdef void kill_tokens(Token* start):
     while start != NULL:
         tmp = start
         start = start.next
+        if tmp.allocated:
+            free(tmp.value)
         free(tmp)
 
 cdef void kill_ptree(cParseNode* node):
@@ -844,6 +856,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
                 tmp.value = <char*>malloc(sizeof(char)*(res+1))
                 strncpy(tmp.value, state.text + state.at, res)
                 tmp.value[res] = '\0'
+                tmp.allocated = 1
                 # print 'got token!', res, state.at, [tmp.value], state.lineno, state.charno
                 tmp.which = i
                 tmp.next = NULL
@@ -869,7 +882,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
     
     for i from 0<=i<nstrs:
         free(str_cache[i].strings)
-        free(str_cache[i].cache)    
+        free(str_cache[i].cache)
     free(str_cache)
     free(state.indents)
     return start
@@ -904,6 +917,7 @@ cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int
             add_indent(state, ind)
             tmp = <Token*>malloc(sizeof(Token))
             tmp.value = ''
+            tmp.allocated = 0
             tmp.which = ID_t
             tmp.next = NULL
             tmp.lineno = state.lineno
@@ -915,6 +929,7 @@ cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int
                 state.num_indents -= 1
                 tmp = <Token*>malloc(sizeof(Token))
                 tmp.value = ''
+                tmp.allocated = 0
                 tmp.which = DD_t
                 tmp.next = NULL
                 tmp.lineno = state.lineno
@@ -997,9 +1012,9 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
     for i from 0<=i<attrs.num:
         # print 'attr num', i, 'of', attrs.num
         child = start
+        cnum = 0
+        stepnum = 0
         if attrs.attrs[i].single:
-            cnum = 0
-            stepnum = 0
             # print 'stype'
             while child != NULL:
                 # print 'looking', attrs.attrs[i].numtypes
@@ -1025,7 +1040,6 @@ cdef object _get_ast(Grammar* grammar, int gid, cParseNode* node, object ast_cla
         else:
             kids = []
             setattr(obj, attrs.attrs[i].name, kids)
-            cnum = 0
             # print 'mtype'
             while child != NULL:
                 for m from 0<=m<attrs.attrs[i].numtypes:
