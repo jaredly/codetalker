@@ -242,6 +242,7 @@ struct cParseNode* parse_children(unsigned int rule, struct RuleOption* option, 
                     tmp = _new_parsenode(rule);
                     tmp->token = (struct Token*)malloc(sizeof(struct Token));
                     tmp->token->value = NULL;
+                    tmp->token->allocated = 0;
                     tmp->token->which = tokens->eof;
                     tmp->token->lineno = -1;
                     tmp->token->charno = -1;
@@ -556,6 +557,7 @@ struct Token* c_get_tokens(struct Grammar* grammar, char* text, int indent, stru
                 tmp->value = (char*)malloc(sizeof(char)*(res+1));
                 strncpy(tmp->value, text + state.at, res);
                 tmp->value[res] = '\0';
+                tmp->allocated = 1;
                 // printf("got token! %d (%s)\n", res, tmp->value);
                 tmp->which = ptoken.which;
                 tmp->next = NULL;
@@ -620,6 +622,7 @@ struct Token* advance_token(int res, struct Token* current, int indent, struct T
         add_indent(state, ind);
         tmp = (struct Token*)malloc(sizeof(struct Token));
         tmp->value = "";
+        tmp->allocated = 0;
         tmp->which = ID_t;
         tmp->next = NULL;
         tmp->lineno = state->lineno;
@@ -631,6 +634,7 @@ struct Token* advance_token(int res, struct Token* current, int indent, struct T
             state->num_indents -= 1;
             tmp = (struct Token*)malloc(sizeof(struct Token));
             tmp->value = "";
+            tmp->allocated = 0;
             tmp->which = DD_t;
             tmp->next = NULL;
             tmp->lineno = state->lineno;

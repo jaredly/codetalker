@@ -107,6 +107,7 @@ cdef extern from "c/parser.h":
         unsigned int which
         unsigned int lineno
         unsigned int charno
+        unsigned int allocated
         char* value
         Token* next
 
@@ -416,6 +417,7 @@ cdef Token NO_TOKEN
 NO_TOKEN.lineno = 1
 NO_TOKEN.charno = 0
 NO_TOKEN.value = ''
+NO_TOKEN.allocated = 0
 NO_TOKEN.which = 0
 
 cdef Token* get_last_token(TokenStream* tokens):
@@ -706,6 +708,8 @@ cdef void kill_tokens(Token* start):
     while start != NULL:
         tmp = start
         start = start.next
+        if tmp.allocated:
+            free(tmp.value)
         free(tmp)
 
 cdef void kill_ptree(cParseNode* node):
@@ -844,6 +848,7 @@ cdef Token* _get_tokens(int gid, char* text, cTokenError* error, char* idchars):
                 tmp.value = <char*>malloc(sizeof(char)*(res+1))
                 strncpy(tmp.value, state.text + state.at, res)
                 tmp.value[res] = '\0'
+                tmp.allocated = 1
                 # print 'got token!', res, state.at, [tmp.value], state.lineno, state.charno
                 tmp.which = i
                 tmp.next = NULL
@@ -904,6 +909,7 @@ cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int
             add_indent(state, ind)
             tmp = <Token*>malloc(sizeof(Token))
             tmp.value = ''
+            tmp.allocated = 0
             tmp.which = ID_t
             tmp.next = NULL
             tmp.lineno = state.lineno
@@ -915,6 +921,7 @@ cdef Token* advance(int res, Token* current, bint indent, TokenState* state, int
                 state.num_indents -= 1
                 tmp = <Token*>malloc(sizeof(Token))
                 tmp.value = ''
+                tmp.allocated = 0
                 tmp.which = DD_t
                 tmp.next = NULL
                 tmp.lineno = state.lineno

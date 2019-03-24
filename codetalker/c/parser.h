@@ -42,6 +42,7 @@ struct Token {
     unsigned int which;
     unsigned int lineno;
     unsigned int charno;
+    unsigned int allocated;
     char* value;
     struct Token* next;
 };
