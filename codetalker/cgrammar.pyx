@@ -412,12 +412,11 @@ def get_ast(gid, text, start_i, ast_classes, ast_tokens):
             try_get_parse_tree(gid, text, start_i, &tstream, &ptree)
             if ptree == NULL:
                 return None
-            try:
-                ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
-                return ast
-            finally:
-                kill_ptree(ptree)
+            ast = _get_ast(grammar, gid, ptree, ast_classes, ast_tokens)
+            return ast
         finally:
+            if ptree != NULL:
+                kill_ptree(ptree)
             free(tstream.tokens)
     finally:
         kill_tokens(tokens)
